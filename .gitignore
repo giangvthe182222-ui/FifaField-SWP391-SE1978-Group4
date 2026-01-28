@@ -1,0 +1,21 @@
+
+# ===== Java / Ant =====
+build/
+dist/
+*.class
+
+# ===== Logs =====
+*.log
+
+# ===== NetBeans =====
+nbproject/private/
+
+# ===== VS Code =====
+.vscode/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== Temp files =====
+*.tmp

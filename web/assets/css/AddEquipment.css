@@ -1,0 +1,121 @@
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    background-color: #f8fafc;
+    color: #0f172a;
+}
+
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+.card {
+    background: #ffffff;
+    border-radius: 48px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+}
+
+
+.header {
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: -0.03em;
+}
+
+.logo span {
+    color: #10b981;
+}
+
+
+.label-fancy {
+    display: block;
+    font-size: 10px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-left: 4px;
+    margin-bottom: 6px;
+}
+
+.input-fancy,
+.select-fancy,
+.textarea-fancy {
+    width: 100%;
+    padding: 16px 16px 16px 48px;
+    background-color: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.input-fancy:focus,
+.select-fancy:focus,
+.textarea-fancy:focus {
+    border-color: #10b981;
+    background-color: #ffffff;
+}
+
+.textarea-fancy {
+    padding: 16px;
+    resize: none;
+    height: 120px;
+}
+
+
+.field {
+    position: relative;
+}
+
+.field i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+/* =====================
+   GRID
+===================== */
+.grid {
+    display: grid;
+    gap: 32px;
+}
+
+.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 768px) {
+    .grid-2,
+    .grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+
