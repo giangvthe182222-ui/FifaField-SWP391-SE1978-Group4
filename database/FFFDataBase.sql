@@ -5,7 +5,8 @@ GO
 
 CREATE TABLE Role (
     role_id VARCHAR(36) PRIMARY KEY,
-    role_name NVARCHAR(50) NOT NULL UNIQUE
+    role_name NVARCHAR(50) NOT NULL UNIQUE,
+	description NVARCHAR(255),
 );
 GO
 
@@ -43,6 +44,7 @@ GO
 CREATE TABLE Manager (
     user_id VARCHAR(36) PRIMARY KEY,
     start_date DATE,
+	location_id VARCHAR(36),
     CONSTRAINT FK_Manager_User FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 GO
@@ -51,6 +53,10 @@ CREATE TABLE Location (
     location_id VARCHAR(36) PRIMARY KEY,
     location_name NVARCHAR(255) NOT NULL,
     address NVARCHAR(255),
+	latitude NVARCHAR(255),
+	longtitude NVARCHAR(255),
+	image_url NVARCHAR(255),
+	status NVARCHAR(50),
     manager_id VARCHAR(36) NOT NULL,
     CONSTRAINT FK_Location_Manager FOREIGN KEY (manager_id) REFERENCES Manager(user_id)
 );
@@ -60,7 +66,7 @@ CREATE TABLE Staff (
     user_id VARCHAR(36) PRIMARY KEY,
     employee_code NVARCHAR(50) UNIQUE,
     hire_date DATE,
-    salary DECIMAL(12,2),
+    status NVARCHAR(50),
     location_id VARCHAR(36) NOT NULL,
     CONSTRAINT FK_Staff_User FOREIGN KEY (user_id) REFERENCES Users(user_id),
     CONSTRAINT FK_Staff_Location FOREIGN KEY (location_id) REFERENCES Location(location_id)
@@ -71,8 +77,9 @@ CREATE TABLE Field (
     field_id VARCHAR(36) PRIMARY KEY,
     field_name NVARCHAR(255) NOT NULL,
     field_type NVARCHAR(20) CHECK (field_type IN (N'7-a-side', N'11-a-side')),
-    price_per_slot DECIMAL(10,2),
-    status NVARCHAR(20),
+    image_url NVARCHAR(255) NOT NULL,
+	status NVARCHAR(50) NOT NULL,
+	condition NVARCHAR(50) NOT NULL,
     location_id VARCHAR(36) NOT NULL,
     CONSTRAINT FK_Field_Location FOREIGN KEY (location_id) REFERENCES Location(location_id)
 );
@@ -82,6 +89,7 @@ CREATE TABLE Schedule (
     schedule_id VARCHAR(36) PRIMARY KEY,
     field_id VARCHAR(36) NOT NULL,
     booking_date DATE NOT NULL,
+	price DECIMAL NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
     is_available BIT DEFAULT 1,
@@ -93,8 +101,10 @@ CREATE TABLE Equipment (
     equipment_id VARCHAR(36) PRIMARY KEY,
     name NVARCHAR(255) NOT NULL,
     equipment_type NVARCHAR(50),
+	image_url NVARCHAR(255) NOT NULL,
     rental_price DECIMAL(10,2) NOT NULL,
     damage_fee DECIMAL(10,2),
+	description VARCHAR(255) NOT NULL,
     status NVARCHAR(20) DEFAULT N'active'
 );
 GO
@@ -103,6 +113,8 @@ CREATE TABLE Field_Equipment (
     field_id VARCHAR(36) NOT NULL,
     equipment_id VARCHAR(36) NOT NULL,
     quantity INT CHECK (quantity >= 0),
+	status VARCHAR(255) NOT NULL,
+	condition VARCHAR(255) NOT NULL,
     CONSTRAINT PK_Field_Equipment PRIMARY KEY (field_id, equipment_id),
     CONSTRAINT FK_FE_Field FOREIGN KEY (field_id) REFERENCES Field(field_id),
     CONSTRAINT FK_FE_Equipment FOREIGN KEY (equipment_id) REFERENCES Equipment(equipment_id)
@@ -136,9 +148,10 @@ CREATE TABLE Voucher (
     voucher_id VARCHAR(36) PRIMARY KEY,
     code NVARCHAR(50) UNIQUE,
     discount_value DECIMAL(5,2),
-    expiry_date DATE,
-    max_usage INT,
-    used_count INT DEFAULT 0,
+	description NVARCHAR(255),
+    start_date DATE,
+	end_date DATE,
+	used_count INT DEFAULT 0,
     status NVARCHAR(20)
 );
 GO
