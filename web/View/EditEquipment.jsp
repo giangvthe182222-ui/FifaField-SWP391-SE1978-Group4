@@ -60,7 +60,7 @@
             </h1>
         </div>
 
-        <a href="${pageContext.request.contextPath}/equipment-detail?id=${equipment.id}"
+        <a href="${pageContext.request.contextPath}/equipment-detail?id=${equipment.equipmentId}"
            class="flex items-center gap-2 px-5 py-2 rounded-full
                   hover:bg-emerald-50 text-slate-600
                   hover:text-emerald-600 font-black text-sm">
@@ -98,7 +98,7 @@
               class="p-10 md:p-14 space-y-8">
 
             <!-- ID hidden -->
-            <input type="hidden" name="equipment_id" value="${equipment.id}">
+            <input type="hidden" name="equipment_id" value="${equipment.equipmentId}">
             <input type="hidden" name="old_image" value="${equipment.imageUrl}">
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">

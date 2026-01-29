@@ -6,6 +6,7 @@ import Utils.DBConnection;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class EquipmentDAO {
 
@@ -15,20 +16,20 @@ public class EquipmentDAO {
         this.db = db;
     }
 
-    // ADD
+    // ================= ADD =================
     public boolean addEquipment(Equipment e) {
-        String sql = " INSERT INTO Equipment (equipment_id, name, equipment_type, image_url, rental_price, damage_fee, status, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Equipment (equipment_id, name, equipment_type, image_url, rental_price, damage_fee, status, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection c = db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
 
-            ps.setString(1, e.getId());
+            ps.setObject(1, e.getEquipmentId());
             ps.setString(2, e.getName());
             ps.setString(3, e.getEquipmentType());
             ps.setString(4, e.getImageUrl());
-            ps.setFloat(5, e.getRentalPrice());
-            ps.setFloat(6, e.getDamageFee());
-            ps.setString(7, e.getStatus()); // AVAILABLE / UNAVAILABLE
+            ps.setBigDecimal(5, e.getRentalPrice());
+            ps.setBigDecimal(6, e.getDamageFee());
+            ps.setString(7, e.getStatus());
             ps.setString(8, e.getDescription());
 
             return ps.executeUpdate() > 0;
@@ -38,14 +39,14 @@ public class EquipmentDAO {
         return false;
     }
 
-    // GET DETAIL
-    public Equipment getEquipmentById(String id) {
+    // ================= GET BY ID =================
+    public Equipment getById(UUID id) {
         String sql = "SELECT * FROM Equipment WHERE equipment_id = ?";
 
         try (Connection c = db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
 
-            ps.setString(1, id);
+            ps.setObject(1, id);
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
@@ -57,9 +58,9 @@ public class EquipmentDAO {
         return null;
     }
 
-    // UPDATE FULL INFO
-    public boolean updateEquipment(Equipment e) {
-        String sql = "UPDATE Equipment SET name = ?, equipment_type = ?, image_url = ?, rental_price = ?,damage_fee = ?, status = ?, description = ? WHERE equipment_id = ?";
+    // ================= UPDATE =================
+    public boolean update(Equipment e) {
+        String sql = "UPDATE Equipment SET name = ?, equipment_type = ?, image_url = ?, rental_price = ?, damage_fee = ?, status = ?, description = ? WHERE equipment_id = ?";
 
         try (Connection c = db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql)) {
@@ -67,11 +68,11 @@ public class EquipmentDAO {
             ps.setString(1, e.getName());
             ps.setString(2, e.getEquipmentType());
             ps.setString(3, e.getImageUrl());
-            ps.setFloat(4, e.getRentalPrice());
-            ps.setFloat(5, e.getDamageFee());
+            ps.setBigDecimal(4, e.getRentalPrice());
+            ps.setBigDecimal(5, e.getDamageFee());
             ps.setString(6, e.getStatus());
             ps.setString(7, e.getDescription());
-            ps.setString(8, e.getId());
+            ps.setObject(8, e.getEquipmentId());
 
             return ps.executeUpdate() > 0;
         } catch (SQLException ex) {
@@ -80,10 +81,27 @@ public class EquipmentDAO {
         return false;
     }
 
-    // GET ALL (FOR LIST)
+    // ================= UPDATE STATUS =================
+    public boolean updateStatus(UUID id, String status) {
+        String sql = "UPDATE Equipment SET status = ? WHERE equipment_id = ?";
+
+        try (Connection c = db.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setString(1, status);
+            ps.setObject(2, id);
+
+            return ps.executeUpdate() > 0;
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return false;
+    }
+
+    // ================= GET ALL =================
     public List<Equipment> getAll() {
         List<Equipment> list = new ArrayList<>();
-        String sql = "SELECT * FROM Equipment ORDER BY name";
+        String sql = "SELECT * FROM Equipment ORDER BY created_at DESC";
 
         try (Connection c = db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
@@ -97,98 +115,84 @@ public class EquipmentDAO {
         }
         return list;
     }
-    public void updateStatus(String id, String status) {
-    String sql = "UPDATE Equipment SET status = ? WHERE equipment_id = ?";
 
-    try (Connection c = db.getConnection();
-         PreparedStatement ps = c.prepareStatement(sql)) {
-
-        ps.setString(1, status);
-        ps.setString(2, id);
-        ps.executeUpdate();
-
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-}
-
-    
-    // MAP RESULTSET → OBJECT
-    private Equipment map(ResultSet rs) throws SQLException {
-        return new Equipment(
-                rs.getString("equipment_id"),
-                rs.getString("name"),
-                rs.getString("equipment_type"),
-                rs.getString("image_url"),
-                rs.getFloat("rental_price"),
-                rs.getFloat("damage_fee"),
-                rs.getString("status"),
-                rs.getString("description")
-        );
-    }
+    // ================= GET TYPES =================
     public List<String> getAllTypes() {
-    List<String> list = new ArrayList<>();
-    String sql = "SELECT DISTINCT equipment_type FROM Equipment";
+        List<String> list = new ArrayList<>();
+        String sql = "SELECT DISTINCT equipment_type FROM Equipment";
 
-    try (Connection c = db.getConnection();
-         PreparedStatement ps = c.prepareStatement(sql);
-         ResultSet rs = ps.executeQuery()) {
+        try (Connection c = db.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
 
-        while (rs.next()) {
-            list.add(rs.getString("equipment_type"));
+            while (rs.next()) {
+                list.add(rs.getString("equipment_type"));
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
         }
-    } catch (Exception e) {
-        e.printStackTrace();
-    }
-    return list;
-}
-public List<Equipment> filter(String keyword, String status, String type) {
-    List<Equipment> list = new ArrayList<>();
-
-    StringBuilder sql = new StringBuilder("SELECT * FROM Equipment WHERE 1=1 ");
-
-    if (keyword != null && !keyword.isEmpty()) {
-        sql.append("AND name LIKE ? ");
-    }
-    if (status != null && !status.isEmpty()) {
-        sql.append("AND status = ? ");
-    }
-    if (type != null && !type.isEmpty()) {
-        sql.append("AND equipment_type = ? ");
+        return list;
     }
 
-    try (Connection c = db.getConnection();
-         PreparedStatement ps = c.prepareStatement(sql.toString())) {
+    // ================= FILTER =================
+    public List<Equipment> filter(String keyword, String status, String type) {
+        List<Equipment> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT * FROM Equipment WHERE 1=1 ");
 
-        int i = 1;
-        if (keyword != null && !keyword.isEmpty()) {
-            ps.setString(i++, "%" + keyword + "%");
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append("AND name LIKE ? ");
         }
-        if (status != null && !status.isEmpty()) {
-            ps.setString(i++, status);
+        if (status != null && !status.isBlank()) {
+            sql.append("AND status = ? ");
         }
-        if (type != null && !type.isEmpty()) {
-            ps.setString(i++, type);
-        }
-
-        ResultSet rs = ps.executeQuery();
-        while (rs.next()) {
-            Equipment e = new Equipment();
-            e.setId(rs.getString("equipment_id"));
-            e.setName(rs.getString("name"));
-            e.setEquipment_type(rs.getString("equipment_type"));
-            e.setImage_url(rs.getString("image_url"));
-            e.setRental_price(rs.getFloat("rental_price"));
-            e.setDamage_fee(rs.getFloat("damage_fee"));
-            e.setStatus(rs.getString("status"));
-            e.setDescription(rs.getString("description"));
-            list.add(e);
+        if (type != null && !type.isBlank()) {
+            sql.append("AND equipment_type = ? ");
         }
 
-    } catch (Exception e) {
-        e.printStackTrace();
+        sql.append("ORDER BY created_at DESC");
+
+        try (Connection c = db.getConnection();
+             PreparedStatement ps = c.prepareStatement(sql.toString())) {
+
+            int i = 1;
+            if (keyword != null && !keyword.isBlank()) {
+                ps.setString(i++, "%" + keyword + "%");
+            }
+            if (status != null && !status.isBlank()) {
+                ps.setString(i++, status);
+            }
+            if (type != null && !type.isBlank()) {
+                ps.setString(i++, type);
+            }
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(map(rs));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return list;
     }
-    return list;
-}
 
+    // ================= MAP =================
+    private Equipment map(ResultSet rs) throws SQLException {
+        Equipment e = new Equipment();
+        e.setEquipmentId(rs.getObject("equipment_id", UUID.class));
+        e.setName(rs.getString("name"));
+        e.setEquipmentType(rs.getString("equipment_type"));
+        e.setImageUrl(rs.getString("image_url"));
+        e.setRentalPrice(rs.getBigDecimal("rental_price"));
+        e.setDamageFee(rs.getBigDecimal("damage_fee"));
+        e.setStatus(rs.getString("status"));
+        e.setDescription(rs.getString("description"));
+
+        Timestamp ts = rs.getTimestamp("created_at");
+        if (ts != null) {
+            e.setCreatedAt(ts.toLocalDateTime());
+        }
+
+        return e;
+    }
 }

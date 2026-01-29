@@ -114,7 +114,7 @@
 
                 <!-- ACTIONS -->
                 <div class="flex gap-3 pt-4 border-t">
-                    <a href="${pageContext.request.contextPath}/edit-equipment?id=${equipment.id}"
+                    <a href="${pageContext.request.contextPath}/edit-equipment?id=${equipment.equipmentId}"
                        class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700
                               text-white text-sm font-semibold rounded-lg
                               flex items-center justify-center gap-2">

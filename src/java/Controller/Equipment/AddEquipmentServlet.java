@@ -9,58 +9,76 @@ import jakarta.servlet.http.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Paths;
 import java.util.UUID;
 
 @MultipartConfig
 @WebServlet("/add-equipment")
 public class AddEquipmentServlet extends HttpServlet {
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.getRequestDispatcher("View/AddEquipment.jsp")
                .forward(request, response);
     }
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
         req.setCharacterEncoding("UTF-8");
 
+        // ===== BASIC INFO =====
         String name = req.getParameter("name");
         String type = req.getParameter("equipment_type");
         String status = req.getParameter("status");
         String desc = req.getParameter("description");
 
-        float rental = Float.parseFloat(req.getParameter("rental_price"));
-        float damage = Float.parseFloat(req.getParameter("damage_fee"));
+        BigDecimal rental = new BigDecimal(req.getParameter("rental_price"));
+        BigDecimal damage = new BigDecimal(req.getParameter("damage_fee"));
 
-        // IMAGE
+        // ===== IMAGE UPLOAD =====
         Part img = req.getPart("image");
-        String fileName = Paths.get(img.getSubmittedFileName()).getFileName().toString();
+        String imagePath = null;
 
-        String uploadDir = getServletContext().getRealPath("/uploads");
-        new File(uploadDir).mkdirs();
+        if (img != null && img.getSize() > 0) {
+            String fileName = Paths.get(img.getSubmittedFileName())
+                                   .getFileName().toString();
 
-        String imagePath = "uploads/" + UUID.randomUUID() + "_" + fileName;
-        img.write(getServletContext().getRealPath("/") + imagePath);
+            String uploadDir = getServletContext().getRealPath("/uploads");
+            new File(uploadDir).mkdirs();
 
-        // UUID
-        String id = UUID.randomUUID().toString();
+            imagePath = "uploads/" + UUID.randomUUID() + "_" + fileName;
+            img.write(getServletContext().getRealPath("/") + imagePath);
+        }
 
-        Equipment e = new Equipment(
-                id, name, type, imagePath, rental, damage, status, desc
-        );
+        // ===== CREATE MODEL =====
+        UUID equipmentId = UUID.randomUUID();
 
+        Equipment e = new Equipment();
+        e.setEquipmentId(equipmentId);
+        e.setName(name);
+        e.setEquipmentType(type);
+        e.setImageUrl(imagePath);
+        e.setRentalPrice(rental);
+        e.setDamageFee(damage);
+        e.setStatus(status);
+        e.setDescription(desc);
+        // createdAt: DB tự set
+
+        // ===== SAVE =====
         EquipmentDAO dao = new EquipmentDAO(new DBConnection());
 
         if (dao.addEquipment(e)) {
-            // 👉 CHUYỂN SANG DETAIL
-            resp.sendRedirect(req.getContextPath()
-                    + "/equipment-detail?id=" + id);
+            resp.sendRedirect(
+                req.getContextPath() + "/equipment-detail?id=" + equipmentId
+            );
         } else {
             req.setAttribute("error", "Add failed");
-            req.getRequestDispatcher("View/AddEquipment.jsp").forward(req, resp);
+            req.getRequestDispatcher("View/AddEquipment.jsp")
+               .forward(req, resp);
         }
     }
 }

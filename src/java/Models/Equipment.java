@@ -1,102 +1,63 @@
 package Models;
 
-public class Equipment {
+import java.util.UUID;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
-    private String equipment_id;
+public class Equipment {
+    private UUID equipmentId;
     private String name;
-    private String equipment_type;
-    private String image_url;
-    private float rental_price;
-    private float damage_fee;
-    private String status;
+    private String equipmentType;
+    private String imageUrl;
+    private BigDecimal rentalPrice;
+    private BigDecimal damageFee;
     private String description;
+    private String status;
+    private LocalDateTime createdAt;
 
     public Equipment() {}
 
-    public Equipment(String equipment_id, String name, String equipment_type,
-                     String image_url, float rental_price, float damage_fee,
-                     String status, String description) {
-        this.equipment_id = equipment_id;
+    public Equipment(UUID equipmentId, String name, String equipmentType,
+                     String imageUrl, BigDecimal rentalPrice,
+                     BigDecimal damageFee, String description,
+                     String status, LocalDateTime createdAt) {
+        this.equipmentId = equipmentId;
         this.name = name;
-        this.equipment_type = equipment_type;
-        this.image_url = image_url;
-        this.rental_price = rental_price;
-        this.damage_fee = damage_fee;
-        this.status = status;
+        this.equipmentType = equipmentType;
+        this.imageUrl = imageUrl;
+        this.rentalPrice = rentalPrice;
+        this.damageFee = damageFee;
         this.description = description;
-    }
-
-    // ===== QUAN TRỌNG CHO JSP =====
-    public String getId() {
-        return equipment_id;
-    }
-
-    public void setId(String id) {
-        this.equipment_id = id;
-    }
-
-    // ===== GETTER / SETTER CHUẨN =====
-    public String getEquipment_id() {
-        return equipment_id;
-    }
-
-    public void setEquipment_id(String equipment_id) {
-        this.equipment_id = equipment_id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getEquipmentType() {
-        return equipment_type;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setEquipment_type(String equipment_type) {
-        this.equipment_type = equipment_type;
-    }
-
-    public void setImage_url(String image_url) {
-        this.image_url = image_url;
-    }
-
-    public void setRental_price(float rental_price) {
-        this.rental_price = rental_price;
-    }
-
-    public void setDamage_fee(float damage_fee) {
-        this.damage_fee = damage_fee;
-    }
-
-    public void setStatus(String status) {
         this.status = status;
+        this.createdAt = createdAt;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
+    public UUID getEquipmentId() { return equipmentId; }
+    public void setEquipmentId(UUID equipmentId) { this.equipmentId = equipmentId; }
 
-    public String getImageUrl() {
-        return image_url;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public float getRentalPrice() {
-        return rental_price;
-    }
+    public String getEquipmentType() { return equipmentType; }
+    public void setEquipmentType(String equipmentType) { this.equipmentType = equipmentType; }
 
-    public float getDamageFee() {
-        return damage_fee;
-    }
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 
-    public String getStatus() {
-        return status;
-    }
+    public BigDecimal getRentalPrice() { return rentalPrice; }
+    public void setRentalPrice(BigDecimal rentalPrice) { this.rentalPrice = rentalPrice; }
 
-    public String getDescription() {
-        return description;
-    }
+    public BigDecimal getDamageFee() { return damageFee; }
+    public void setDamageFee(BigDecimal damageFee) { this.damageFee = damageFee; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
+

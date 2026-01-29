@@ -36,6 +36,19 @@
                 FIFA<span class="text-emerald-600">FIELD</span>
             </h1>
         </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-6 py-10">
+
+    <!-- TITLE + ADD BUTTON -->
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h2 class="text-3xl font-semibold text-slate-900">Kho thiết bị</h2>
+            <p class="text-slate-500 text-sm mt-1">
+                Quản lý dụng cụ và vật tư thi đấu
+            </p>
+        </div>
 
         <a href="add-equipment"
            class="bg-emerald-600 text-white px-6 py-3 rounded-xl text-sm font-semibold
@@ -44,62 +57,51 @@
             Thêm dụng cụ
         </a>
     </div>
-</header>
 
-<main class="max-w-7xl mx-auto px-6 py-10">
+    <!-- FILTER -->
+    <form method="get" action="equipment-list"
+          class="mb-8 flex flex-wrap gap-4 bg-white p-6 rounded-2xl
+                 border border-slate-200 shadow-sm">
 
-    <!-- TITLE + FILTER -->
-    <div class="mb-8 flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
-            <h2 class="text-3xl font-semibold text-slate-900">Kho thiết bị</h2>
-            <p class="text-slate-500 text-sm mt-1">
-                Quản lý dụng cụ và vật tư thi đấu
-            </p>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Tìm kiếm</label>
+            <input type="text" name="keyword" value="${param.keyword}"
+                   placeholder="Tên thiết bị..."
+                   class="px-4 py-2 border border-slate-300 rounded-lg text-sm
+                          focus:outline-none focus:border-emerald-500">
         </div>
 
-        <form method="get" action="equipment-list"
-              class="flex flex-wrap gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Trạng thái</label>
+            <select name="status"
+                    class="px-4 py-2 border border-slate-300 rounded-lg text-sm
+                           focus:outline-none focus:border-emerald-500">
+                <option value="">Tất cả</option>
+                <option value="available" ${param.status == 'available' ? 'selected' : ''}>available</option>
+                <option value="unavailable" ${param.status == 'unavailable' ? 'selected' : ''}>unavailable</option>
+            </select>
+        </div>
 
-            <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1">Tìm kiếm</label>
-                <input type="text" name="keyword" value="${param.keyword}"
-                       placeholder="Tên thiết bị..."
-                       class="px-4 py-2 border border-slate-300 rounded-lg text-sm
-                              focus:outline-none focus:border-emerald-500">
-            </div>
+        <div>
+            <label class="block text-xs font-medium text-slate-500 mb-1">Loại</label>
+            <select name="type"
+                    class="px-4 py-2 border border-slate-300 rounded-lg text-sm
+                           focus:outline-none focus:border-emerald-500">
+                <option value="">Tất cả</option>
+                <c:forEach items="${typeList}" var="t">
+                    <option value="${t}" ${param.type == t ? 'selected' : ''}>${t}</option>
+                </c:forEach>
+            </select>
+        </div>
 
-            <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1">Trạng thái</label>
-                <select name="status"
-                        class="px-4 py-2 border border-slate-300 rounded-lg text-sm
-                               focus:outline-none focus:border-emerald-500">
-                    <option value="">Tất cả</option>
-                    <option value="AVAILABLE" ${param.status == 'AVAILABLE' ? 'selected' : ''}>AVAILABLE</option>
-                    <option value="UNAVAILABLE" ${param.status == 'UNAVAILABLE' ? 'selected' : ''}>UNAVAILABLE</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-medium text-slate-500 mb-1">Loại</label>
-                <select name="type"
-                        class="px-4 py-2 border border-slate-300 rounded-lg text-sm
-                               focus:outline-none focus:border-emerald-500">
-                    <option value="">Tất cả</option>
-                    <c:forEach items="${typeList}" var="t">
-                        <option value="${t}" ${param.type == t ? 'selected' : ''}>${t}</option>
-                    </c:forEach>
-                </select>
-            </div>
-
-            <div class="flex items-end">
-                <button type="submit"
-                        class="bg-emerald-600 text-white px-6 py-2 rounded-lg
-                               text-sm font-semibold hover:bg-emerald-700">
-                    Lọc
-                </button>
-            </div>
-        </form>
-    </div>
+        <div class="flex items-end">
+            <button type="submit"
+                    class="bg-emerald-600 text-white px-6 py-2 rounded-lg
+                           text-sm font-semibold hover:bg-emerald-700">
+                Lọc
+            </button>
+        </div>
+    </form>
 
     <!-- TABLE -->
     <div class="bg-white rounded-3xl shadow border border-slate-200 overflow-hidden">
@@ -124,7 +126,7 @@
                                  class="w-16 h-12 object-cover rounded-lg border">
                             <div>
                                 <p class="font-medium text-slate-900">${e.name}</p>
-                                <p class="text-xs text-slate-500">ID: #${e.id}</p>
+                                <p class="text-xs text-slate-500">ID: #${e.equipmentId}</p>
                             </div>
                         </div>
                     </td>
@@ -142,17 +144,18 @@
                     <!-- STATUS -->
                     <td class="px-6 py-4 text-center">
                         <form action="update-equipment-status" method="post">
-                            <input type="hidden" name="id" value="${e.id}">
+                            <input type="hidden" name="id" value="${e.equipmentId}">
                             <select name="newStatus"
                                     onchange="if(confirm('Thay đổi trạng thái?')) this.form.submit(); else this.value='${e.status}';"
                                     class="status-select px-4 py-2 rounded-lg text-xs font-semibold border
-                                    ${e.status == 'AVAILABLE'
-                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                    ${e.status == 'available'
+                                        ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
                                         : 'bg-slate-100 text-slate-600 border-slate-300'}">
+
                                 <option value="available" ${e.status == 'available' ? 'selected' : ''}>
                                     available
                                 </option>
-                                <option value="UNAVAILABLE" ${e.status == 'unavailable' ? 'selected' : ''}>
+                                <option value="unavailable" ${e.status == 'unavailable' ? 'selected' : ''}>
                                     unavailable
                                 </option>
                             </select>
@@ -162,11 +165,11 @@
                     <!-- ACTION -->
                     <td class="px-6 py-4 text-center">
                         <div class="flex justify-center gap-2">
-                            <a href="equipment-detail?id=${e.id}"
+                            <a href="equipment-detail?id=${e.equipmentId}"
                                class="p-2 rounded-lg hover:bg-emerald-50 text-slate-500 hover:text-emerald-600">
                                 <i data-lucide="eye" class="w-4 h-4"></i>
                             </a>
-                            <a href="edit-equipment?id=${e.id}"
+                            <a href="edit-equipment?id=${e.equipmentId}"
                                class="p-2 rounded-lg hover:bg-blue-50 text-slate-500 hover:text-blue-600">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </a>
