@@ -92,7 +92,7 @@ CREATE TABLE Schedule (
 	price DECIMAL NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    is_available BIT DEFAULT 1,
+    status NVARCHAR(20),
     CONSTRAINT FK_Schedule_Field FOREIGN KEY (field_id) REFERENCES Field(field_id)
 );
 GO
