@@ -15,8 +15,7 @@ public class Location {
     private UUID locationId;
     private String locationName;
     private String address;
-    private String latitude;
-    private String longitude;
+    private int phoneNumber;
     private String imageUrl;
     private String status;
     private LocalDateTime createdAt;
@@ -25,13 +24,12 @@ public class Location {
     public Location() {}
 
     public Location(UUID locationId, String locationName, String address,
-                    String latitude, String longitude, String imageUrl,
+                    int phoneNumber, String imageUrl,
                     String status, LocalDateTime createdAt, UUID managerId) {
         this.locationId = locationId;
         this.locationName = locationName;
         this.address = address;
-        this.latitude = latitude;
-        this.longitude = longitude;
+        this.phoneNumber = phoneNumber;
         this.imageUrl = imageUrl;
         this.status = status;
         this.createdAt = createdAt;
@@ -47,11 +45,15 @@ public class Location {
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
 
-    public String getLatitude() { return latitude; }
-    public void setLatitude(String latitude) { this.latitude = latitude; }
+    public int getPhoneNumber() {
+        return phoneNumber;
+    }
 
-    public String getLongitude() { return longitude; }
-    public void setLongitude(String longitude) { this.longitude = longitude; }
+    public void setPhoneNumber(int phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
