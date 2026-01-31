@@ -46,7 +46,7 @@ public class EditEquipmentServlet extends HttpServlet {
         }
 
         request.setAttribute("equipment", equipment);
-        request.getRequestDispatcher("View/EditEquipment.jsp")
+        request.getRequestDispatcher("View/Equipment/EditEquipment.jsp")
                .forward(request, response);
     }
 
