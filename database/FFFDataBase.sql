@@ -109,14 +109,13 @@ CREATE TABLE Equipment (
 );
 GO
 
-CREATE TABLE Field_Equipment (
-    field_id VARCHAR(36) NOT NULL,
+CREATE TABLE Location_Equipment (
+    location_id VARCHAR(36) NOT NULL,
     equipment_id VARCHAR(36) NOT NULL,
     quantity INT CHECK (quantity >= 0),
 	status VARCHAR(255) NOT NULL,
-	condition VARCHAR(255) NOT NULL,
-    CONSTRAINT PK_Field_Equipment PRIMARY KEY (field_id, equipment_id),
-    CONSTRAINT FK_FE_Field FOREIGN KEY (field_id) REFERENCES Field(field_id),
+    CONSTRAINT PK_Field_Equipment PRIMARY KEY (location_id, equipment_id),
+    CONSTRAINT FK_FE_Location FOREIGN KEY (location_id) REFERENCES Location(location_id),
     CONSTRAINT FK_FE_Equipment FOREIGN KEY (equipment_id) REFERENCES Equipment(equipment_id)
 );
 GO
