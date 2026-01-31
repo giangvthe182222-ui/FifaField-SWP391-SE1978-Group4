@@ -102,7 +102,7 @@
             </button>
         </div>
     </form>
-
+${equipmentList.size()}
     <!-- TABLE -->
     <div class="bg-white rounded-3xl shadow border border-slate-200 overflow-hidden">
         <table class="w-full">

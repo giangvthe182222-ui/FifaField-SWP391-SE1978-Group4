@@ -11,7 +11,10 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/equipment-list")
+@WebServlet(
+    name = "EquipmentListServlet",
+    urlPatterns = "/equipment-list"
+)
 public class EquipmentListServlet extends HttpServlet {
 
     @Override
@@ -21,27 +24,28 @@ public class EquipmentListServlet extends HttpServlet {
         String keyword = request.getParameter("keyword");
         String status = request.getParameter("status");
         String type = request.getParameter("type");
-
-        // normalize empty string -> null
         if (keyword != null && keyword.isBlank()) keyword = null;
         if (status != null && status.isBlank()) status = null;
         if (type != null && type.isBlank()) type = null;
 
         EquipmentDAO dao = new EquipmentDAO(new DBConnection());
 
-        List<Equipment> equipmentList = dao.filter(keyword, status, type);
+//        List<Equipment> equipmentList = dao.filter(keyword, status, type);
+        List<Equipment> equipmentList = dao.getAll();
         List<String> typeList = dao.getAllTypes();
 
         request.setAttribute("equipmentList", equipmentList);
         request.setAttribute("typeList", typeList);
-
-        // giữ lại filter cho UI
         request.setAttribute("keyword", keyword);
         request.setAttribute("status", status);
         request.setAttribute("type", type);
 
-        request.getRequestDispatcher("/View/EquipmentList.jsp")
+        request.getRequestDispatcher("/View/Equipment/EquipmentList.jsp")
                .forward(request, response);
+        
+        System.out.println("Equipment size = " + equipmentList.size());
+        System.out.println(">>> EquipmentListServlet DOGET CALLED");
+
     }
 
     @Override

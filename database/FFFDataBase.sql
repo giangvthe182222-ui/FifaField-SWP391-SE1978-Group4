@@ -53,11 +53,10 @@ CREATE TABLE Location (
     location_id VARCHAR(36) PRIMARY KEY,
     location_name NVARCHAR(255) NOT NULL,
     address NVARCHAR(255),
-	latitude NVARCHAR(255),
-	longtitude NVARCHAR(255),
+	phone_number INT,
 	image_url NVARCHAR(255),
 	status NVARCHAR(50),
-    manager_id VARCHAR(36) NOT NULL,
+    manager_id VARCHAR(36),
     CONSTRAINT FK_Location_Manager FOREIGN KEY (manager_id) REFERENCES Manager(user_id)
 );
 GO
@@ -92,7 +91,7 @@ CREATE TABLE Schedule (
 	price DECIMAL NOT NULL,
     start_time TIME NOT NULL,
     end_time TIME NOT NULL,
-    is_available BIT DEFAULT 1,
+    status NVARCHAR(20),
     CONSTRAINT FK_Schedule_Field FOREIGN KEY (field_id) REFERENCES Field(field_id)
 );
 GO
@@ -109,14 +108,13 @@ CREATE TABLE Equipment (
 );
 GO
 
-CREATE TABLE Field_Equipment (
-    field_id VARCHAR(36) NOT NULL,
+CREATE TABLE Location_Equipment (
+    location_id VARCHAR(36) NOT NULL,
     equipment_id VARCHAR(36) NOT NULL,
     quantity INT CHECK (quantity >= 0),
 	status VARCHAR(255) NOT NULL,
-	condition VARCHAR(255) NOT NULL,
-    CONSTRAINT PK_Field_Equipment PRIMARY KEY (field_id, equipment_id),
-    CONSTRAINT FK_FE_Field FOREIGN KEY (field_id) REFERENCES Field(field_id),
+    CONSTRAINT PK_Field_Equipment PRIMARY KEY (location_id, equipment_id),
+    CONSTRAINT FK_FE_Location FOREIGN KEY (location_id) REFERENCES Location(location_id),
     CONSTRAINT FK_FE_Equipment FOREIGN KEY (equipment_id) REFERENCES Equipment(equipment_id)
 );
 GO
@@ -227,3 +225,17 @@ CREATE TABLE Feedback (
     CONSTRAINT FK_Feedback_Customer FOREIGN KEY (customer_id) REFERENCES Customer(user_id)
 );
 GO
+
+CREATE TRIGGER trg_AfterInsertEquipment
+ON Equipment
+AFTER INSERT
+AS
+BEGIN
+    INSERT INTO Location_Equipment (location_id, equipment_id, quantity, status)
+    SELECT l.location_id, i.equipment_id, 0, 'unavailable'
+    FROM Location l
+    CROSS JOIN inserted i;
+END;
+
+
+

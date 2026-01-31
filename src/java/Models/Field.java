@@ -18,21 +18,18 @@ public class Field {
     private String imageUrl;
     private String status;
     private String fieldCondition;
-    private LocalDateTime createdAt;
     private UUID locationId;
 
     public Field() {}
 
     public Field(UUID fieldId, String fieldName, String fieldType,
-                 String imageUrl, String status, String fieldCondition,
-                 LocalDateTime createdAt, UUID locationId) {
+                 String imageUrl, String status, String fieldCondition, UUID locationId) {
         this.fieldId = fieldId;
         this.fieldName = fieldName;
         this.fieldType = fieldType;
         this.imageUrl = imageUrl;
         this.status = status;
         this.fieldCondition = fieldCondition;
-        this.createdAt = createdAt;
         this.locationId = locationId;
     }
 
@@ -53,9 +50,6 @@ public class Field {
 
     public String getFieldCondition() { return fieldCondition; }
     public void setFieldCondition(String fieldCondition) { this.fieldCondition = fieldCondition; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 
     public UUID getLocationId() { return locationId; }
     public void setLocationId(UUID locationId) { this.locationId = locationId; }

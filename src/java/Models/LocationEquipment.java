@@ -15,16 +15,16 @@ public class LocationEquipment {
     private UUID locationId;
     private UUID equipmentId;
     private String status;
-    private String equipmentCondition;
+    
 
     public LocationEquipment() {}
 
     public LocationEquipment(UUID locationId, UUID equipmentId,
-                             String status, String equipmentCondition) {
+                             String status) {
         this.locationId = locationId;
         this.equipmentId = equipmentId;
         this.status = status;
-        this.equipmentCondition = equipmentCondition;
+        
     }
 
     public UUID getLocationId() { return locationId; }
@@ -36,9 +36,6 @@ public class LocationEquipment {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
-    public String getEquipmentCondition() { return equipmentCondition; }
-    public void setEquipmentCondition(String equipmentCondition) {
-        this.equipmentCondition = equipmentCondition;
-    }
+   
 }
 

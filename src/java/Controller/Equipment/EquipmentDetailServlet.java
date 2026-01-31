@@ -10,7 +10,10 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.UUID;
 
-@WebServlet("/equipment-detail")
+@WebServlet(
+    name = "EquipmentDeatilServlet",
+    urlPatterns = "/equipment-detail"
+)
 public class EquipmentDetailServlet extends HttpServlet {
 
     @Override
@@ -41,6 +44,6 @@ public class EquipmentDetailServlet extends HttpServlet {
         }
 
         req.setAttribute("equipment", e);
-        req.getRequestDispatcher("View/EquipmentDetail.jsp").forward(req, resp);
+        req.getRequestDispatcher("View/Equipment/EquipmentDetail.jsp").forward(req, resp);
     }
 }

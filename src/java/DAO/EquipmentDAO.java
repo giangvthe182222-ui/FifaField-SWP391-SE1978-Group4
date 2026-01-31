@@ -16,7 +16,7 @@ public class EquipmentDAO {
         this.db = db;
     }
 
-    // ================= ADD =================
+    
     public boolean addEquipment(Equipment e) {
         String sql = "INSERT INTO Equipment (equipment_id, name, equipment_type, image_url, rental_price, damage_fee, status, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -39,7 +39,7 @@ public class EquipmentDAO {
         return false;
     }
 
-    // ================= GET BY ID =================
+    
     public Equipment getById(UUID id) {
         String sql = "SELECT * FROM Equipment WHERE equipment_id = ?";
 
@@ -81,7 +81,7 @@ public class EquipmentDAO {
         return false;
     }
 
-    // ================= UPDATE STATUS =================
+
     public boolean updateStatus(UUID id, String status) {
         String sql = "UPDATE Equipment SET status = ? WHERE equipment_id = ?";
 
@@ -98,10 +98,10 @@ public class EquipmentDAO {
         return false;
     }
 
-    // ================= GET ALL =================
+    
     public List<Equipment> getAll() {
         List<Equipment> list = new ArrayList<>();
-        String sql = "SELECT * FROM Equipment ORDER BY created_at DESC";
+        String sql = "SELECT * FROM Equipment";
 
         try (Connection c = db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql);
@@ -116,7 +116,7 @@ public class EquipmentDAO {
         return list;
     }
 
-    // ================= GET TYPES =================
+    
     public List<String> getAllTypes() {
         List<String> list = new ArrayList<>();
         String sql = "SELECT DISTINCT equipment_type FROM Equipment";
@@ -149,7 +149,7 @@ public class EquipmentDAO {
             sql.append("AND equipment_type = ? ");
         }
 
-        sql.append("ORDER BY created_at DESC");
+        
 
         try (Connection c = db.getConnection();
              PreparedStatement ps = c.prepareStatement(sql.toString())) {
@@ -179,7 +179,7 @@ public class EquipmentDAO {
     // ================= MAP =================
     private Equipment map(ResultSet rs) throws SQLException {
         Equipment e = new Equipment();
-        e.setEquipmentId(rs.getObject("equipment_id", UUID.class));
+        e.setEquipmentId(UUID.fromString(rs.getString("equipment_id")));
         e.setName(rs.getString("name"));
         e.setEquipmentType(rs.getString("equipment_type"));
         e.setImageUrl(rs.getString("image_url"));
@@ -188,10 +188,7 @@ public class EquipmentDAO {
         e.setStatus(rs.getString("status"));
         e.setDescription(rs.getString("description"));
 
-        Timestamp ts = rs.getTimestamp("created_at");
-        if (ts != null) {
-            e.setCreatedAt(ts.toLocalDateTime());
-        }
+        
 
         return e;
     }

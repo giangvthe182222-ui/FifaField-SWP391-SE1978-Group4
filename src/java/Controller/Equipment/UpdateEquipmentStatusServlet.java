@@ -10,7 +10,10 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.UUID;
 
-@WebServlet("/update-equipment-status")
+@WebServlet(
+    name = "UpdateEquipmentServlet",
+    urlPatterns = "/update-equipment-status"
+)
 public class UpdateEquipmentStatusServlet extends HttpServlet {
 
     @Override
