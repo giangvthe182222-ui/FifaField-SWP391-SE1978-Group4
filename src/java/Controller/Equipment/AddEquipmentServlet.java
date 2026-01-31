@@ -14,13 +14,16 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 @MultipartConfig
-@WebServlet("/add-equipment")
+@WebServlet(
+    name = "AddEquipmentServlet",
+    urlPatterns = "/add-equipment"
+)
 public class AddEquipmentServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        request.getRequestDispatcher("View/AddEquipment.jsp")
+        request.getRequestDispatcher("View/Equipment/AddEquipment.jsp")
                .forward(request, response);
     }
 
@@ -30,7 +33,6 @@ public class AddEquipmentServlet extends HttpServlet {
 
         req.setCharacterEncoding("UTF-8");
 
-        // ===== BASIC INFO =====
         String name = req.getParameter("name");
         String type = req.getParameter("equipment_type");
         String status = req.getParameter("status");
@@ -39,7 +41,6 @@ public class AddEquipmentServlet extends HttpServlet {
         BigDecimal rental = new BigDecimal(req.getParameter("rental_price"));
         BigDecimal damage = new BigDecimal(req.getParameter("damage_fee"));
 
-        // ===== IMAGE UPLOAD =====
         Part img = req.getPart("image");
         String imagePath = null;
 
@@ -66,9 +67,7 @@ public class AddEquipmentServlet extends HttpServlet {
         e.setDamageFee(damage);
         e.setStatus(status);
         e.setDescription(desc);
-        // createdAt: DB tự set
-
-        // ===== SAVE =====
+        
         EquipmentDAO dao = new EquipmentDAO(new DBConnection());
 
         if (dao.addEquipment(e)) {
@@ -77,7 +76,7 @@ public class AddEquipmentServlet extends HttpServlet {
             );
         } else {
             req.setAttribute("error", "Add failed");
-            req.getRequestDispatcher("View/AddEquipment.jsp")
+            req.getRequestDispatcher("View/Equipment/AddEquipment.jsp")
                .forward(req, resp);
         }
     }
