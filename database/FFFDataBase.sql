@@ -53,11 +53,10 @@ CREATE TABLE Location (
     location_id VARCHAR(36) PRIMARY KEY,
     location_name NVARCHAR(255) NOT NULL,
     address NVARCHAR(255),
-	latitude NVARCHAR(255),
-	longtitude NVARCHAR(255),
+	phone_number INT,
 	image_url NVARCHAR(255),
 	status NVARCHAR(50),
-    manager_id VARCHAR(36) NOT NULL,
+    manager_id VARCHAR(36),
     CONSTRAINT FK_Location_Manager FOREIGN KEY (manager_id) REFERENCES Manager(user_id)
 );
 GO
@@ -226,3 +225,17 @@ CREATE TABLE Feedback (
     CONSTRAINT FK_Feedback_Customer FOREIGN KEY (customer_id) REFERENCES Customer(user_id)
 );
 GO
+
+CREATE TRIGGER trg_AfterInsertEquipment
+ON Equipment
+AFTER INSERT
+AS
+BEGIN
+    INSERT INTO Location_Equipment (location_id, equipment_id, quantity, status)
+    SELECT l.location_id, i.equipment_id, 0, 'unavailable'
+    FROM Location l
+    CROSS JOIN inserted i;
+END;
+
+
+
