@@ -53,7 +53,7 @@ public class Location {
         this.phoneNumber = phoneNumber;
     }
 
-    
+   
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
