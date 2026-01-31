@@ -49,8 +49,8 @@ public class Location {
         return phoneNumber;
     }
 
-    public void setPhoneNumber(int phone_number) {
-        this.phoneNumber = phone_number;
+    public void setPhoneNumber(int phoneNumber) {
+        this.phoneNumber = phoneNumber;
     }
 
     public String getImageUrl() { return imageUrl; }
