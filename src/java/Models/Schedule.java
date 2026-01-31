@@ -18,20 +18,20 @@ public class Schedule {
     private BigDecimal price;
     private java.time.LocalTime startTime;
     private java.time.LocalTime endTime;
-    private boolean available;
+    private String status;
 
     public Schedule() {}
 
     public Schedule(UUID scheduleId, UUID fieldId, LocalDate bookingDate,
                     BigDecimal price, java.time.LocalTime startTime,
-                    java.time.LocalTime endTime, boolean available) {
+                    java.time.LocalTime endTime, String status) {
         this.scheduleId = scheduleId;
         this.fieldId = fieldId;
         this.bookingDate = bookingDate;
         this.price = price;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.available = available;
+        this.status = status;
     }
 
     public UUID getScheduleId() { return scheduleId; }
@@ -52,7 +52,14 @@ public class Schedule {
     public java.time.LocalTime getEndTime() { return endTime; }
     public void setEndTime(java.time.LocalTime endTime) { this.endTime = endTime; }
 
-    public boolean isAvailable() { return available; }
-    public void setAvailable(boolean available) { this.available = available; }
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    
 }
 
