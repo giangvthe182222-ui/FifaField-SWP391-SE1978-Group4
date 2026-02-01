@@ -6,7 +6,7 @@ import jakarta.servlet.ServletException;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
-
+ 
 public class GoogleCallbackServlet extends HttpServlet {
 
     private static final String CLIENT_ID = "546134683118-2hnlovqa88eg8ol483e9gp5lsm2av7pn.apps.googleusercontent.com";

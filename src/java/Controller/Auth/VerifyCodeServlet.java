@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class VerifyCodeServlet extends HttpServlet {
 
-    @Override
+    @Override 
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.getRequestDispatcher("/View/Auth/verifyCode.jsp").forward(request, response);

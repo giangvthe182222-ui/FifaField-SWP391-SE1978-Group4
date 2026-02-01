@@ -12,9 +12,9 @@ public class ForgotPasswordServlet extends HttpServlet {
 
     private String generateOtp() {
         int code = 100000 + new Random().nextInt(900000);
-        return String.valueOf(code);
+        return String.valueOf(code); 
     }
-
+ 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {

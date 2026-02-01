@@ -5,7 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
-
+ 
 public class ResetPasswordServlet extends HttpServlet {
 
     @Override
