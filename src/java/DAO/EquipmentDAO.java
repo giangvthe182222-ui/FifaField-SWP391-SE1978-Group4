@@ -16,12 +16,10 @@ public class EquipmentDAO {
         this.db = db;
     }
 
-    
     public boolean addEquipment(Equipment e) {
         String sql = "INSERT INTO Equipment (equipment_id, name, equipment_type, image_url, rental_price, damage_fee, status, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection c = db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setObject(1, e.getEquipmentId());
             ps.setString(2, e.getName());
@@ -39,12 +37,10 @@ public class EquipmentDAO {
         return false;
     }
 
-    
     public Equipment getById(UUID id) {
         String sql = "SELECT * FROM Equipment WHERE equipment_id = ?";
 
-        try (Connection c = db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setObject(1, id);
             ResultSet rs = ps.executeQuery();
@@ -62,8 +58,7 @@ public class EquipmentDAO {
     public boolean update(Equipment e) {
         String sql = "UPDATE Equipment SET name = ?, equipment_type = ?, image_url = ?, rental_price = ?, damage_fee = ?, status = ?, description = ? WHERE equipment_id = ?";
 
-        try (Connection c = db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setString(1, e.getName());
             ps.setString(2, e.getEquipmentType());
@@ -81,12 +76,10 @@ public class EquipmentDAO {
         return false;
     }
 
-
     public boolean updateStatus(UUID id, String status) {
         String sql = "UPDATE Equipment SET status = ? WHERE equipment_id = ?";
 
-        try (Connection c = db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql)) {
+        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
 
             ps.setString(1, status);
             ps.setObject(2, id);
@@ -98,14 +91,11 @@ public class EquipmentDAO {
         return false;
     }
 
-    
     public List<Equipment> getAll() {
         List<Equipment> list = new ArrayList<>();
         String sql = "SELECT * FROM Equipment";
 
-        try (Connection c = db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 list.add(map(rs));
@@ -116,14 +106,11 @@ public class EquipmentDAO {
         return list;
     }
 
-    
     public List<String> getAllTypes() {
         List<String> list = new ArrayList<>();
         String sql = "SELECT DISTINCT equipment_type FROM Equipment";
 
-        try (Connection c = db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 list.add(rs.getString("equipment_type"));
@@ -149,10 +136,7 @@ public class EquipmentDAO {
             sql.append("AND equipment_type = ? ");
         }
 
-        
-
-        try (Connection c = db.getConnection();
-             PreparedStatement ps = c.prepareStatement(sql.toString())) {
+        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
             int i = 1;
             if (keyword != null && !keyword.isBlank()) {
@@ -188,8 +172,98 @@ public class EquipmentDAO {
         e.setStatus(rs.getString("status"));
         e.setDescription(rs.getString("description"));
 
-        
-
         return e;
     }
+
+    public List<Equipment> filter(
+            String keyword,
+            String status,
+            String type,
+            int page,
+            int pageSize
+    ) {
+        List<Equipment> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT * FROM Equipment WHERE 1=1 "
+        );
+
+        if (keyword != null) {
+            sql.append("AND name LIKE ? ");
+        }
+        if (status != null) {
+            sql.append("AND status = ? ");
+        }
+        if (type != null) {
+            sql.append("AND equipment_type = ? ");
+        }
+
+        sql.append("ORDER BY name ");
+        sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+
+        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+
+            int i = 1;
+            if (keyword != null) {
+                ps.setString(i++, "%" + keyword + "%");
+            }
+            if (status != null) {
+                ps.setString(i++, status);
+            }
+            if (type != null) {
+                ps.setString(i++, type);
+            }
+
+            ps.setInt(i++, (page - 1) * pageSize);
+            ps.setInt(i, pageSize);
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(map(rs));
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return list;
+    }
+
+    public int count(String keyword, String status, String type) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT COUNT(*) FROM Equipment WHERE 1=1 "
+        );
+
+        if (keyword != null) {
+            sql.append("AND name LIKE ? ");
+        }
+        if (status != null) {
+            sql.append("AND status = ? ");
+        }
+        if (type != null) {
+            sql.append("AND equipment_type = ? ");
+        }
+
+        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+
+            int i = 1;
+            if (keyword != null) {
+                ps.setString(i++, "%" + keyword + "%");
+            }
+            if (status != null) {
+                ps.setString(i++, status);
+            }
+            if (type != null) {
+                ps.setString(i++, type);
+            }
+
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1);
+            }
+
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+        }
+        return 0;
+    }
+
 }

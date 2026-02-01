@@ -1,14 +1,16 @@
 package Models;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 public class LocationEquipmentViewModel {
-
     private UUID equipmentId;
     private String name;
     private String equipmentType;
+    private BigDecimal rentalPrice;
+    private BigDecimal damageFee;
     private String imageUrl;
-
+    
     private int quantity;
     private String status;
 
@@ -46,6 +48,22 @@ public class LocationEquipmentViewModel {
 
     public int getQuantity() {
         return quantity;
+    }
+
+    public BigDecimal getRentalPrice() {
+        return rentalPrice;
+    }
+
+    public void setRentalPrice(BigDecimal rentalPrice) {
+        this.rentalPrice = rentalPrice;
+    }
+
+    public BigDecimal getDamageFee() {
+        return damageFee;
+    }
+
+    public void setDamageFee(BigDecimal damageFee) {
+        this.damageFee = damageFee;
     }
 
     public void setQuantity(int quantity) {

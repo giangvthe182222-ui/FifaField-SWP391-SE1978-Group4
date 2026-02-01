@@ -4,192 +4,263 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Quản Lý Thiết Bị - FIFA FIELD</title>
+    <title>Quản lý thiết bị - FIFAFIELD</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .table-row-hover:hover { background-color: #f8fafc; }
-        .status-select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+        body { font-family: 'Inter', sans-serif; background:#f8fafc }
+        .filter-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
             background-repeat: no-repeat;
-            background-position: right 0.5rem center;
-            background-size: 1rem;
+            background-position: right 1rem center;
+            background-size: 1.25rem;
+            appearance: none;
+            padding-right: 2.5rem;
         }
     </style>
 </head>
 
-<body class="bg-slate-50 min-h-screen pb-20">
+<body class="text-gray-900">
 
-<!-- HEADER -->
-<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="bg-emerald-600 p-2 rounded-xl text-white shadow">
-                <i data-lucide="trophy" class="w-6 h-6"></i>
-            </div>
-            <h1 class="text-2xl font-semibold text-slate-900">
-                FIFA<span class="text-emerald-600">FIELD</span>
-            </h1>
-        </div>
-    </div>
-</header>
+<jsp:include page="/View/Layout/Header.jsp"/>
 
-<main class="max-w-7xl mx-auto px-6 py-10">
+<div class="max-w-7xl mx-auto px-6 py-10 space-y-8">
 
-    <!-- TITLE + ADD BUTTON -->
-    <div class="mb-6 flex items-center justify-between">
+    <!-- HEADER -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-            <h2 class="text-3xl font-semibold text-slate-900">Kho thiết bị</h2>
-            <p class="text-slate-500 text-sm mt-1">
-                Quản lý dụng cụ và vật tư thi đấu
+            <h1 class="text-4xl font-black uppercase tracking-tight">
+                QUẢN LÝ <span class="text-[#008751]">THIẾT BỊ</span>
+            </h1>
+            <p class="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">
+                Kho vật tư & dụng cụ thi đấu
             </p>
         </div>
 
         <a href="add-equipment"
-           class="bg-emerald-600 text-white px-6 py-3 rounded-xl text-sm font-semibold
-                  hover:bg-emerald-700 transition flex items-center gap-2 shadow">
+           class="bg-[#008751] text-white px-6 py-4 rounded-2xl
+           text-[10px] font-black uppercase tracking-widest
+           shadow-lg shadow-[#008751]/20 hover:bg-[#007043] transition
+           flex items-center gap-2">
             <i data-lucide="plus" class="w-4 h-4"></i>
             Thêm dụng cụ
         </a>
     </div>
 
-    <!-- FILTER -->
+    <!-- FILTER + QUICK SORT -->
     <form method="get" action="equipment-list"
-          class="mb-8 flex flex-wrap gap-4 bg-white p-6 rounded-2xl
-                 border border-slate-200 shadow-sm">
+          class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
 
-        <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Tìm kiếm</label>
-            <input type="text" name="keyword" value="${param.keyword}"
-                   placeholder="Tên thiết bị..."
-                   class="px-4 py-2 border border-slate-300 rounded-lg text-sm
-                          focus:outline-none focus:border-emerald-500">
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+
+            <!-- SEARCH -->
+            <div class="md:col-span-4">
+                <input type="text" name="keyword" value="${param.keyword}"
+                       placeholder="Tìm tên thiết bị..."
+                       class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl
+                       font-bold text-sm focus:ring-4 focus:ring-[#008751]/10 focus:border-[#008751]">
+            </div>
+
+            <!-- STATUS -->
+            <div class="md:col-span-3">
+                <select name="status"
+                        class="filter-select w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl
+                        font-black text-[10px] uppercase tracking-widest text-gray-500">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="available" ${param.status=='available'?'selected':''}>Available</option>
+                    <option value="unavailable" ${param.status=='unavailable'?'selected':''}>Unavailable</option>
+                </select>
+            </div>
+
+            <!-- TYPE -->
+            <div class="md:col-span-3">
+                <select name="type"
+                        class="filter-select w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl
+                        font-black text-[10px] uppercase tracking-widest text-gray-500">
+                    <option value="">Tất cả loại</option>
+                    <c:forEach items="${typeList}" var="t">
+                        <option value="${t}" ${param.type==t?'selected':''}>${t}</option>
+                    </c:forEach>
+                </select>
+            </div>
+
+            <!-- SUBMIT -->
+            <div class="md:col-span-2">
+                <button type="submit"
+                        class="w-full h-full bg-[#008751] text-white rounded-2xl
+                        font-black text-[10px] uppercase tracking-widest
+                        hover:bg-[#007043] transition">
+                    Lọc
+                </button>
+            </div>
         </div>
 
-        <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Trạng thái</label>
-            <select name="status"
-                    class="px-4 py-2 border border-slate-300 rounded-lg text-sm
-                           focus:outline-none focus:border-emerald-500">
-                <option value="">Tất cả</option>
-                <option value="available" ${param.status == 'available' ? 'selected' : ''}>available</option>
-                <option value="unavailable" ${param.status == 'unavailable' ? 'selected' : ''}>unavailable</option>
-            </select>
-        </div>
+        <!-- QUICK SORT (JS) -->
+        <div class="flex items-center gap-4 pt-6">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                Sắp xếp nhanh:
+            </span>
 
-        <div>
-            <label class="block text-xs font-medium text-slate-500 mb-1">Loại</label>
-            <select name="type"
-                    class="px-4 py-2 border border-slate-300 rounded-lg text-sm
-                           focus:outline-none focus:border-emerald-500">
-                <option value="">Tất cả</option>
-                <c:forEach items="${typeList}" var="t">
-                    <option value="${t}" ${param.type == t ? 'selected' : ''}>${t}</option>
-                </c:forEach>
-            </select>
-        </div>
+            <button type="button" onclick="sortByName()"
+                    class="px-4 py-2 rounded-xl border text-[10px] font-black uppercase hover:bg-gray-50">
+                Tên A → Z
+            </button>
 
-        <div class="flex items-end">
-            <button type="submit"
-                    class="bg-emerald-600 text-white px-6 py-2 rounded-lg
-                           text-sm font-semibold hover:bg-emerald-700">
-                Lọc
+            <button type="button" onclick="sortByPrice()"
+                    class="px-4 py-2 rounded-xl border text-[10px] font-black uppercase hover:bg-gray-50">
+                Giá ↑ ↓
             </button>
         </div>
     </form>
-${equipmentList.size()}
-    <!-- TABLE -->
-    <div class="bg-white rounded-3xl shadow border border-slate-200 overflow-hidden">
-        <table class="w-full">
-            <thead class="bg-slate-50 border-b border-slate-200">
-            <tr>
-                <th class="px-8 py-4 text-xs font-semibold text-slate-500">Thiết bị</th>
-                <th class="px-6 py-4 text-xs font-semibold text-slate-500">Loại</th>
-                <th class="px-6 py-4 text-xs font-semibold text-slate-500 text-right">Giá thuê</th>
-                <th class="px-6 py-4 text-xs font-semibold text-slate-500 text-right">Phí hỏng</th>
-                <th class="px-6 py-4 text-xs font-semibold text-slate-500 text-center">Trạng thái</th>
-                <th class="px-6 py-4 text-xs font-semibold text-slate-500 text-center">Thao tác</th>
-            </tr>
-            </thead>
 
-            <tbody class="divide-y">
-            <c:forEach var="e" items="${equipmentList}">
-                <tr class="table-row-hover">
-                    <td class="px-8 py-4">
-                        <div class="flex items-center gap-4">
-                            <img src="${e.imageUrl}"
-                                 class="w-16 h-12 object-cover rounded-lg border">
-                            <div>
-                                <p class="font-medium text-slate-900">${e.name}</p>
-                                <p class="text-xs text-slate-500">ID: #${e.equipmentId}</p>
-                            </div>
+    <!-- GRID -->
+    <div id="equipmentGrid"
+         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+
+        <c:forEach var="e" items="${equipmentList}">
+            <div class="equipment-card bg-white border-2 border-gray-50 rounded-[2.8rem]
+                        overflow-hidden transition-all hover:shadow-2xl
+                        hover:shadow-[#008751]/5 hover:border-[#008751]
+                        flex flex-col"
+                 data-name="${e.name}"
+                 data-price="${e.rentalPrice}">
+
+                <!-- IMAGE (hover zoom + overlay) -->
+                <div class="relative h-52 bg-gray-100 overflow-hidden group">
+                    <img src="${e.imageUrl}"
+                         class="w-full h-full object-cover
+                                group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t
+                                from-black/30 to-transparent
+                                opacity-0 group-hover:opacity-100 transition-opacity">
+                    </div>
+                </div>
+
+                <!-- CONTENT -->
+                <div class="p-6 flex flex-col gap-4 flex-1">
+
+                    <h3 class="text-lg font-black leading-tight">
+                        ${e.name}
+                    </h3>
+
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                        ${e.equipmentType}
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-4 py-4 border-y border-gray-100">
+                        <div>
+                            <p class="text-[9px] font-black text-gray-400 uppercase">Giá thuê</p>
+                            <p class="text-sm font-medium text-gray-700">
+                                ${e.rentalPrice}đ
+                            </p>
                         </div>
-                    </td>
+                        <div>
+                            <p class="text-[9px] font-black text-gray-400 uppercase">Phí hỏng</p>
+                            <p class="text-sm font-medium text-gray-700">
+                                ${e.damageFee}đ
+                            </p>
+                        </div>
+                    </div>
 
-                    <td class="px-6 py-4 text-sm text-slate-700">${e.equipmentType}</td>
+                    <!-- FOOTER -->
+                    <div class="flex justify-between items-center mt-auto">
 
-                    <td class="px-6 py-4 text-right text-sm font-medium">
-                        ${e.rentalPrice}đ
-                    </td>
-
-                    <td class="px-6 py-4 text-right text-sm font-medium">
-                        ${e.damageFee}đ
-                    </td>
-
-                    <!-- STATUS -->
-                    <td class="px-6 py-4 text-center">
+                        <!-- STATUS EDIT -->
                         <form action="update-equipment-status" method="post">
                             <input type="hidden" name="id" value="${e.equipmentId}">
                             <select name="newStatus"
-                                    onchange="if(confirm('Thay đổi trạng thái?')) this.form.submit(); else this.value='${e.status}';"
-                                    class="status-select px-4 py-2 rounded-lg text-xs font-semibold border
-                                    ${e.status == 'available'
-                                        ? 'bg-emerald-100 text-emerald-700 border-emerald-300'
-                                        : 'bg-slate-100 text-slate-600 border-slate-300'}">
-
-                                <option value="available" ${e.status == 'available' ? 'selected' : ''}>
-                                    available
-                                </option>
-                                <option value="unavailable" ${e.status == 'unavailable' ? 'selected' : ''}>
-                                    unavailable
-                                </option>
+                                    onchange="if(confirm('Thay đổi trạng thái?'))this.form.submit();else this.value='${e.status}'"
+                                    class="px-4 py-2 rounded-xl text-[10px] font-black uppercase
+                                    ${e.status=='available'
+                                      ? 'bg-emerald-100 text-emerald-700'
+                                      : 'bg-gray-100 text-gray-600'}">
+                                <option value="available" ${e.status=='available'?'selected':''}>available</option>
+                                <option value="unavailable" ${e.status=='unavailable'?'selected':''}>unavailable</option>
                             </select>
                         </form>
-                    </td>
 
-                    <!-- ACTION -->
-                    <td class="px-6 py-4 text-center">
-                        <div class="flex justify-center gap-2">
-                            <a href="equipment-detail?id=${e.equipmentId}"
-                               class="p-2 rounded-lg hover:bg-emerald-50 text-slate-500 hover:text-emerald-600">
+                        <!-- ACTION -->
+                        <div class="flex gap-2">
+<!--                            <a href="equipment-detail?id=${e.equipmentId}"
+                               class="p-2 rounded-xl hover:bg-emerald-50 text-gray-500 hover:text-emerald-600">
                                 <i data-lucide="eye" class="w-4 h-4"></i>
-                            </a>
+                            </a>-->
                             <a href="edit-equipment?id=${e.equipmentId}"
-                               class="p-2 rounded-lg hover:bg-blue-50 text-slate-500 hover:text-blue-600">
+                               class="p-2 rounded-xl hover:bg-blue-50 text-gray-500 hover:text-blue-600">
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                             </a>
                         </div>
-                    </td>
-                </tr>
-            </c:forEach>
+                    </div>
 
-            <c:if test="${empty equipmentList}">
-                <tr>
-                    <td colspan="6" class="py-16 text-center text-slate-500">
-                        Không có thiết bị nào
-                    </td>
-                </tr>
-            </c:if>
-            </tbody>
-        </table>
+                </div>
+            </div>
+        </c:forEach>
+
+        <c:if test="${empty equipmentList}">
+            <div class="col-span-full py-32 text-center text-gray-400 font-bold">
+                Không có thiết bị nào
+            </div>
+        </c:if>
     </div>
-</main>
 
-<script>lucide.createIcons();</script>
+    <!-- PAGINATION -->
+    <div class="flex justify-center pt-14 gap-2">
+        <c:if test="${currentPage > 1}">
+            <a href="equipment-list?page=${currentPage-1}&keyword=${keyword}&status=${status}&type=${type}"
+               class="px-4 py-2 rounded-xl border font-black">←</a>
+        </c:if>
+
+        <c:forEach begin="1" end="${totalPages}" var="p">
+            <a href="equipment-list?page=${p}&keyword=${keyword}&status=${status}&type=${type}"
+               class="px-4 py-2 rounded-xl font-black
+               ${p==currentPage?'bg-[#008751] text-white':'border'}">
+                ${p}
+            </a>
+        </c:forEach>
+
+        <c:if test="${currentPage < totalPages}">
+            <a href="equipment-list?page=${currentPage+1}&keyword=${keyword}&status=${status}&type=${type}"
+               class="px-4 py-2 rounded-xl border font-black">→</a>
+        </c:if>
+    </div>
+
+</div>
+
+<jsp:include page="/View/Layout/Footer.jsp"/>
+
+<script>
+    lucide.createIcons();
+
+    let priceAsc = true;
+
+    function sortByPrice() {
+        const grid = document.getElementById('equipmentGrid');
+        const cards = Array.from(grid.children);
+
+        cards.sort((a, b) => {
+            const pa = parseInt(a.dataset.price);
+            const pb = parseInt(b.dataset.price);
+            return priceAsc ? pa - pb : pb - pa;
+        });
+
+        priceAsc = !priceAsc;
+        cards.forEach(c => grid.appendChild(c));
+    }
+
+    function sortByName() {
+        const grid = document.getElementById('equipmentGrid');
+        const cards = Array.from(grid.children);
+
+        cards.sort((a, b) =>
+            a.dataset.name.localeCompare(b.dataset.name, 'vi', { sensitivity: 'base' })
+        );
+
+        cards.forEach(c => grid.appendChild(c));
+    }
+</script>
+
 </body>
 </html>
