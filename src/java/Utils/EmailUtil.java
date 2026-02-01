@@ -8,8 +8,8 @@ import java.util.Properties;
 
 public class EmailUtil {
 
-    private static final String SMTP_USER = "jakilaso1@gmail.com";
-    private static final String SMTP_PASS = "zgpkwslfmmalipvt";
+    private static final String SMTP_USER = "fifafield13626@gmail.com"; 
+    private static final String SMTP_PASS = "ycewwjgkhuvonmmt";
 
     public static void sendOtp(String toEmail, String otp) throws MessagingException {
         Properties props = new Properties();
