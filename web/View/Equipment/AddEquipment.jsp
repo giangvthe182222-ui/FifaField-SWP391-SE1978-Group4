@@ -43,32 +43,10 @@
 </head>
 <body class="bg-slate-50 min-h-screen pb-20">
 
-    <!-- Header tương tự các view khác -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="bg-emerald-600 p-2 rounded-xl text-white shadow-lg">
-                    <i data-lucide="trophy" class="w-6 h-6"></i>
-                </div>
-                <h1 class="text-2xl font-black text-slate-900 tracking-tighter">FIFA<span class="text-emerald-600">FIELD</span></h1>
-            </div>
-            <div class="flex items-center gap-4">
-    <a href="${pageContext.request.contextPath}/equipment-list"
-       class="flex items-center gap-2 px-5 py-2 rounded-full hover:bg-emerald-50 
-              text-slate-600 hover:text-emerald-600 font-black text-sm transition-all">
-        <i data-lucide="arrow-left" class="w-4 h-4"></i>
-        quay lại
-    </a>
-    </div>
-
-        </div>
-    </header>
+    <jsp:include page="/View/Layout/Header.jsp"/>
 
     <div class="max-w-3xl mx-auto px-6 pt-12">
-        <!-- Breadcrumb & Title -->
         
-
-        <!-- Thông báo JSTL -->
         <c:if test="${not empty error}">
             <div class="mb-6 p-4 bg-red-50 border-2 border-red-100 rounded-2xl flex items-center gap-3 text-red-600 font-bold animate-pulse">
                 <i data-lucide="alert-circle"></i> ${error}
@@ -81,7 +59,7 @@
             </div>
         </c:if>
 
-        <!-- Form Card -->
+       
         <div class="bg-white rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden">
             <form name="addForm"
                   action="${pageContext.request.contextPath}/add-equipment"
@@ -91,7 +69,7 @@
                   class="p-10 md:p-14 space-y-8">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <!-- Tên thiết bị -->
+                    
                     <div class="space-y-2">
                         <label class="label-fancy">Tên thiết bị</label>
                         <div class="relative">
@@ -100,7 +78,6 @@
                         </div>
                     </div>
 
-                    <!-- Loại thiết bị -->
                     <div class="space-y-2">
                         <label class="label-fancy">Loại thiết bị</label>
                         <div class="relative">
@@ -109,7 +86,6 @@
                         </div>
                     </div>
 
-                    <!-- Giá thuê -->
                     <div class="space-y-2">
                         <label class="label-fancy">Giá thuê (VNĐ)</label>
                         <div class="relative">
@@ -118,7 +94,6 @@
                         </div>
                     </div>
 
-                    <!-- Phí hỏng hóc -->
                     <div class="space-y-2">
                         <label class="label-fancy">Phí đền bù hỏng hóc</label>
                         <div class="relative">
@@ -128,7 +103,6 @@
                     </div>
                 </div>
 
-                <!-- Tải ảnh -->
                 <div class="space-y-4">
                     <label class="label-fancy">Hình ảnh thiết bị</label>
                     <div class="flex items-center justify-center w-full">
@@ -141,14 +115,13 @@
                             <input type="file" name="image" accept="image/*" class="hidden" onchange="previewImage(this)" required />
                         </label>
                     </div>
-                    <!-- Preview Ảnh -->
+                    
                     <div id="preview-container" class="hidden mt-4 p-4 bg-slate-50 rounded-[2rem] border-2 border-slate-100">
                         <p class="text-[10px] font-black text-slate-400 uppercase mb-3 text-center">Xem trước ảnh</p>
                         <img id="preview" class="max-h-60 mx-auto rounded-2xl shadow-lg border-4 border-white" />
                     </div>
                 </div>
 
-                <!-- Trạng thái & Mô tả -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div class="md:col-span-1 space-y-2">
                         <label class="label-fancy">Trạng thái</label>
@@ -163,7 +136,6 @@
                     </div>
                 </div>
 
-                <!-- Nút Submit -->
                 <button type="submit" class="w-full py-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-[1.5rem] shadow-2xl shadow-emerald-100 transition-all active:scale-[0.98] uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3">
                     <i data-lucide="plus-circle" class="w-5 h-5"></i> XÁC NHẬN THÊM THIẾT BỊ
                 </button>
@@ -173,4 +145,5 @@
 
     <script>lucide.createIcons();</script>
 </body>
+<jsp:include page="/View/Layout/Footer.jsp"/>
 </html>
