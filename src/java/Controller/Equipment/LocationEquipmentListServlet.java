@@ -43,7 +43,7 @@ public class LocationEquipmentListServlet extends HttpServlet {
         int totalItems = dao.countFiltered(LOCATION_ID, search, type, status);
         int totalPages = (int) Math.ceil((double) totalItems / pageSize);
 
-        // 🔥 QUAN TRỌNG
+        
         request.setAttribute("locationEquipmentList", list);
         request.setAttribute("locationId", LOCATION_ID);
 

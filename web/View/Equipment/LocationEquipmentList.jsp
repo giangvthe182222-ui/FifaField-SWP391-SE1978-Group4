@@ -38,21 +38,21 @@
                 -moz-appearance: none;
                 appearance: none;
             }
-        </style>
-        
+        </style>    
+
     </head>
- 
+
 
     <body class="antialiased text-gray-900">
-<jsp:include page="/View/Layout/Header.jsp"/>
+        <jsp:include page="/View/Layout/Header.jsp"/>
 
         <!-- GLOBAL HEADER (Mocked for consistency with dashboard) -->
-        
+
 
 
         <div class="max-w-7xl mx-auto px-6 py-10 space-y-8">
 
-            
+
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div class="space-y-2">
                     <a href="javascript:history.back()" 
@@ -131,7 +131,6 @@
                     </c:if>
                 </form>
             </div>
-
             <!-- EQUIPMENT GRID -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 <c:forEach items="${locationEquipmentList}" var="e">
@@ -148,7 +147,7 @@
 
                             <!-- Image Section -->
                             <div class="relative h-56 bg-gray-100 overflow-hidden">
-                                
+
                                 <img src="${e.imageUrl}" alt="${e.name}" 
                                      class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                                 <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -183,6 +182,15 @@
                                 <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
                                     <span class="uppercase tracking-widest">Phí đền bù:</span>
                                     <span class="text-gray-900 font-black"><fmt:formatNumber value="${e.damageFee}" /> đ</span>
+                                </div>
+                                <!-- Action Buttons -->
+                                <div class="pt-4 flex justify-end">
+                                    <a href="${pageContext.request.contextPath}/update-location-equipment?locationId=E41577BF-A373-4389-ADC6-44B6E132AF66&equipmentId=${e.equipmentId}"
+                                       class="px-5 py-2 rounded-full text-[10px] font-black tracking-widest uppercase
+                                       bg-[#008751] text-white
+                                       hover:bg-[#006f43] transition-all shadow-md hover:shadow-lg">
+                                        Chỉnh sửa
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -242,14 +250,10 @@
                         </div>
                     </div>
                 </c:if>
-
-
-
-
             </div>
 
         </body>
         <jsp:include page="/View/Layout/Footer.jsp"/>
-        
+
 
     </html>
