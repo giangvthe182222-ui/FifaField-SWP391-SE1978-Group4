@@ -16,36 +16,44 @@ import java.util.UUID;
 public class UpdateLocationEquipmentServlet extends HttpServlet {
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+protected void doGet(HttpServletRequest request, HttpServletResponse response)
+        throws ServletException, IOException {
 
-        try {
-            UUID locationId =
-            UUID.fromString("E41577BF-A373-4389-ADC6-44B6E132AF66");
-//            UUID locationId = UUID.fromString(request.getParameter("locationId"));
-            UUID equipmentId = UUID.fromString(request.getParameter("equipmentId"));
+    try {
+        String locationIdRaw = request.getParameter("locationId");
+        String equipmentIdRaw = request.getParameter("equipmentId");
 
-            LocationEquipmentDAO dao = new LocationEquipmentDAO(new DBConnection());
-            LocationEquipmentViewModel le = dao.getOne(locationId, equipmentId);
-
-            if (le == null) {
-                response.sendRedirect(request.getContextPath() + "/location-equipment-list");
-                return;
-            }
-
-            request.setAttribute("locationEquipment", le);
-            request.setAttribute("locationId", locationId);
-            request.setAttribute("equipmentId", equipmentId);
-
-            request.getRequestDispatcher(
-                    "/View/Equipment/UpdateLocationEquipment.jsp"
-            ).forward(request, response);
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        // check null để debug dễ
+        if (locationIdRaw == null || equipmentIdRaw == null) {
             response.sendRedirect(request.getContextPath() + "/location-equipment-list");
+            return;
         }
+
+        UUID locationId = UUID.fromString(locationIdRaw);
+        UUID equipmentId = UUID.fromString(equipmentIdRaw);
+
+        LocationEquipmentDAO dao = new LocationEquipmentDAO(new DBConnection());
+        LocationEquipmentViewModel le = dao.getOne(locationId, equipmentId);
+
+        if (le == null) {
+            response.sendRedirect(request.getContextPath() + "/location-equipment-list");
+            return;
+        }
+
+        request.setAttribute("locationEquipment", le);
+        request.setAttribute("locationId", locationId);
+        request.setAttribute("equipmentId", equipmentId);
+
+        request.getRequestDispatcher(
+                "/View/Equipment/UpdateLocationEquipment.jsp"
+        ).forward(request, response);
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        response.sendRedirect(request.getContextPath() + "/location-equipment-list");
     }
+}
+
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
