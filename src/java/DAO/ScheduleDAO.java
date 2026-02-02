@@ -4,6 +4,7 @@ import Models.Schedule;
 import Utils.DBConnection;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -24,23 +25,41 @@ public class ScheduleDAO {
 
     public List<Schedule> getScheduleByField(UUID fieldId) {
         List<Schedule> list = new ArrayList<>();
-
         String sql = "SELECT * FROM [Schedule] WHERE field_id = ? ORDER BY booking_date, start_time";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setObject(1, fieldId);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                list.add(map(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    // 🔥 MỚI – LỌC THEO NGÀY
+    public List<Schedule> getScheduleByFieldAndDate(UUID fieldId, LocalDate date) {
+        List<Schedule> list = new ArrayList<>();
+        String sql = "SELECT * FROM [Schedule] WHERE field_id = ? AND booking_date = ? ORDER BY start_time";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setObject(1, fieldId);
+            ps.setDate(2, Date.valueOf(date));
 
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 list.add(map(rs));
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return list;
     }
 }

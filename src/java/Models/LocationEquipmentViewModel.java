@@ -5,6 +5,7 @@ import java.util.UUID;
 
 public class LocationEquipmentViewModel {
     private UUID equipmentId;
+    private UUID locationId;
     private String name;
     private String equipmentType;
     private BigDecimal rentalPrice;
@@ -72,6 +73,14 @@ public class LocationEquipmentViewModel {
 
     public String getStatus() {
         return status;
+    }
+
+    public UUID getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(UUID locationID) {
+        this.locationId = locationID;
     }
 
     public void setStatus(String status) {
