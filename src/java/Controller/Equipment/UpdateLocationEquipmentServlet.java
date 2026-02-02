@@ -9,69 +9,83 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.UUID;
 
-@WebServlet(name = "UpdateLocationEquipmentServlet", urlPatterns = {"/update-location-equipment"})
+@WebServlet("/update-location-equipment")
 public class UpdateLocationEquipmentServlet extends HttpServlet {
 
     @Override
-protected void doGet(HttpServletRequest request, HttpServletResponse response)
-        throws ServletException, IOException {
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-    try {
-        String locationIdRaw = request.getParameter("locationId");
-        String equipmentIdRaw = request.getParameter("equipmentId");
+        try {
+            String locationIdRaw = request.getParameter("locationId");
+            String equipmentIdRaw = request.getParameter("equipmentId");
 
-        // check null để debug dễ
-        if (locationIdRaw == null || equipmentIdRaw == null) {
+            if (locationIdRaw == null || equipmentIdRaw == null) {
+                response.sendRedirect(request.getContextPath() + "/location-equipment-list");
+                return;
+            }
+
+            UUID locationId = UUID.fromString(locationIdRaw);
+            UUID equipmentId = UUID.fromString(equipmentIdRaw);
+
+            LocationEquipmentDAO dao =
+                    new LocationEquipmentDAO(new DBConnection());
+
+            LocationEquipmentViewModel le =
+                    dao.getOne(locationId, equipmentId);
+
+            if (le == null) {
+                response.sendRedirect(
+                        request.getContextPath()
+                        + "/location-equipment-list?locationId=" + locationId
+                );
+                return;
+            }
+
+            request.setAttribute("locationEquipment", le);
+            request.setAttribute("locationId", locationId);
+            request.setAttribute("equipmentId", equipmentId);
+
+            request.getRequestDispatcher(
+                    "/View/Equipment/UpdateLocationEquipment.jsp"
+            ).forward(request, response);
+
+        } catch (Exception e) {
+            e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/location-equipment-list");
-            return;
         }
-
-        UUID locationId = UUID.fromString(locationIdRaw);
-        UUID equipmentId = UUID.fromString(equipmentIdRaw);
-
-        LocationEquipmentDAO dao = new LocationEquipmentDAO(new DBConnection());
-        LocationEquipmentViewModel le = dao.getOne(locationId, equipmentId);
-
-        if (le == null) {
-            response.sendRedirect(request.getContextPath() + "/location-equipment-list");
-            return;
-        }
-
-        request.setAttribute("locationEquipment", le);
-        request.setAttribute("locationId", locationId);
-        request.setAttribute("equipmentId", equipmentId);
-
-        request.getRequestDispatcher(
-                "/View/Equipment/UpdateLocationEquipment.jsp"
-        ).forward(request, response);
-
-    } catch (Exception e) {
-        e.printStackTrace();
-        response.sendRedirect(request.getContextPath() + "/location-equipment-list");
     }
-}
-
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         try {
-            UUID locationId = UUID.fromString(request.getParameter("locationId"));
-            UUID equipmentId = UUID.fromString(request.getParameter("equipmentId"));
+            UUID locationId =
+                    UUID.fromString(request.getParameter("locationId"));
+            UUID equipmentId =
+                    UUID.fromString(request.getParameter("equipmentId"));
 
-            String status = request.getParameter("status");
-            int quantity = Integer.parseInt(request.getParameter("quantity"));
+            int quantity =
+                    Integer.parseInt(request.getParameter("quantity"));
+            String status =
+                    request.getParameter("status");
 
-            LocationEquipmentDAO dao = new LocationEquipmentDAO(new DBConnection());
-            dao.updateStatusAndQuantity(locationId, equipmentId, status, quantity);
+            LocationEquipmentDAO dao =
+                    new LocationEquipmentDAO(new DBConnection());
 
-            // quay lại list
+            dao.updateStatusAndQuantity(
+                    locationId,
+                    equipmentId,
+                    status,
+                    quantity
+            );
+
             response.sendRedirect(
-                request.getContextPath() + "/location-equipment-list?locationId=" + locationId
+                request.getContextPath()
+                + "/location-equipment-list?locationId=" + locationId
             );
 
         } catch (Exception e) {

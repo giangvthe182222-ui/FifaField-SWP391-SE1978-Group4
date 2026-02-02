@@ -53,7 +53,7 @@ CREATE TABLE Location (
     location_id VARCHAR(36) PRIMARY KEY,
     location_name NVARCHAR(255) NOT NULL,
     address NVARCHAR(255),
-	phone_number NVARCHAR,
+	phone_number NVARCHAR(255),
 	image_url NVARCHAR(255),
 	status NVARCHAR(50),
     manager_id VARCHAR(36) NULL,
@@ -236,6 +236,3 @@ BEGIN
     FROM Location l
     CROSS JOIN inserted i;
 END;
-
-
-
