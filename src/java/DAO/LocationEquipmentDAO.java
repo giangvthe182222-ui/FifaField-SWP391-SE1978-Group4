@@ -217,5 +217,5 @@ public class LocationEquipmentDAO {
         }
         return null;
     }
-
+    
 }
