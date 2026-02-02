@@ -56,7 +56,7 @@ CREATE TABLE Location (
 	phone_number NVARCHAR(255),
 	image_url NVARCHAR(255),
 	status NVARCHAR(50),
-    manager_id VARCHAR(36),
+    manager_id VARCHAR(36) NULL,
     CONSTRAINT FK_Location_Manager FOREIGN KEY (manager_id) REFERENCES Manager(user_id)
 );
 GO
