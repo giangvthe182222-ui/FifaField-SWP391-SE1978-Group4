@@ -231,3 +231,87 @@ body{
 .link:hover{
     text-decoration: underline;
 }
+
+.email-row{
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+.btn-mini{
+    height:48px;
+    padding:0 14px;
+    border-radius:14px;
+    border:0;
+    background:var(--primary);
+    color:#fff;
+    font-weight:800;
+    letter-spacing:.6px;
+    cursor:pointer;
+    white-space:nowrap;
+    box-shadow:0 12px 26px rgba(14,165,106,.22);
+}
+
+.btn-mini:hover{
+    background: var(--primary-dark);
+}
+
+.btn-mini:disabled,
+.btn:disabled{
+    opacity:.6;
+    cursor:not-allowed;
+    box-shadow:none;
+}
+
+.hint{
+    min-height:18px;
+}
+/* OTP style giống hình */
+.otp-wrap{
+    padding-left: 0; /* vì otp input không có icon */
+}
+
+.otp-wrap .otp-input{
+    padding-left: 16px;     /* không có icon nên padding nhỏ */
+    padding-right: 70px;    /* chừa chỗ cho chữ Gửi */
+}
+
+.otp-send{
+    position:absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 26px;
+
+    background: none;
+    border: none;
+    padding: 0 0 0 14px;   /* tạo khoảng cách sau vạch */
+    cursor: pointer;
+
+    font-weight: 700;
+    font-size: 14px;
+    color: #64748b;        /* xám nhẹ giống ảnh */
+}
+
+/* vạch ngăn trước chữ Gửi */
+.otp-send::before{
+    content:"";
+    position:absolute;
+    left:0;
+    top:50%;
+    transform: translateY(-50%);
+    width:1px;
+    height:18px;
+    background:#e2e8f0;
+}
+
+/* hover */
+.otp-send:hover{
+    color: var(--primary);
+}
+
+/* disabled */
+.otp-send:disabled{
+    color:#cbd5e1;
+    cursor:not-allowed;
+}

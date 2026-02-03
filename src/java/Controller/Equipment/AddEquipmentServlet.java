@@ -37,9 +37,32 @@ public class AddEquipmentServlet extends HttpServlet {
         String type = req.getParameter("equipment_type");
         String status = req.getParameter("status");
         String desc = req.getParameter("description");
+        String rentalRaw = req.getParameter("rental_price");
+        String damageRaw = req.getParameter("damage_fee");
+        String error = null;
+        BigDecimal rental = null;
+        BigDecimal damage = null;
 
-        BigDecimal rental = new BigDecimal(req.getParameter("rental_price"));
-        BigDecimal damage = new BigDecimal(req.getParameter("damage_fee"));
+        // Validate status
+        if (!"available".equals(status) && !"unavailable".equals(status)) {
+            error = "Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')";
+        }
+
+        // Validate numbers
+        try {
+            rental = new BigDecimal(rentalRaw);
+            damage = new BigDecimal(damageRaw);
+            if (rental.compareTo(BigDecimal.ZERO) <= 0 || damage.compareTo(BigDecimal.ZERO) <= 0) {
+                error = "Giá thuê và phí hỏng hóc phải lớn hơn 0";
+            }
+        } catch (Exception ex) {
+            error = "Giá trị số không hợp lệ";
+        }
+
+        // Validate required fields
+        if (name == null || name.isBlank() || type == null || type.isBlank()) {
+            error = "Vui lòng nhập đầy đủ tên và loại thiết bị";
+        }
 
         Part img = req.getPart("image");
         String imagePath = null;
@@ -53,6 +76,13 @@ public class AddEquipmentServlet extends HttpServlet {
 
             imagePath = "uploads/" + UUID.randomUUID() + "_" + fileName;
             img.write(getServletContext().getRealPath("/") + imagePath);
+        }
+
+        if (error != null) {
+            req.setAttribute("error", error);
+            req.getRequestDispatcher("View/Equipment/AddEquipment.jsp")
+               .forward(req, resp);
+            return;
         }
 
         // ===== CREATE MODEL =====
@@ -72,7 +102,7 @@ public class AddEquipmentServlet extends HttpServlet {
 
         if (dao.addEquipment(e)) {
             resp.sendRedirect(
-                req.getContextPath() + "/equipment-detail?id=" + equipmentId
+                req.getContextPath() + "/equipment-list"
             );
         } else {
             req.setAttribute("error", "Add failed");

@@ -33,7 +33,7 @@
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
             <h1 class="text-4xl font-black uppercase tracking-tight">
-                QUẢN LÝ <span class="text-[#008751]">THIẾT BỊ</span>
+                QUẢN LÝ <span class="text-[#008751]">DỤNG CỤ</span>
             </h1>
             <p class="text-gray-400 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">
                 Kho vật tư & dụng cụ thi đấu

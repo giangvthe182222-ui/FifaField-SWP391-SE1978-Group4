@@ -30,11 +30,23 @@
         }
 
         function validateForm() {
-            const price = document.forms["addForm"]["rental_price"].value;
-            const fee = document.forms["addForm"]["damage_fee"].value;
+            const form = document.forms["addForm"];
+            const price = form["rental_price"].value;
+            const fee = form["damage_fee"].value;
+            const name = form["name"].value;
+            const type = form["equipment_type"].value;
+            const status = form["status"].value;
 
+            if (!name.trim() || !type.trim()) {
+                alert("Vui lòng nhập đầy đủ tên và loại thiết bị");
+                return false;
+            }
             if (parseFloat(price) <= 0 || parseFloat(fee) <= 0) {
                 alert("Giá thuê và Phí hỏng hóc phải lớn hơn 0");
+                return false;
+            }
+            if (status !== "available" && status !== "unavailable") {
+                alert("Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')");
                 return false;
             }
             return true;

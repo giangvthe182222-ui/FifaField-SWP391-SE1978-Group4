@@ -54,14 +54,19 @@
 
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div class="space-y-2">
-                    <a href="javascript:history.back()" 
+                    <a href="${pageContext.request.contextPath}/locations" 
                        class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 hover:text-[#008751] transition-all uppercase tracking-widest mb-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
                         QUAY LẠI
                     </a>
                     <h1 class="text-4xl font-black text-gray-900 tracking-tight uppercase leading-none">
-                        VẬT TƯ <span class="text-[#008751]">TẠI SÂN</span>
+                        THÔNG TIN DỤNG CỤ <span class="text-[#008751]">TẠI CƠ SỞ</span>
                     </h1>
+                    <c:if test="${not empty locationName}">
+                        <div class="text-lg font-bold text-[#008751] mt-2">
+                            <i class="fa fa-map-marker-alt"></i> ${locationName}
+                        </div>
+                    </c:if>
                     <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.2em]">Hệ thống kiểm kê thiết bị thi đấu & hỗ trợ</p>
                 </div>
 
@@ -96,9 +101,9 @@
                         <!-- Status -->
                         <div class="md:col-span-3">
                             <select name="status" class="filter-select w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:border-[#008751] font-black text-[10px] uppercase tracking-widest text-gray-500 cursor-pointer">
-                                <option value="">Tất cả trạng thái</option>
-                                <option value="available" ${param.status == 'available' ? 'selected' : ''}>Sẵn sàng (Available)</option>
-                                <option value="unavailable" ${param.status == 'unavailable' ? 'selected' : ''}>Không sẵn sàng</option>
+                                <option value="">Tất cả</option>
+                                <option value="available" ${param.status == 'available' ? 'selected' : ''}>Available</option>
+                                <option value="unavailable" ${param.status == 'unavailable' ? 'selected' : ''}>Unavailable</option>
                             </select>
                         </div>
 
@@ -140,7 +145,7 @@
                             <div class="absolute top-4 right-4 z-10">
                                 <span class="px-3 py-1.5 rounded-full text-[8px] font-black tracking-[0.15em] uppercase shadow-lg
                                       ${e.status == 'available' ? 'bg-emerald-500 text-white' : 'bg-gray-400 text-white'}">
-                                    ${e.status == 'available' ? 'SẴN SÀNG' : 'KHÔNG TRỐNG'}
+                                    ${e.status == 'available' ? 'available' : 'unavailable'}
                                 </span>
                             </div>
 
