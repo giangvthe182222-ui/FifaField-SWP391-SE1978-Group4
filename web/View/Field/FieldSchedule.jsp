@@ -186,14 +186,13 @@
     </div>
 
 </main>
-
+ 
 <jsp:include page="/View/Layout/Footer.jsp"/>
 
 <script>
     // Initialize Lucide Icons
     lucide.createIcons();
 
-    // Logic cuộn tự động khi chạm biên (Giữ nguyên logic của bạn)
     const wrapper = document.getElementById("scrollWrapper");
 
     wrapper.addEventListener("scroll", () => {

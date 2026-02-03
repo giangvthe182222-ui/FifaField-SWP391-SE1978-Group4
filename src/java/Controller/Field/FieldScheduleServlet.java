@@ -28,9 +28,7 @@ try {
     response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid fieldId format");
     return;
 }
-
-        /* ===== FILTER PARAM ===== */
-        String weekRaw = request.getParameter("date");   // yyyy-MM-dd
+        String weekRaw = request.getParameter("date");   
         String status = request.getParameter("status");
         String fromTimeRaw = request.getParameter("fromTime");
         String toTimeRaw = request.getParameter("toTime");
@@ -92,12 +90,8 @@ try {
 
             schedulesByDate.get(d).add(s);
         }
-
-        /* ===== ATTR ===== */
         request.setAttribute("field", field);
         request.setAttribute("schedulesByDate", schedulesByDate);
-
-        // Display date map
         Map<LocalDate, String> displayDateMap = new LinkedHashMap<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE\ndd/MM", Locale.forLanguageTag("vi"));
         for (LocalDate d : schedulesByDate.keySet()) {
