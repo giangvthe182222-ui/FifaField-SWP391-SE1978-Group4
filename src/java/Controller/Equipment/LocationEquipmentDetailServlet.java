@@ -11,8 +11,8 @@ import jakarta.servlet.http.*;
 import java.io.IOException;
 import java.util.UUID;
 
-@WebServlet("/update-location-equipment")
-public class UpdateLocationEquipmentServlet extends HttpServlet {
+@WebServlet("/location-equipment-detail")
+public class LocationEquipmentDetailServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -49,7 +49,7 @@ public class UpdateLocationEquipmentServlet extends HttpServlet {
             request.setAttribute("equipmentId", equipmentId);
 
             request.getRequestDispatcher(
-                    "/View/Equipment/UpdateLocationEquipment.jsp"
+                    "/View/Equipment/LocationEquipmentDetail.jsp"
             ).forward(request, response);
 
         } catch (Exception e) {
@@ -75,7 +75,7 @@ public class UpdateLocationEquipmentServlet extends HttpServlet {
 
             if (!"available".equals(status) && !"unavailable".equals(status)) {
                 request.setAttribute("error", "Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')");
-                request.getRequestDispatcher("/View/Equipment/UpdateLocationEquipment.jsp").forward(request, response);
+                request.getRequestDispatcher("/View/Equipment/LocationEquipmentDetail.jsp").forward(request, response);
                 return;
             }
 
