@@ -266,4 +266,6 @@ public class EquipmentDAO {
         return 0;
     }
 
+    
+
 }
