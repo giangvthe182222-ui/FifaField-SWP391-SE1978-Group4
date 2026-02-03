@@ -21,11 +21,13 @@ public class FieldScheduleServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        UUID fieldId = UUID.fromString(
-                request.getParameter("fieldId") != null
-                        ? request.getParameter("fieldId")
-                        : "36BB5060-CC7E-466F-975E-C72DF50E8C18"
-        );
+UUID fieldId;
+try {
+    fieldId = UUID.fromString(request.getParameter("fieldId"));
+} catch (Exception e) {
+    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid fieldId format");
+    return;
+}
 
         /* ===== FILTER PARAM ===== */
         String weekRaw = request.getParameter("date");   // yyyy-MM-dd
