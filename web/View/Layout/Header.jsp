@@ -51,7 +51,7 @@
                     </a>
 
                     <!-- Cụm sân -->
-                    <a href="${pageContext.request.contextPath}/location-list"
+                    <a href="${pageContext.request.contextPath}/locations"
                        class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                        text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                         <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"

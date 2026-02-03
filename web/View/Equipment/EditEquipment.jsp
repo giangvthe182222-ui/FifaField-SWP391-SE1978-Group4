@@ -184,6 +184,8 @@
                     </div>
 
                     <button type="submit"
+                            type="button"
+                            onclick="window.location.href='${pageContext.request.contextPath}/equipment-list"
                             class="w-full py-6 bg-emerald-600 hover:bg-emerald-700
                             text-white font-black rounded-[1.5rem]
                             shadow-2xl uppercase tracking-[0.2em]

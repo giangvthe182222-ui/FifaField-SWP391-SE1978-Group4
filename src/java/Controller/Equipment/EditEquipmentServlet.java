@@ -69,15 +69,35 @@ public class EditEquipmentServlet extends HttpServlet {
         String equipmentType = request.getParameter("equipment_type");
         String status = request.getParameter("status");
         String description = request.getParameter("description");
+        String rentalRaw = request.getParameter("rental_price");
+        String damageRaw = request.getParameter("damage_fee");
+        String error = null;
+        BigDecimal rentalPrice = null;
+        BigDecimal damageFee = null;
 
-        BigDecimal rentalPrice;
-        BigDecimal damageFee;
+        // Validate status
+        if (!"available".equals(status) && !"unavailable".equals(status)) {
+            error = "Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')";
+        }
 
+        // Validate numbers
         try {
-            rentalPrice = new BigDecimal(request.getParameter("rental_price"));
-            damageFee = new BigDecimal(request.getParameter("damage_fee"));
+            rentalPrice = new BigDecimal(rentalRaw);
+            damageFee = new BigDecimal(damageRaw);
+            if (rentalPrice.compareTo(BigDecimal.ZERO) <= 0 || damageFee.compareTo(BigDecimal.ZERO) <= 0) {
+                error = "Giá thuê và phí hỏng hóc phải lớn hơn 0";
+            }
         } catch (Exception e) {
-            request.setAttribute("error", "Giá không hợp lệ");
+            error = "Giá không hợp lệ";
+        }
+
+        // Validate required fields
+        if (name == null || name.isBlank() || equipmentType == null || equipmentType.isBlank()) {
+            error = "Vui lòng nhập đầy đủ tên và loại thiết bị";
+        }
+
+        if (error != null) {
+            request.setAttribute("error", error);
             doGet(request, response);
             return;
         }
@@ -122,7 +142,7 @@ public class EditEquipmentServlet extends HttpServlet {
 
         if (success) {
             response.sendRedirect(
-                request.getContextPath() + "/equipment-detail?id=" + id
+                request.getContextPath() + "/equipment-list"
             );
         } else {
             request.setAttribute("error", "Cập nhật thất bại");

@@ -46,7 +46,6 @@
     <body class="antialiased text-gray-900">
         <jsp:include page="/View/Layout/Header.jsp"/>
 
-        <!-- GLOBAL HEADER (Mocked for consistency with dashboard) -->
 
 
 
@@ -55,14 +54,19 @@
 
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div class="space-y-2">
-                    <a href="javascript:history.back()" 
+                    <a href="${pageContext.request.contextPath}/locations" 
                        class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 hover:text-[#008751] transition-all uppercase tracking-widest mb-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
                         QUAY LẠI
                     </a>
                     <h1 class="text-4xl font-black text-gray-900 tracking-tight uppercase leading-none">
-                        VẬT TƯ <span class="text-[#008751]">TẠI SÂN</span>
+                        THÔNG TIN DỤNG CỤ <span class="text-[#008751]">TẠI CƠ SỞ</span>
                     </h1>
+                    <c:if test="${not empty locationName}">
+                        <div class="text-lg font-bold text-[#008751] mt-2">
+                            <i class="fa fa-map-marker-alt"></i> ${locationName}
+                        </div>
+                    </c:if>
                     <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.2em]">Hệ thống kiểm kê thiết bị thi đấu & hỗ trợ</p>
                 </div>
 
@@ -72,9 +76,9 @@
                 </div>
             </div>
 
-            <!-- ADVANCED FILTER SECTION -->
             <div class="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100">
-                <form action="" method="GET" class="space-y-6">
+                <form action="${pageContext.request.contextPath}/location-equipment-list" method="GET">
+                    <input type="hidden" name="locationId" value="${locationId}" />
                     <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
                         <!-- Search -->
                         <div class="md:col-span-4 relative group">
@@ -97,9 +101,9 @@
                         <!-- Status -->
                         <div class="md:col-span-3">
                             <select name="status" class="filter-select w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:border-[#008751] font-black text-[10px] uppercase tracking-widest text-gray-500 cursor-pointer">
-                                <option value="">Tất cả trạng thái</option>
-                                <option value="available" ${param.status == 'available' ? 'selected' : ''}>Sẵn sàng (Available)</option>
-                                <option value="unavailable" ${param.status == 'unavailable' ? 'selected' : ''}>Không sẵn sàng</option>
+                                <option value="">Tất cả</option>
+                                <option value="available" ${param.status == 'available' ? 'selected' : ''}>Available</option>
+                                <option value="unavailable" ${param.status == 'unavailable' ? 'selected' : ''}>Unavailable</option>
                             </select>
                         </div>
 
@@ -123,8 +127,8 @@
                     <c:if test="${not empty param.search or not empty param.type or not empty param.status}">
                         <div class="flex items-center gap-3 pt-2">
                             <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Đang lọc:</span>
-                            <a href="location-equipment-list" class="text-[10px] font-black text-[#008751] hover:underline uppercase tracking-widest flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            <a href${pageContext.request.contextPath}/location-equipment-list?locationId=${locationId}" class="text-[10px] font-black text-[#008751] hover:underline uppercase tracking-widest flex items-center gap-1">
+                               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                                 Xóa tất cả bộ lọc
                             </a>
                         </div>
@@ -141,7 +145,7 @@
                             <div class="absolute top-4 right-4 z-10">
                                 <span class="px-3 py-1.5 rounded-full text-[8px] font-black tracking-[0.15em] uppercase shadow-lg
                                       ${e.status == 'available' ? 'bg-emerald-500 text-white' : 'bg-gray-400 text-white'}">
-                                    ${e.status == 'available' ? 'SẴN SÀNG' : 'KHÔNG TRỐNG'}
+                                    ${e.status == 'available' ? 'available' : 'unavailable'}
                                 </span>
                             </div>
 
@@ -185,7 +189,7 @@
                                 </div>
                                 <!-- Action Buttons -->
                                 <div class="pt-4 flex justify-end">
-                                    <a href="${pageContext.request.contextPath}/update-location-equipment?locationId=E41577BF-A373-4389-ADC6-44B6E132AF66&equipmentId=${e.equipmentId}"
+                                    <a href="${pageContext.request.contextPath}/update-location-equipment?locationId=${locationId}&equipmentId=${e.equipmentId}"
                                        class="px-5 py-2 rounded-full text-[10px] font-black tracking-widest uppercase
                                        bg-[#008751] text-white
                                        hover:bg-[#006f43] transition-all shadow-md hover:shadow-lg">
@@ -207,7 +211,7 @@
                             <h3 class="text-gray-900 font-black uppercase tracking-tight text-xl">Không tìm thấy vật tư</h3>
                             <p class="text-gray-400 font-medium text-sm mt-1">Hệ thống không tìm thấy kết quả phù hợp với bộ lọc hiện tại.</p>
                         </div>
-                        <a href="location-equipment-list" class="px-10 py-4 bg-[#008751] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[#008751]/20 hover:-translate-y-0.5 transition-all">
+                        <a href="${pageContext.request.contextPath}/location-equipment-list?locationId=${locationId}" class="px-10 py-4 bg-[#008751] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-[#008751]/20 hover:-translate-y-0.5 transition-all">
                             LÀM MỚI DANH SÁCH
                         </a>
                     </div>
@@ -220,7 +224,7 @@
 
                         <!-- PREV -->
                         <c:if test="${currentPage > 1}">
-                            <a href="?page=${currentPage - 1}&search=${param.search}&type=${param.type}&status=${param.status}&sort=${param.sort}"
+                            <a href="?locationId=${locationId}&page=${currentPage - 1}&search=${param.search}&type=${param.type}&status=${param.status}&sort=${param.sort}"
                                class="px-4 py-2 rounded-xl text-sm font-black text-gray-500
                                hover:text-[#008751] hover:bg-gray-50 transition">
                                 ←
@@ -229,7 +233,7 @@
 
                         <!-- PAGE NUMBERS -->
                         <c:forEach begin="1" end="${totalPages}" var="p">
-                            <a href="?page=${p}&search=${param.search}&type=${param.type}&status=${param.status}&sort=${param.sort}"
+                            <a href="?locationId=${locationId}&page=${p}&search=${param.search}&type=${param.type}&status=${param.status}&sort=${param.sort}"
                                class="px-4 py-2 rounded-xl text-sm font-black transition
                                ${p == currentPage
                                  ? 'bg-[#008751] text-white shadow-lg shadow-[#008751]/30'
@@ -240,7 +244,12 @@
 
                             <!-- NEXT -->
                             <c:if test="${currentPage < totalPages}">
-                                <a href="?page=${currentPage + 1}&search=${param.search}&type=${param.type}&status=${param.status}&sort=${param.sort}"
+                                <a href="?locationId=${locationId}
+                                   &page=${currentPage + 1}
+                                   &search=${param.search}
+                                   &type=${param.type}
+                                   &status=${param.status}
+                                   &sort=${param.sort}"
                                    class="px-4 py-2 rounded-xl text-sm font-black text-gray-500
                                    hover:text-[#008751] hover:bg-gray-50 transition">
                                     →
@@ -250,6 +259,7 @@
                         </div>
                     </div>
                 </c:if>
+
             </div>
 
         </body>
