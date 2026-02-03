@@ -28,7 +28,7 @@ public class FieldScheduleServlet extends HttpServlet {
         );
 
         /* ===== FILTER PARAM ===== */
-        String weekRaw = request.getParameter("week");   // yyyy-MM-dd
+        String weekRaw = request.getParameter("date");   // yyyy-MM-dd
         String status = request.getParameter("status");
         String fromTimeRaw = request.getParameter("fromTime");
         String toTimeRaw = request.getParameter("toTime");
@@ -94,6 +94,14 @@ public class FieldScheduleServlet extends HttpServlet {
         /* ===== ATTR ===== */
         request.setAttribute("field", field);
         request.setAttribute("schedulesByDate", schedulesByDate);
+
+        // Display date map
+        Map<LocalDate, String> displayDateMap = new LinkedHashMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE\ndd/MM", Locale.forLanguageTag("vi"));
+        for (LocalDate d : schedulesByDate.keySet()) {
+            displayDateMap.put(d, d.format(formatter));
+        }
+        request.setAttribute("displayDateMap", displayDateMap);
 
         request.setAttribute("week", weekStart);
         request.setAttribute("weekStart", weekStart);
