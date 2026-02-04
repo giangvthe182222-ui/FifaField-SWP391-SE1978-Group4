@@ -61,4 +61,24 @@ public class FieldDAO {
         return list;
     }
 
+    public boolean addField(Field f) {
+        String sql = "INSERT INTO Field(field_id, field_name, field_type, image_url, status, condition, location_id) VALUES(?, ?, ?, ?, ?, ?, ?)";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, f.getFieldId().toString());
+            ps.setNString(2, f.getFieldName());
+            ps.setNString(3, f.getFieldType());
+            ps.setString(4, f.getImageUrl());
+            ps.setNString(5, f.getStatus());
+            ps.setNString(6, f.getFieldCondition());
+            ps.setString(7, f.getLocationId().toString());
+
+            int rows = ps.executeUpdate();
+            return rows == 1;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 }

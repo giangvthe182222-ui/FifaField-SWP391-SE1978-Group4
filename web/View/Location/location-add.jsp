@@ -32,7 +32,7 @@
                 </div>
             </c:if>
 
-            <form method="post" class="space-y-6">
+            <form method="post" enctype="multipart/form-data" class="space-y-6">
 
                 <div>
                     <label class="text-xs font-black uppercase text-slate-400">
@@ -67,12 +67,15 @@
 
                     <div>
                         <label class="text-xs font-black uppercase text-slate-400">
-                            Ảnh (URL)
+                            Ảnh (Tải từ thiết bị)
                         </label>
-                        <input name="imageUrl"
-                               value="${param.imageUrl}"
-                               class="w-full px-5 py-4 mt-2 rounded-2xl bg-slate-50 border font-bold"
-                               placeholder="default_cluster.jpg"/>
+                        <input id="imageInputAdd" type="file" name="image" accept="image/*"
+                               class="w-full px-5 py-3 mt-2 rounded-2xl bg-slate-50 border font-bold"/>
+
+                        <div class="mt-4">
+                            <img id="previewAdd" src="" alt="Preview" class="w-full h-48 object-cover rounded-2xl hidden" />
+                            <div id="previewAddPlaceholder" class="w-full h-48 rounded-2xl bg-slate-50 border flex items-center justify-center text-slate-400 mt-2">Chưa chọn ảnh</div>
+                        </div>
                     </div>
                 </div>
 
@@ -80,10 +83,10 @@
                     <label class="text-xs font-black uppercase text-slate-400">
                         Trạng thái
                     </label>
-                    <input name="status"
-                           value="${param.status}"
-                           class="w-full px-5 py-4 mt-2 rounded-2xl bg-slate-50 border font-bold"
-                           placeholder="ACTIVE"/>
+                    <select name="status" class="w-full px-5 py-4 mt-2 rounded-2xl bg-slate-50 border font-bold">
+                        <option value="ACTIVE" ${param.status == 'ACTIVE' ? 'selected' : ''}>ACTIVE</option>
+                        <option value="INACTIVE" ${param.status == 'INACTIVE' ? 'selected' : ''}>INACTIVE</option>
+                    </select>
                 </div>
 
                 <div class="flex gap-4 pt-4">
@@ -103,6 +106,28 @@
 
     <!-- FOOTER -->
     <jsp:include page="/View/Layout/Footer.jsp"/>
+
+        <script>
+            const inputAdd = document.getElementById('imageInputAdd');
+            const previewAdd = document.getElementById('previewAdd');
+            const placeholderAdd = document.getElementById('previewAddPlaceholder');
+
+            if (inputAdd) {
+                inputAdd.addEventListener('change', function (e) {
+                    const file = e.target.files && e.target.files[0];
+                    if (file) {
+                        const url = URL.createObjectURL(file);
+                        previewAdd.src = url;
+                        previewAdd.classList.remove('hidden');
+                        placeholderAdd.style.display = 'none';
+                    } else {
+                        previewAdd.src = '';
+                        previewAdd.classList.add('hidden');
+                        placeholderAdd.style.display = 'flex';
+                    }
+                });
+            }
+        </script>
 
 </body>
 </html>

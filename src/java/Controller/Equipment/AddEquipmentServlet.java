@@ -23,8 +23,13 @@ public class AddEquipmentServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        DBConnection db = new DBConnection();
+        EquipmentDAO dao = new EquipmentDAO(db);
+        request.setAttribute("typeList",dao.getAllTypes()); 
         request.getRequestDispatcher("View/Equipment/AddEquipment.jsp")
                .forward(request, response);
+        
+        
     }
 
     @Override
@@ -37,9 +42,32 @@ public class AddEquipmentServlet extends HttpServlet {
         String type = req.getParameter("equipment_type");
         String status = req.getParameter("status");
         String desc = req.getParameter("description");
+        String rentalRaw = req.getParameter("rental_price");
+        String damageRaw = req.getParameter("damage_fee");
+        String error = null;
+        BigDecimal rental = null;
+        BigDecimal damage = null;
 
-        BigDecimal rental = new BigDecimal(req.getParameter("rental_price"));
-        BigDecimal damage = new BigDecimal(req.getParameter("damage_fee"));
+       
+        if (!"available".equals(status) && !"unavailable".equals(status)) {
+            error = "Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')";
+        }
+
+        
+        try {
+            rental = new BigDecimal(rentalRaw);
+            damage = new BigDecimal(damageRaw);
+            if (rental.compareTo(BigDecimal.ZERO) <= 0 || damage.compareTo(BigDecimal.ZERO) <= 0) {
+                error = "Giá thuê và phí hỏng hóc phải lớn hơn 0";
+            }
+        } catch (Exception ex) {
+            error = "Giá trị số không hợp lệ";
+        }
+
+        
+        if (name == null || name.isBlank() || type == null || type.isBlank()) {
+            error = "Vui lòng nhập đầy đủ tên và loại thiết bị";
+        }
 
         Part img = req.getPart("image");
         String imagePath = null;
@@ -55,7 +83,14 @@ public class AddEquipmentServlet extends HttpServlet {
             img.write(getServletContext().getRealPath("/") + imagePath);
         }
 
-        // ===== CREATE MODEL =====
+        if (error != null) {
+            req.setAttribute("error", error);
+            req.getRequestDispatcher("View/Equipment/AddEquipment.jsp")
+               .forward(req, resp);
+            return;
+        }
+
+        
         UUID equipmentId = UUID.randomUUID();
 
         Equipment e = new Equipment();
@@ -72,7 +107,7 @@ public class AddEquipmentServlet extends HttpServlet {
 
         if (dao.addEquipment(e)) {
             resp.sendRedirect(
-                req.getContextPath() + "/equipment-detail?id=" + equipmentId
+                req.getContextPath() + "/equipment-list"
             );
         } else {
             req.setAttribute("error", "Add failed");

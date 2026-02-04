@@ -5,6 +5,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import Models.User;
+import Models.Role;
+import java.util.UUID;
 
 public class AuthDAO {
 
@@ -31,6 +34,42 @@ public class AuthDAO {
         return null;
     }
 
+    public User getUserById(String userId) {
+        String sql = "SELECT u.user_id, u.gmail_id, u.password, u.full_name, u.phone, u.address, u.gender, u.role_id, u.status, u.created_at, "
+                + "r.role_name, r.description "
+                + "FROM Users u "
+                + "JOIN Role r ON u.role_id = r.role_id "
+                + "WHERE u.user_id = ?";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, userId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    User user = new User();
+                    user.setUserId(UUID.fromString(rs.getString("user_id")));
+                    user.setGmailId(UUID.fromString(rs.getString("gmail_id")));
+                    user.setPassword(rs.getString("password"));
+                    user.setFullName(rs.getString("full_name"));
+                    user.setPhone(rs.getString("phone"));
+                    user.setAddress(rs.getString("address"));
+                    user.setGender(rs.getString("gender"));
+                    user.setRoleId(UUID.fromString(rs.getString("role_id")));
+                    user.setStatus(rs.getString("status"));
+                    user.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+
+                    Role role = new Role();
+                    role.setRoleId(UUID.fromString(rs.getString("role_id")));
+                    role.setRoleName(rs.getString("role_name"));
+                    role.setDescription(rs.getString("description"));
+                    user.setRole(role);
+
+                    return user;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     // register staff: create Gmail_Account, Users (role 'staff') and Staff record
     public void registerStaff(
             String fullName,

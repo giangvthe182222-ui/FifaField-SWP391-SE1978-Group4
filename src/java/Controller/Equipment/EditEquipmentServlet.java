@@ -44,7 +44,8 @@ public class EditEquipmentServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/equipment-list");
             return;
         }
-
+        
+        request.setAttribute("typeList", dao.getAllTypes());
         request.setAttribute("equipment", equipment);
         request.getRequestDispatcher("View/Equipment/EditEquipment.jsp")
                .forward(request, response);
@@ -56,7 +57,7 @@ public class EditEquipmentServlet extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
 
-        // ===== ID =====
+        
         UUID id;
         try {
             id = UUID.fromString(request.getParameter("equipment_id"));
@@ -69,30 +70,49 @@ public class EditEquipmentServlet extends HttpServlet {
         String equipmentType = request.getParameter("equipment_type");
         String status = request.getParameter("status");
         String description = request.getParameter("description");
+        String rentalRaw = request.getParameter("rental_price");
+        String damageRaw = request.getParameter("damage_fee");
+        String error = null;
+        BigDecimal rentalPrice = null;
+        BigDecimal damageFee = null;
 
-        BigDecimal rentalPrice;
-        BigDecimal damageFee;
+        
+        if (!"available".equals(status) && !"unavailable".equals(status)) {
+            error = "Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')";
+        }
 
+        
         try {
-            rentalPrice = new BigDecimal(request.getParameter("rental_price"));
-            damageFee = new BigDecimal(request.getParameter("damage_fee"));
+            rentalPrice = new BigDecimal(rentalRaw);
+            damageFee = new BigDecimal(damageRaw);
+            if (rentalPrice.compareTo(BigDecimal.ZERO) <= 0 || damageFee.compareTo(BigDecimal.ZERO) <= 0) {
+                error = "Giá thuê và phí hỏng hóc phải lớn hơn 0";
+            }
         } catch (Exception e) {
-            request.setAttribute("error", "Giá không hợp lệ");
+            error = "Giá không hợp lệ";
+        }
+
+        
+        if (name == null || name.isBlank() || equipmentType == null || equipmentType.isBlank()) {
+            error = "Vui lòng nhập đầy đủ tên và loại thiết bị";
+        }
+
+        if (error != null) {
+            request.setAttribute("error", error);
             doGet(request, response);
             return;
         }
 
         EquipmentDAO dao = new EquipmentDAO(new DBConnection());
         Equipment old = dao.getById(id);
-
+        
         if (old == null) {
             response.sendRedirect(request.getContextPath() + "/equipment-list");
             return;
         }
 
-        // ===== IMAGE HANDLING =====
         Part imagePart = request.getPart("image");
-        String imageUrl = old.getImageUrl(); // mặc định giữ ảnh cũ
+        String imageUrl = old.getImageUrl(); 
 
         if (imagePart != null && imagePart.getSize() > 0) {
             String fileName = Paths.get(imagePart.getSubmittedFileName())
@@ -106,7 +126,7 @@ public class EditEquipmentServlet extends HttpServlet {
             imagePart.write(getServletContext().getRealPath("/") + imageUrl);
         }
 
-        // ===== UPDATE MODEL =====
+        
         Equipment updated = new Equipment();
         updated.setEquipmentId(id);
         updated.setName(name);
@@ -116,13 +136,13 @@ public class EditEquipmentServlet extends HttpServlet {
         updated.setDamageFee(damageFee);
         updated.setStatus(status);
         updated.setDescription(description);
-        // createdAt giữ nguyên trong DB
+        
 
         boolean success = dao.update(updated);
 
         if (success) {
             response.sendRedirect(
-                request.getContextPath() + "/equipment-detail?id=" + id
+                request.getContextPath() + "/equipment-list"
             );
         } else {
             request.setAttribute("error", "Cập nhật thất bại");

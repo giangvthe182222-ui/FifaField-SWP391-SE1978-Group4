@@ -30,11 +30,23 @@
         }
 
         function validateForm() {
-            const price = document.forms["addForm"]["rental_price"].value;
-            const fee = document.forms["addForm"]["damage_fee"].value;
+            const form = document.forms["addForm"];
+            const price = form["rental_price"].value;
+            const fee = form["damage_fee"].value;
+            const name = form["name"].value;
+            const type = form["equipment_type"].value;
+            const status = form["status"].value;
 
+            if (!name.trim() || !type.trim()) {
+                alert("Vui lòng nhập đầy đủ tên và loại thiết bị");
+                return false;
+            }
             if (parseFloat(price) <= 0 || parseFloat(fee) <= 0) {
                 alert("Giá thuê và Phí hỏng hóc phải lớn hơn 0");
+                return false;
+            }
+            if (status !== "available" && status !== "unavailable") {
+                alert("Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')");
                 return false;
             }
             return true;
@@ -79,12 +91,25 @@
                     </div>
 
                     <div class="space-y-2">
-                        <label class="label-fancy">Loại thiết bị</label>
-                        <div class="relative">
-                            <i data-lucide="tag" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                            <input type="text" name="equipment_type" required class="input-fancy" placeholder="Ví dụ: Dụng cụ thi đấu">
+                            <label class="label-fancy">Loại thiết bị</label>
+                            <div class="relative">
+                                <i data-lucide="tag"
+                                   class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+
+                                <input type="text"
+                                       name="equipment_type"
+                                       list="equipmentTypeList"
+                                       required
+                                       class="input-fancy"
+                                       value="">
+
+                                <datalist id="equipmentTypeList">
+                                    <c:forEach items="${typeList}" var="t">
+                                        <option value="${t}"></option>
+                                    </c:forEach>
+                                </datalist>
+                            </div>
                         </div>
-                    </div>
 
                     <div class="space-y-2">
                         <label class="label-fancy">Giá thuê (VNĐ)</label>

@@ -10,6 +10,7 @@
         <title>Vật tư sân bóng - FIFAFIELD</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <script src="https://unpkg.com/lucide@latest"></script>
         <style>
             body {
                 font-family: 'Inter', sans-serif;
@@ -54,14 +55,19 @@
 
             <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div class="space-y-2">
-                    <a href="javascript:history.back()" 
+                    <a href="${pageContext.request.contextPath}/locations" 
                        class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 hover:text-[#008751] transition-all uppercase tracking-widest mb-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
                         QUAY LẠI
                     </a>
                     <h1 class="text-4xl font-black text-gray-900 tracking-tight uppercase leading-none">
-                        VẬT TƯ <span class="text-[#008751]">TẠI SÂN</span>
+                        THÔNG TIN DỤNG CỤ <span class="text-[#008751]">TẠI CƠ SỞ</span>
                     </h1>
+                    <c:if test="${not empty locationName}">
+                        <div class="text-lg font-bold text-[#008751] mt-2">
+                            <i class="fa fa-map-marker-alt"></i> ${locationName}
+                        </div>
+                    </c:if>
                     <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.2em]">Hệ thống kiểm kê thiết bị thi đấu & hỗ trợ</p>
                 </div>
 
@@ -96,9 +102,9 @@
                         <!-- Status -->
                         <div class="md:col-span-3">
                             <select name="status" class="filter-select w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:border-[#008751] font-black text-[10px] uppercase tracking-widest text-gray-500 cursor-pointer">
-                                <option value="">Tất cả trạng thái</option>
-                                <option value="available" ${param.status == 'available' ? 'selected' : ''}>Sẵn sàng (Available)</option>
-                                <option value="unavailable" ${param.status == 'unavailable' ? 'selected' : ''}>Không sẵn sàng</option>
+                                <option value="">Tất cả</option>
+                                <option value="available" ${param.status == 'available' ? 'selected' : ''}>Available</option>
+                                <option value="unavailable" ${param.status == 'unavailable' ? 'selected' : ''}>Unavailable</option>
                             </select>
                         </div>
 
@@ -140,7 +146,7 @@
                             <div class="absolute top-4 right-4 z-10">
                                 <span class="px-3 py-1.5 rounded-full text-[8px] font-black tracking-[0.15em] uppercase shadow-lg
                                       ${e.status == 'available' ? 'bg-emerald-500 text-white' : 'bg-gray-400 text-white'}">
-                                    ${e.status == 'available' ? 'SẴN SÀNG' : 'KHÔNG TRỐNG'}
+                                    ${e.status == 'available' ? 'available' : 'unavailable'}
                                 </span>
                             </div>
 
@@ -182,13 +188,29 @@
                                     <span class="uppercase tracking-widest">Phí đền bù:</span>
                                     <span class="text-gray-900 font-black"><fmt:formatNumber value="${e.damageFee}" /> đ</span>
                                 </div>
-                                <!-- Action Buttons -->
-                                <div class="pt-4 flex justify-end">
+
+                                <!-- FOOTER -->
+                                <div class="flex justify-between items-center mt-auto pt-4">
+
+                                    <!-- STATUS EDIT -->
+                                    <form action="update-location-equipment-status" method="post">
+                                        <input type="hidden" name="locationId" value="${locationId}">
+                                        <input type="hidden" name="equipmentId" value="${e.equipmentId}">
+                                        <select name="newStatus"
+                                                onchange="if(confirm('Thay đổi trạng thái?'))this.form.submit();else this.value='${e.status}'"
+                                                class="px-4 py-2 rounded-xl text-[10px] font-black uppercase
+                                                ${e.status=='available'
+                                                  ? 'bg-emerald-100 text-emerald-700'
+                                                  : 'bg-gray-100 text-gray-600'}">
+                                            <option value="available" ${e.status=='available'?'selected':''}>available</option>
+                                            <option value="unavailable" ${e.status=='unavailable'?'selected':''}>unavailable</option>
+                                        </select>
+                                    </form>
+
+                                    <!-- ACTION -->
                                     <a href="${pageContext.request.contextPath}/update-location-equipment?locationId=${locationId}&equipmentId=${e.equipmentId}"
-                                       class="px-5 py-2 rounded-full text-[10px] font-black tracking-widest uppercase
-                                       bg-[#008751] text-white
-                                       hover:bg-[#006f43] transition-all shadow-md hover:shadow-lg">
-                                        Chỉnh sửa
+                                       class="p-2 rounded-xl hover:bg-blue-50 text-gray-500 hover:text-blue-600">
+                                        <i data-lucide="edit-3" class="w-4 h-4"></i>
                                     </a>
                                 </div>
                             </div>
@@ -260,5 +282,8 @@
         </body>
         <jsp:include page="/View/Layout/Footer.jsp"/>
 
+        <script>
+            lucide.createIcons();
+        </script>
 
     </html>
