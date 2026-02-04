@@ -232,4 +232,17 @@ public class AuthDAO {
             }
         }
     }
+
+    // Cập nhật thông tin cơ bản của user
+    public boolean updateUserBasic(String userId, String fullName, String phone, String address, String gender) throws SQLException {
+        String sql = "UPDATE Users SET full_name = ?, phone = ?, address = ?, gender = ? WHERE user_id = ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, fullName);
+            ps.setString(2, (phone == null || phone.isBlank()) ? null : phone);
+            ps.setString(3, (address == null || address.isBlank()) ? null : address);
+            ps.setString(4, (gender == null || gender.isBlank()) ? null : gender);
+            ps.setString(5, userId);
+            return ps.executeUpdate() > 0;
+        }
+    }
 }

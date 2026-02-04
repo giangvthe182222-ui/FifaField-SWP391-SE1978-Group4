@@ -83,6 +83,22 @@
         <servlet-name>EditStaffServlet</servlet-name>
         <servlet-class>Controller.Staff.EditStaffServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>ProfileViewServlet</servlet-name>
+        <servlet-class>Controller.Auth.ProfileViewServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ProfileEditServlet</servlet-name>
+        <servlet-class>Controller.Auth.ProfileEditServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>VoucherDetailServlet</servlet-name>
+        <servlet-class>Controller.Voucher.VoucherDetailServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>EditVoucherServlet</servlet-name>
+        <servlet-class>Controller.Voucher.EditVoucherServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>MainServlet</servlet-name>
         <url-pattern>/main</url-pattern>
@@ -106,5 +122,21 @@
     <servlet-mapping>
         <servlet-name>EditStaffServlet</servlet-name>
         <url-pattern>/staff/edit</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ProfileViewServlet</servlet-name>
+        <url-pattern>/auth/profile</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ProfileEditServlet</servlet-name>
+        <url-pattern>/auth/profile/edit</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>VoucherDetailServlet</servlet-name>
+        <url-pattern>/voucher/detail</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>EditVoucherServlet</servlet-name>
+        <url-pattern>/voucher/edit</url-pattern>
     </servlet-mapping>
 </web-app>
