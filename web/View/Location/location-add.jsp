@@ -100,6 +100,10 @@
                 </div>
 
                 <div class="flex gap-4 pt-4">
+                    <button type="button" onclick="history.back()" class="flex-1 text-center py-4 rounded-2xl border font-black uppercase">
+                        Quay về
+                    </button>
+
                     <a href="${pageContext.request.contextPath}/locations"
                        class="flex-1 text-center py-4 rounded-2xl border font-black uppercase">
                         Hủy
