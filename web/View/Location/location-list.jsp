@@ -38,7 +38,6 @@
         </div>
 
           <div class="flex items-center gap-4">
-                <a href="${pageContext.request.contextPath}/admin-dashboard" class="px-6 py-4 border rounded-xl font-black">Quay về Admin</a>
                 <a href="${pageContext.request.contextPath}/locations/add"
                     class="fifa-gradient text-white px-10 py-6 rounded-[2rem] font-black flex items-center gap-4 transition-all shadow-2xl shadow-[#008751]/40 hover:scale-105 active:scale-95 group">
             <i data-lucide="plus-circle"

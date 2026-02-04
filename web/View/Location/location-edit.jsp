@@ -81,6 +81,7 @@
             </div>
 
             <div class="flex gap-4 pt-4">
+                <button type="button" onclick="history.back()" class="flex-1 text-center py-4 rounded-2xl border font-black uppercase">Quay về</button>
                 <a href="${pageContext.request.contextPath}/locations" class="flex-1 text-center py-4 rounded-2xl border font-black uppercase">Hủy</a>
                 <button class="flex-1 bg-[#008751] text-white py-4 rounded-2xl font-black uppercase shadow-xl">Lưu thay đổi</button>
             </div>
