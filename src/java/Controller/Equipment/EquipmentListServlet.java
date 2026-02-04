@@ -24,9 +24,10 @@ public class EquipmentListServlet extends HttpServlet {
             throws ServletException, IOException {
 
         // ================= FILTER PARAM =================
-        String keyword = trimToNull(request.getParameter("keyword"));
+        String search = trimToNull(request.getParameter("search"));
         String status = trimToNull(request.getParameter("status"));
         String type = trimToNull(request.getParameter("type"));
+        String sort = trimToNull(request.getParameter("sort"));
 
         // ================= PAGINATION PARAM =================
         int page = 1;
@@ -44,9 +45,9 @@ public class EquipmentListServlet extends HttpServlet {
         EquipmentDAO dao = new EquipmentDAO(new DBConnection());
 
         List<Equipment> equipmentList =
-                dao.filter(keyword, status, type, page, PAGE_SIZE);
+                dao.filter(search, status, type, sort, page, PAGE_SIZE);
 
-        int totalRecords = dao.count(keyword, status, type);
+        int totalRecords = dao.count(search, status, type);
         int totalPages = (int) Math.ceil((double) totalRecords / PAGE_SIZE);
 
         // ================= ATTRIBUTE =================
@@ -56,9 +57,10 @@ public class EquipmentListServlet extends HttpServlet {
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
 
-        request.setAttribute("keyword", keyword);
+        request.setAttribute("search", search);
         request.setAttribute("status", status);
         request.setAttribute("type", type);
+        request.setAttribute("sort", sort);
 
         // ================= FORWARD =================
         request.getRequestDispatcher("/View/Equipment/EquipmentList.jsp")
