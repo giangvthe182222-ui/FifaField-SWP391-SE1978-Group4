@@ -41,6 +41,7 @@
                         <th class="p-3 font-semibold">Mã</th>
                         <th class="p-3 font-semibold">Giảm (%)</th>
                         <th class="p-3 font-semibold">Từ - Đến</th>
+                        <th class="p-3 font-semibold">Hành động</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -55,6 +56,10 @@
                                     <td class="p-3 font-mono">${v.code}</td>
                                     <td class="p-3">${v.discountValue}%</td>
                                     <td class="p-3 text-sm text-slate-600">${v.startDate} → ${v.endDate}</td>
+                                    <td class="p-3">
+                                        <a href="${pageContext.request.contextPath}/voucher/detail?id=${v.voucherId}" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">Xem</a>
+                                        <a href="${pageContext.request.contextPath}/voucher/edit?id=${v.voucherId}" class="px-3 py-1 bg-green-600 text-white rounded text-sm">Sửa</a>
+                                    </td>
                                 </tr>
                             </c:forEach>
                         </c:otherwise>
@@ -64,39 +69,9 @@
         </div>
 
         <div class="mt-8">
-            <h2 class="text-lg font-bold mb-4">Thêm Voucher Mới</h2>
-            <form method="post" action="${pageContext.request.contextPath}/locations/vouchers" class="grid grid-cols-2 gap-4" onsubmit="return validateVoucher()">
-                <input type="hidden" name="location_id" value="${locationId}" />
-                
-                <div class="col-span-2">
-                    <label class="block text-sm font-semibold mb-1">Tên Voucher *</label>
-                    <input type="text" name="name" placeholder="Ví dụ: Giảm Hè 2026" class="w-full p-3 border rounded" required />
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Mã Voucher *</label>
-                    <input type="text" name="code" placeholder="Ví dụ: SUMMER2026" class="w-full p-3 border rounded" required />
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Phần Trăm Giảm Giá (%) *</label>
-                    <input type="number" name="discount" placeholder="Ví dụ: 10" min="1" max="100" step="0.01" class="w-full p-3 border rounded" required />
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Ngày Bắt Đầu *</label>
-                    <input type="date" name="start_date" class="w-full p-3 border rounded" required />
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold mb-1">Ngày Kết Thúc *</label>
-                    <input type="date" name="end_date" class="w-full p-3 border rounded" required />
-                </div>
-
-                <button type="submit" class="col-span-2 px-6 py-3 bg-[#008751] text-white rounded-xl font-bold hover:bg-[#006a3f]">
-                    ➕ Thêm Voucher
-                </button>
-            </form>
+            <a href="${pageContext.request.contextPath}/locations/vouchers/add?location_id=${locationId}" class="px-6 py-3 bg-[#008751] text-white rounded-xl font-bold hover:bg-[#006a3f]">
+                ➕ Thêm Voucher
+            </a>
         </div>
 
         <div class="mt-6">
@@ -106,19 +81,6 @@
 </div>
 
 <jsp:include page="/View/Layout/Footer.jsp" />
-
-<script>
-function validateVoucher() {
-    const startDate = new Date(document.querySelector('input[name="start_date"]').value);
-    const endDate = new Date(document.querySelector('input[name="end_date"]').value);
-    
-    if (endDate <= startDate) {
-        alert('❌ Ngày kết thúc phải sau ngày bắt đầu!');
-        return false;
-    }
-    return true;
-}
-</script>
 
 </body>
 </html>

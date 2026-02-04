@@ -37,7 +37,7 @@ public class LocationVoucherServlet extends HttpServlet {
             e.printStackTrace();
             request.setAttribute("error", "Lỗi khi tải danh sách voucher: " + e.getMessage());
         }
-        request.getRequestDispatcher("/View/Location/location-vouchers.jsp").forward(request, response);
+        request.getRequestDispatcher("/View/Voucher/location-voucher-list.jsp").forward(request, response);
     }
 
     @Override
