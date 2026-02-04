@@ -20,6 +20,19 @@
                         FIFA<span class="text-[#008751]">FIELD</span>
                     </span>
                 </a>
+                <% String uri = request.getRequestURI().toLowerCase(); boolean showAdminIcon = true; %>
+                <% if (showAdminIcon) { %>
+                <a href="<%=request.getContextPath()%>/admin-dashboard" class="ml-4 inline-flex items-center gap-2 px-3 py-2 rounded-full bg-[#008751] text-white hover:bg-[#006b43] shadow-lg" title="Quay về Admin Dashboard" aria-label="Admin Dashboard">
+                    <!-- Grid icon (more distinct and modern) -->
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="3" y="3" width="7" height="7" rx="1" fill="currentColor" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" fill="currentColor" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" fill="currentColor" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" fill="currentColor" />
+                    </svg>
+                    <span class="hidden md:inline-block text-sm font-semibold">Dashboard</span>
+                </a>
+                <% } %>
 
                 <!-- NAV -->
                 <nav class="hidden lg:flex items-center gap-4">
