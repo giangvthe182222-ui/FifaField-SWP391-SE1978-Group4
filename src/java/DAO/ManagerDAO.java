@@ -12,6 +12,36 @@ import java.util.UUID;
 
 public class ManagerDAO {
 
+    // ================= HELPER: Check if Email Exists =================
+    public boolean emailExists(String email) throws SQLException {
+        String sql = "SELECT COUNT(*) as cnt FROM Gmail_Account WHERE email = ?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, email.trim());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("cnt") > 0;
+                }
+            }
+        }
+        return false;
+    }
+
+    // ================= HELPER: Check if Phone Exists =================
+    public boolean phoneExists(String phone) throws SQLException {
+        String sql = "SELECT COUNT(*) as cnt FROM Users WHERE phone = ?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, phone);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("cnt") > 0;
+                }
+            }
+        }
+        return false;
+    }
+
     // ================= HELPER: Get Role ID by Name =================
     private String getRoleIdByName(Connection con, String roleName) throws SQLException {
         String sql = "SELECT role_id FROM Role WHERE role_name = ?";
