@@ -50,7 +50,7 @@
         </a>
     </div>
 
-    <!-- FILTER + QUICK SORT -->
+    
     <form method="get" action="equipment-list"
           class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
 
@@ -230,11 +230,11 @@
 
 </div>
 
-<jsp:include page="/View/Layout/Footer.jsp"/>
+
 
 <script>
     lucide.createIcons();
 </script>
-
+<jsp:include page="/View/Layout/Footer.jsp"/>
 </body>
 </html>

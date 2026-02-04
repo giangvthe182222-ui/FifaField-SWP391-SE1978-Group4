@@ -22,8 +22,9 @@ public class UpdateLocationEquipmentStatusServlet extends HttpServlet {
 
         String locationIdParam = request.getParameter("locationId");
         String equipmentIdParam = request.getParameter("equipmentId");
+        
         String newStatus = request.getParameter("newStatus");
-
+        
         if (locationIdParam == null || locationIdParam.isBlank()
                 || equipmentIdParam == null || equipmentIdParam.isBlank()
                 || newStatus == null || newStatus.isBlank()) {
@@ -33,18 +34,17 @@ public class UpdateLocationEquipmentStatusServlet extends HttpServlet {
 
         UUID locationId, equipmentId;
         try {
+            
             locationId = UUID.fromString(locationIdParam);
             equipmentId = UUID.fromString(equipmentIdParam);
         } catch (IllegalArgumentException e) {
             response.sendRedirect(request.getContextPath() + "/location-equipment-list");
             return;
         }
-
+        
         LocationEquipmentDAO dao = new LocationEquipmentDAO(new DBConnection());
-        boolean success = dao.updateStatus(locationId, equipmentId, newStatus);
-
-        // có thể log nếu cần
-        // if (!success) { ... }
+        
+        boolean success = dao.updateStatus(locationId, equipmentId);
 
         response.sendRedirect(request.getContextPath() + "/location-equipment-list?locationId=" + locationId);
     }
