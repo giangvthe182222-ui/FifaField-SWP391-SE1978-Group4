@@ -1,71 +1,48 @@
-# Copilot Instructions for FifaFieldSystem
+# Copilot instructions — FifaField (SWP391)
 
-## Project Overview
-- **Type:** Java web application (likely using JSP/Servlets, Ant build)
-- **Structure:**
-  - `src/`: Java source code (Controllers, DAOs, Models, Services, Utils)
-  - `web/`: JSP views, static assets, and web configuration
-  - `database/`: SQL scripts for schema and data
-  - `lib/`: External JAR dependencies
-  - `build.xml`: Ant build script
+Concise, repo-specific guidance to make an AI coding assistant productive immediately.
 
-## Key Architectural Patterns
-- **MVC:**
-  - Controllers in `src/java/Controller/`
-  - Data access in `src/java/DAO/`
-  - Models in `src/java/Models/`
-  - Views in `web/View/`
-- **JSP for UI:** All user-facing pages are JSPs under `web/View/`
-- **DAO Pattern:** All database access is through DAO classes (see `src/java/DAO/`)
-- **Utils:** Shared utilities (e.g., `DBConnection.java`, `EmailUtil.java`)
+- **Big picture:** A Jakarta EE servlet/JSP web app (Ant/NetBeans layout). Java sources in `src/java`, JSP views in `web/View`, build artifacts and deployable webapp under `build/` and `web/`. The app uses SQL Server and plain JDBC DAOs.
 
-## Developer Workflows
-- **Build:**
-  - Use `build.xml` with Ant (`ant` command) to build/deploy
-  - Output goes to `build/` directory
-- **Run/Debug:**
-  - Deploy `build/` output to a servlet container (e.g., Tomcat)
-  - Web root is `web/`
-- **Database:**
-  - SQL scripts in `database/` (e.g., `FFFDataBase.sql`)
-  - Update schema/data via these scripts
-- **Dependencies:**
-  - Place JARs in `lib/` and reference in Ant build
+- **Key locations:**
+  - `src/java/Controller/*` — servlets (e.g. [LoginServlet](src/java/Controller/Auth/LoginServlet.java#L1)).
+  - `src/java/DAO/*` — DAO implementations (e.g. [AuthDAO](src/java/DAO/AuthDAO.java#L1)).
+  - `src/java/Utils/DBConnection.java` — DB config & quick `main` to test connectivity ([DBConnection](src/java/Utils/DBConnection.java#L1)).
+  - `web/WEB-INF/web.xml` — servlet URL mappings and filters ([web.xml](web/WEB-INF/web.xml#L1)).
+  - `web/View/*` — JSP pages and layout fragments (Header/Footer in `web/View/Layout`).
+  - `database/FFFDataBase.sql` — schema + seed data.
 
-## Project-Specific Conventions
-- **JSP Naming:**
-  - Views grouped by feature (e.g., `View/Equipment/`, `View/Auth/`)
-  - Use camel case for JSPs (e.g., `AddEquipment.jsp`)
-- **Java Packages:**
-  - `Controller`, `DAO`, `Models`, `Service`, `Utils` are top-level under `src/java/`
-- **Web Config:**
-  - `web/WEB-INF/web.xml` for servlet config
-  - `web/META-INF/context.xml` for context params
-- **Static Assets:**
-  - CSS/images in `web/assets/`
+- **Build & run (practical):**
+  - Prefer NetBeans for edit+run; alternatively run Ant using the root `build.xml` (`ant` or inspect the file for available targets) and deploy the generated WAR or `web/` folder to Tomcat 10+ (must support `jakarta.servlet`).
+  - To quickly verify DB connectivity, run the `main` in `src/java/Utils/DBConnection.java`.
 
-## Integration Points
-- **Email:**
-  - `Utils/EmailUtil.java` handles email sending
-- **Database:**
-  - All DB access via `Utils/DBConnection.java` and DAOs
-- **Authentication:**
-  - `Controller/Auth/`, `DAO/AuthDAO.java`, and related JSPs
+- **Project-specific patterns & gotchas:**
+  - DAOs use plain JDBC with try-with-resources. For multi-step operations some DAOs use explicit transactions (see `AuthDAO.registerCustomer`).
+  - GUIDs are generated via SQL Server `NEWID()` in DB/DAOs.
+  - Password columns are `NVARCHAR(20)` — application enforces a 20-char max; changing this requires schema migration and updates across auth code.
+  - Role strings (e.g. `customer`) are assumed present in the `Role` table; DAOs look up role IDs by name.
+  - Default DB credentials are embedded in `DBConnection` (`FifaFieldDB`, `sa`, `123`) — update for local development.
 
-## Examples
-- To add a new feature:
-  1. Create Model in `Models/`
-  2. Add DAO in `DAO/`
-  3. Add Controller in `Controller/`
-  4. Add JSP in `web/View/<Feature>/`
+- **How to add/modify functionality:**
+  - Add a servlet: create under `src/java/Controller/<Area>/`, implement doGet/doPost, then register mapping in `web/WEB-INF/web.xml` and create/modify the corresponding JSP under `web/View/<Area>/`.
+  - For DB changes: update `database/FFFDataBase.sql` and corresponding DAO SQL; follow existing try-with-resources + transaction patterns.
+  - Follow existing flow: Controller reads request params → call DAO → set request/session attributes → forward or `sendRedirect`.
 
-- To update DB schema: Edit `database/FFFDataBase.sql` and update DAOs as needed.
+- **Integration & runtime notes:**
+  - Uses Jakarta EE APIs (jakarta.servlet.*) — ensure container compatibility (Tomcat 10+).
+  - Libraries/jars live in `lib/` and `web/WEB-INF/lib/` — NetBeans `nbproject` and `build.xml` manage classpath.
 
-## References
-- **Build:** `build.xml`
-- **Web Config:** `web/WEB-INF/web.xml`, `web/META-INF/context.xml`
-- **DB Connection:** `src/java/Utils/DBConnection.java`
-- **Email:** `src/java/Utils/EmailUtil.java`
+- **Files to inspect first when troubleshooting:**
+  - [src/java/Controller/Auth/LoginServlet.java](src/java/Controller/Auth/LoginServlet.java#L1) — login/session usage.
+  - [src/java/DAO/AuthDAO.java](src/java/DAO/AuthDAO.java#L1) — registration, password rules.
+  - [src/java/Utils/DBConnection.java](src/java/Utils/DBConnection.java#L1) — connection strings.
+  - [web/WEB-INF/web.xml](web/WEB-INF/web.xml#L1) — mappings and filters.
 
----
-For more details, inspect the relevant directories and files as listed above. If any conventions or workflows are unclear, ask for clarification or check with the project maintainers.
+- **What *not* to change without care:**
+  - DB schema (column sizes/types) without updating DAO validation and seeds.
+  - Authentication flows and role names — changes must be propagated to SQL seeds and DAOs.
+
+- **If you'd like next steps:**
+  - I can run a quick scan for TODOs in DAOs/servlets, or add an edit+deploy checklist with exact `ant` targets — tell me which.
+
+Please tell me which follow-up you'd prefer.

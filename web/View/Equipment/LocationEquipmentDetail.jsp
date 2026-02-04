@@ -41,7 +41,7 @@
         <a href="${pageContext.request.contextPath}/location-equipment-list?locationId=${locationId}" 
            class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 hover:text-[#008751] transition-all uppercase tracking-widest mb-1">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-            QUAY LẠI QUẢN LÝ DỤNG CỤ
+            QUAY LẠI 
         </a>
         <h1 class="text-4xl font-black text-gray-900 tracking-tight uppercase leading-none">
             CẬP NHẬT THÔNG TIN<span class="text-[#008751]"> DỤNG CỤ TẠI CƠ SỞ</span>

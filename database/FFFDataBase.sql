@@ -44,7 +44,6 @@ GO
 CREATE TABLE Manager (
     user_id VARCHAR(36) PRIMARY KEY,
     start_date DATE,
-	location_id VARCHAR(36),
     CONSTRAINT FK_Manager_User FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 GO
@@ -154,6 +153,16 @@ CREATE TABLE Voucher (
 );
 GO
 
+-- Mapping table to assign vouchers to locations
+CREATE TABLE Location_Voucher (
+    location_id VARCHAR(36) NOT NULL,
+    voucher_id VARCHAR(36) NOT NULL,
+    CONSTRAINT PK_Location_Voucher PRIMARY KEY (location_id, voucher_id),
+    CONSTRAINT FK_LV_Location FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    CONSTRAINT FK_LV_Voucher FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id)
+);
+GO
+
 CREATE TABLE Customer_Voucher (
     customer_id VARCHAR(36) NOT NULL,
     voucher_id VARCHAR(36) NOT NULL,
@@ -236,3 +245,22 @@ BEGIN
     FROM Location l
     CROSS JOIN inserted i;
 END;
+
+GO
+CREATE TRIGGER trg_AfterInsertLocation
+ON Location
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Location_Equipment (location_id, equipment_id, quantity, status)
+    SELECT 
+        i.location_id,
+        e.equipment_id,
+        0 AS quantity,
+        'unavailable' AS status
+    FROM inserted i
+    CROSS JOIN Equipment e;
+END;
+GO

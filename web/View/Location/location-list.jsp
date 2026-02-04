@@ -70,6 +70,19 @@
 
                     <!-- CONTENT -->
                     <div class="relative z-10 flex flex-col h-full">
+                        <div class="mb-6 w-full h-40 rounded-2xl overflow-hidden">
+                            <c:choose>
+                                <c:when test="${not empty loc.imageUrl}">
+                                    <img src="${pageContext.request.contextPath}/${loc.imageUrl}"
+                                         alt="${loc.locationName}"
+                                         class="w-full h-full object-cover" />
+                                </c:when>
+                                <c:otherwise>
+                                    <img src="${pageContext.request.contextPath}/assets/img/default_cluster.jpg"
+                                         alt="placeholder" class="w-full h-full object-cover" />
+                                </c:otherwise>
+                            </c:choose>
+                        </div>
                         <h3 class="text-3xl font-black text-slate-900 mb-3 tracking-tight group-hover:text-[#008751] transition-colors">
                             ${loc.locationName}
                         </h3>
@@ -115,11 +128,11 @@
                                 THIẾT BỊ
                             </a>
 
-                            <button
-                                class="flex-1 bg-slate-900 text-white rounded-[1.8rem] hover:bg-black transition-all
-                                       flex items-center justify-center shadow-lg">
+                            <a href="${pageContext.request.contextPath}/locations/view?location_id=${loc.locationId}"
+                               class="flex-1 bg-slate-900 text-white rounded-[1.8rem] hover:bg-black transition-all
+                                      flex items-center justify-center shadow-lg">
                                 <i data-lucide="settings-2" class="w-6 h-6"></i>
-                            </button>
+                            </a>
                         </div>
                     </div>
 

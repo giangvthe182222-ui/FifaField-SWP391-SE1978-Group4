@@ -1,6 +1,7 @@
 package Controller.Auth;
 
 import DAO.AuthDAO;
+import Models.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -55,8 +56,34 @@ public class LoginServlet extends HttpServlet {
             return;
         }
 
-        request.getSession(true).setAttribute("userId", userId);
+        User user = dao.getUserById(userId);
+        if (user == null) {
+            request.setAttribute("error", "Lỗi hệ thống. Vui lòng thử lại.");
+            request.getRequestDispatcher("/View/Auth/login.jsp").forward(request, response);
+            return;
+        }
 
-        response.sendRedirect(request.getContextPath() + "/View/Auth/homepage.jsp");
+        request.getSession(true).setAttribute("user", user);
+
+        // Redirect based on role
+        String roleName = user.getRole().getRoleName().toLowerCase();
+        String redirectUrl;
+        switch (roleName) {
+            case "admin":
+                redirectUrl = "/admin-dashboard";
+                break;
+            case "manager":
+                redirectUrl = "/View/Auth/homepage.jsp"; // Assuming manager dashboard
+                break;
+            case "staff":
+                redirectUrl = "/View/Auth/homepage.jsp"; // Assuming staff dashboard
+                break;
+            case "customer":
+            default:
+                redirectUrl = "/View/Auth/homepage.jsp";
+                break;
+        }
+
+        response.sendRedirect(request.getContextPath() + redirectUrl);
     }
 }

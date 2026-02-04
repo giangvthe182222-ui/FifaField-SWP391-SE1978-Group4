@@ -77,21 +77,33 @@
                 </nav>
 
                 <!-- RIGHT -->
-                <div class="flex items-center gap-4">
-                    <div class="w-9 h-9 rounded-full border-2 border-[#008751]
-                         flex items-center justify-center text-[#008751] font-bold text-sm">
-                        A
-                    </div>
+                
+                    <!-- RIGHT -->
+<div class="flex items-center gap-2">
+    <a href="${pageContext.request.contextPath}/auth/profile"
+       class="text-gray-400 hover:text-gray-700 transition-colors p-2 rounded-xl hover:bg-gray-50"
+       title="Thông tin cá nhân">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
+              viewBox="0 0 24 24">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4z"/>
+            <path d="M6 20v-1c0-2.21 3.58-4 6-4s6 1.79 6 4v1"/>
+        </svg>
+    </a>
 
-                    <a href="/logout"
-                       class="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-xl hover:bg-red-50">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
-                             viewBox="0 0 24 24">
-                        <path d="M16 17l5-5-5-5"/>
-                        <path d="M21 12H9"/>
-                        <path d="M4 4h8v16H4z"/>
-                        </svg>
-                    </a>
+    <a href="/logout"
+       class="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-xl hover:bg-red-50"
+       title="Đăng xuất">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
+              viewBox="0 0 24 24">
+            <path d="M16 17l5-5-5-5"/>
+            <path d="M21 12H9"/>
+            <path d="M4 4h8v16H4z"/>
+        </svg>
+    </a>
+</div>
+
+
+                    
                 </div>
 
             </div>

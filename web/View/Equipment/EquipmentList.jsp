@@ -50,7 +50,7 @@
         </a>
     </div>
 
-    <!-- FILTER + QUICK SORT -->
+    
     <form method="get" action="equipment-list"
           class="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
 
@@ -58,10 +58,22 @@
 
             <!-- SEARCH -->
             <div class="md:col-span-4">
-                <input type="text" name="keyword" value="${param.keyword}"
+                <input type="text" name="search" value="${param.search}"
                        placeholder="Tìm tên thiết bị..."
                        class="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl
                        font-bold text-sm focus:ring-4 focus:ring-[#008751]/10 focus:border-[#008751]">
+            </div>
+
+            <!-- TYPE -->
+            <div class="md:col-span-2">
+                <select name="type"
+                        class="filter-select w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl
+                        font-black text-[10px] uppercase tracking-widest text-gray-500">
+                    <option value="">Tất cả loại</option>
+                    <c:forEach items="${typeList}" var="t">
+                        <option value="${t}" ${param.type==t?'selected':''}>${t}</option>
+                    </c:forEach>
+                </select>
             </div>
 
             <!-- STATUS -->
@@ -75,20 +87,19 @@
                 </select>
             </div>
 
-            <!-- TYPE -->
-            <div class="md:col-span-3">
-                <select name="type"
+            <!-- SORT -->
+            <div class="md:col-span-2">
+                <select name="sort"
                         class="filter-select w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl
                         font-black text-[10px] uppercase tracking-widest text-gray-500">
-                    <option value="">Tất cả loại</option>
-                    <c:forEach items="${typeList}" var="t">
-                        <option value="${t}" ${param.type==t?'selected':''}>${t}</option>
-                    </c:forEach>
+                    <option value="">Sắp xếp giá</option>
+                    <option value="asc" ${param.sort=='asc'?'selected':''}>Giá: Thấp -> Cao</option>
+                    <option value="desc" ${param.sort=='desc'?'selected':''}>Giá: Cao -> Thấp</option>
                 </select>
             </div>
 
             <!-- SUBMIT -->
-            <div class="md:col-span-2">
+            <div class="md:col-span-1">
                 <button type="submit"
                         class="w-full h-full bg-[#008751] text-white rounded-2xl
                         font-black text-[10px] uppercase tracking-widest
@@ -98,35 +109,25 @@
             </div>
         </div>
 
-        <!-- QUICK SORT (JS) -->
-        <div class="flex items-center gap-4 pt-6">
-            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                Sắp xếp nhanh:
-            </span>
-
-            <button type="button" onclick="sortByName()"
-                    class="px-4 py-2 rounded-xl border text-[10px] font-black uppercase hover:bg-gray-50">
-                Tên A → Z
-            </button>
-
-            <button type="button" onclick="sortByPrice()"
-                    class="px-4 py-2 rounded-xl border text-[10px] font-black uppercase hover:bg-gray-50">
-                Giá ↑ ↓
-            </button>
-        </div>
+        <c:if test="${not empty param.search or not empty param.type or not empty param.status or not empty param.sort}">
+            <div class="flex items-center gap-3 pt-2">
+                <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Đang lọc:</span>
+                <a href="${pageContext.request.contextPath}/equipment-list" class="text-[10px] font-black text-[#008751] hover:underline uppercase tracking-widest flex items-center gap-1">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    Xóa tất cả bộ lọc
+                </a>
+            </div>
+        </c:if>
     </form>
 
     <!-- GRID -->
-    <div id="equipmentGrid"
-         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
 
         <c:forEach var="e" items="${equipmentList}">
             <div class="equipment-card bg-white border-2 border-gray-50 rounded-[2.8rem]
                         overflow-hidden transition-all hover:shadow-2xl
                         hover:shadow-[#008751]/5 hover:border-[#008751]
-                        flex flex-col"
-                 data-name="${e.name}"
-                 data-price="${e.rentalPrice}">
+                        flex flex-col">
 
                 <!-- IMAGE (hover zoom + overlay) -->
                 <div class="relative h-52 bg-gray-100 overflow-hidden group">
@@ -209,12 +210,12 @@
     <!-- PAGINATION -->
     <div class="flex justify-center pt-14 gap-2">
         <c:if test="${currentPage > 1}">
-            <a href="equipment-list?page=${currentPage-1}&keyword=${keyword}&status=${status}&type=${type}"
+            <a href="equipment-list?page=${currentPage-1}&search=${search}&status=${status}&type=${type}&sort=${sort}"
                class="px-4 py-2 rounded-xl border font-black">←</a>
         </c:if>
 
         <c:forEach begin="1" end="${totalPages}" var="p">
-            <a href="equipment-list?page=${p}&keyword=${keyword}&status=${status}&type=${type}"
+            <a href="equipment-list?page=${p}&search=${search}&status=${status}&type=${type}&sort=${sort}"
                class="px-4 py-2 rounded-xl font-black
                ${p==currentPage?'bg-[#008751] text-white':'border'}">
                 ${p}
@@ -222,45 +223,18 @@
         </c:forEach>
 
         <c:if test="${currentPage < totalPages}">
-            <a href="equipment-list?page=${currentPage+1}&keyword=${keyword}&status=${status}&type=${type}"
+            <a href="equipment-list?page=${currentPage+1}&search=${search}&status=${status}&type=${type}&sort=${sort}"
                class="px-4 py-2 rounded-xl border font-black">→</a>
         </c:if>
     </div>
 
 </div>
 
-<jsp:include page="/View/Layout/Footer.jsp"/>
+
 
 <script>
     lucide.createIcons();
-
-    let priceAsc = true;
-
-    function sortByPrice() {
-        const grid = document.getElementById('equipmentGrid');
-        const cards = Array.from(grid.children);
-
-        cards.sort((a, b) => {
-            const pa = parseInt(a.dataset.price);
-            const pb = parseInt(b.dataset.price);
-            return priceAsc ? pa - pb : pb - pa;
-        });
-
-        priceAsc = !priceAsc;
-        cards.forEach(c => grid.appendChild(c));
-    }
-
-    function sortByName() {
-        const grid = document.getElementById('equipmentGrid');
-        const cards = Array.from(grid.children);
-
-        cards.sort((a, b) =>
-            a.dataset.name.localeCompare(b.dataset.name, 'vi', { sensitivity: 'base' })
-        );
-
-        cards.forEach(c => grid.appendChild(c));
-    }
 </script>
-
+<jsp:include page="/View/Layout/Footer.jsp"/>
 </body>
 </html>
