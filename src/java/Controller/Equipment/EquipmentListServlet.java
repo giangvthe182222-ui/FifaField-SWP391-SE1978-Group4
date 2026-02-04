@@ -22,11 +22,7 @@ public class EquipmentListServlet extends HttpServlet {
 
     //Created by: Giangvthe182222
     //Function: Get Equipment List
-    //Description:
-    //  - Receive filter parameters (search, status, type, sort)
-    //  - Handle pagination for equipment structure list
-    //  - Call DAO to retrieve filtered data and total records
-    //  - Forward data to EquipmentList.jsp
+    //Description:Receive filter parameters to paginate and find equipment structure records
     //Note:
     //  - Page index always starts from 1
     //  - Invalid page values will be reset to 1
