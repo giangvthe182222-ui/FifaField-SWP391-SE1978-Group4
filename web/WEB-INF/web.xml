@@ -67,8 +67,44 @@
         <servlet-name>GoogleLoginServlet</servlet-name>
         <servlet-class>Controller.Auth.GoogleLoginServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>AddStaffServlet</servlet-name>
+        <servlet-class>Controller.Staff.AddStaffServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>StaffListServlet</servlet-name>
+        <servlet-class>Controller.Staff.StaffListServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>StaffDetailServlet</servlet-name>
+        <servlet-class>Controller.Staff.StaffDetailServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>EditStaffServlet</servlet-name>
+        <servlet-class>Controller.Staff.EditStaffServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>MainServlet</servlet-name>
         <url-pattern>/main</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AddStaffServlet</servlet-name>
+        <url-pattern>/staff/add</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>StaffListServlet</servlet-name>
+        <url-pattern>/staff/list</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>StaffListServlet</servlet-name>
+        <url-pattern>/staff-list</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>StaffDetailServlet</servlet-name>
+        <url-pattern>/staff/detail</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>EditStaffServlet</servlet-name>
+        <url-pattern>/staff/edit</url-pattern>
     </servlet-mapping>
 </web-app>
