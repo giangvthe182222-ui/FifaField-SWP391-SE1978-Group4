@@ -44,7 +44,8 @@ public class EditEquipmentServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/equipment-list");
             return;
         }
-
+        
+        request.setAttribute("typeList", dao.getAllTypes());
         request.setAttribute("equipment", equipment);
         request.getRequestDispatcher("View/Equipment/EditEquipment.jsp")
                .forward(request, response);
@@ -56,7 +57,7 @@ public class EditEquipmentServlet extends HttpServlet {
 
         request.setCharacterEncoding("UTF-8");
 
-        // ===== ID =====
+        
         UUID id;
         try {
             id = UUID.fromString(request.getParameter("equipment_id"));
@@ -75,12 +76,12 @@ public class EditEquipmentServlet extends HttpServlet {
         BigDecimal rentalPrice = null;
         BigDecimal damageFee = null;
 
-        // Validate status
+        
         if (!"available".equals(status) && !"unavailable".equals(status)) {
             error = "Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')";
         }
 
-        // Validate numbers
+        
         try {
             rentalPrice = new BigDecimal(rentalRaw);
             damageFee = new BigDecimal(damageRaw);
@@ -91,7 +92,7 @@ public class EditEquipmentServlet extends HttpServlet {
             error = "Giá không hợp lệ";
         }
 
-        // Validate required fields
+        
         if (name == null || name.isBlank() || equipmentType == null || equipmentType.isBlank()) {
             error = "Vui lòng nhập đầy đủ tên và loại thiết bị";
         }
@@ -104,15 +105,14 @@ public class EditEquipmentServlet extends HttpServlet {
 
         EquipmentDAO dao = new EquipmentDAO(new DBConnection());
         Equipment old = dao.getById(id);
-
+        
         if (old == null) {
             response.sendRedirect(request.getContextPath() + "/equipment-list");
             return;
         }
 
-        // ===== IMAGE HANDLING =====
         Part imagePart = request.getPart("image");
-        String imageUrl = old.getImageUrl(); // mặc định giữ ảnh cũ
+        String imageUrl = old.getImageUrl(); 
 
         if (imagePart != null && imagePart.getSize() > 0) {
             String fileName = Paths.get(imagePart.getSubmittedFileName())
@@ -126,7 +126,7 @@ public class EditEquipmentServlet extends HttpServlet {
             imagePart.write(getServletContext().getRealPath("/") + imageUrl);
         }
 
-        // ===== UPDATE MODEL =====
+        
         Equipment updated = new Equipment();
         updated.setEquipmentId(id);
         updated.setName(name);
@@ -136,7 +136,7 @@ public class EditEquipmentServlet extends HttpServlet {
         updated.setDamageFee(damageFee);
         updated.setStatus(status);
         updated.setDescription(description);
-        // createdAt giữ nguyên trong DB
+        
 
         boolean success = dao.update(updated);
 

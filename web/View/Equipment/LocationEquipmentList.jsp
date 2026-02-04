@@ -10,6 +10,7 @@
         <title>Vật tư sân bóng - FIFAFIELD</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+        <script src="https://unpkg.com/lucide@latest"></script>
         <style>
             body {
                 font-family: 'Inter', sans-serif;
@@ -187,13 +188,29 @@
                                     <span class="uppercase tracking-widest">Phí đền bù:</span>
                                     <span class="text-gray-900 font-black"><fmt:formatNumber value="${e.damageFee}" /> đ</span>
                                 </div>
-                                <!-- Action Buttons -->
-                                <div class="pt-4 flex justify-end">
+
+                                <!-- FOOTER -->
+                                <div class="flex justify-between items-center mt-auto pt-4">
+
+                                    <!-- STATUS EDIT -->
+                                    <form action="update-location-equipment-status" method="post">
+                                        <input type="hidden" name="locationId" value="${locationId}">
+                                        <input type="hidden" name="equipmentId" value="${e.equipmentId}">
+                                        <select name="newStatus"
+                                                onchange="if(confirm('Thay đổi trạng thái?'))this.form.submit();else this.value='${e.status}'"
+                                                class="px-4 py-2 rounded-xl text-[10px] font-black uppercase
+                                                ${e.status=='available'
+                                                  ? 'bg-emerald-100 text-emerald-700'
+                                                  : 'bg-gray-100 text-gray-600'}">
+                                            <option value="available" ${e.status=='available'?'selected':''}>available</option>
+                                            <option value="unavailable" ${e.status=='unavailable'?'selected':''}>unavailable</option>
+                                        </select>
+                                    </form>
+
+                                    <!-- ACTION -->
                                     <a href="${pageContext.request.contextPath}/update-location-equipment?locationId=${locationId}&equipmentId=${e.equipmentId}"
-                                       class="px-5 py-2 rounded-full text-[10px] font-black tracking-widest uppercase
-                                       bg-[#008751] text-white
-                                       hover:bg-[#006f43] transition-all shadow-md hover:shadow-lg">
-                                        Chỉnh sửa
+                                       class="p-2 rounded-xl hover:bg-blue-50 text-gray-500 hover:text-blue-600">
+                                        <i data-lucide="edit-3" class="w-4 h-4"></i>
                                     </a>
                                 </div>
                             </div>
@@ -265,5 +282,8 @@
         </body>
         <jsp:include page="/View/Layout/Footer.jsp"/>
 
+        <script>
+            lucide.createIcons();
+        </script>
 
     </html>
