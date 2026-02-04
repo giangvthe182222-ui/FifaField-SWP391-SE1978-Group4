@@ -23,13 +23,11 @@ public class EquipmentListServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // ================= FILTER PARAM =================
         String search = trimToNull(request.getParameter("search"));
         String status = trimToNull(request.getParameter("status"));
         String type = trimToNull(request.getParameter("type"));
         String sort = trimToNull(request.getParameter("sort"));
 
-        // ================= PAGINATION PARAM =================
         int page = 1;
         String pageRaw = request.getParameter("page");
         if (pageRaw != null) {
