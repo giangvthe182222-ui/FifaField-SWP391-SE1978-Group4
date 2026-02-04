@@ -12,22 +12,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen" style="font-family: 'Inter', sans-serif;">
 
-<!-- HEADER -->
-<header class="bg-white border-b border-slate-200 sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-            <div class="bg-emerald-600 p-2 rounded-xl text-white shadow">
-                <i data-lucide="trophy" class="w-6 h-6"></i>
-            </div>
-            <h1 class="text-2xl font-semibold text-slate-900">
-                FIFA<span class="text-emerald-600">FIELD</span>
-            </h1>
-        </div>
-        <nav class="flex items-center gap-6">
-            <a href="${pageContext.request.contextPath}/manager-list" class="text-slate-600 hover:text-slate-900">Quay lại</a>
-        </nav>
-    </div>
-</header>
+<jsp:include page="/View/Layout/Header.jsp" />
 
 <!-- MAIN CONTENT -->
 <main class="max-w-3xl mx-auto px-6 py-12">
@@ -53,6 +38,9 @@
         <c:otherwise>
             <!-- HEADER SECTION -->
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-6">
+                <div class="mb-4">
+                    <button type="button" onclick="history.back()" class="px-3 py-2 rounded-lg border bg-white text-sm font-semibold hover:bg-slate-50">← Quay lại</button>
+                </div>
                 <div class="flex items-start justify-between mb-6">
                     <div>
                         <h1 class="text-3xl font-bold text-slate-900">${manager.fullName}</h1>
@@ -182,6 +170,8 @@
 <script>
     lucide.createIcons();
 </script>
+
+<jsp:include page="/View/Layout/Footer.jsp" />
 
 </body>
 </html>
