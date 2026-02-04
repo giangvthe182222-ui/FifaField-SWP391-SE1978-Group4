@@ -53,8 +53,7 @@ public class EquipmentDAO {
         }
         return null;
     }
-
-    // ================= UPDATE =================
+    
     public boolean update(Equipment e) {
         String sql = "UPDATE Equipment SET name = ?, equipment_type = ?, image_url = ?, rental_price = ?, damage_fee = ?, status = ?, description = ? WHERE equipment_id = ?";
 
@@ -121,7 +120,6 @@ public class EquipmentDAO {
         return list;
     }
 
-    // ================= FILTER =================
     public List<Equipment> filter(String keyword, String status, String type) {
         List<Equipment> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT * FROM Equipment WHERE 1=1 ");
@@ -160,7 +158,6 @@ public class EquipmentDAO {
         return list;
     }
 
-    // ================= MAP =================
     private Equipment map(ResultSet rs) throws SQLException {
         Equipment e = new Equipment();
         e.setEquipmentId(UUID.fromString(rs.getString("equipment_id")));
@@ -176,9 +173,10 @@ public class EquipmentDAO {
     }
 
     public List<Equipment> filter(
-            String keyword,
+            String search,
             String status,
             String type,
+            String sort,
             int page,
             int pageSize
     ) {
@@ -187,7 +185,7 @@ public class EquipmentDAO {
                 "SELECT * FROM Equipment WHERE 1=1 "
         );
 
-        if (keyword != null) {
+        if (search != null) {
             sql.append("AND name LIKE ? ");
         }
         if (status != null) {
@@ -197,14 +195,21 @@ public class EquipmentDAO {
             sql.append("AND equipment_type = ? ");
         }
 
-        sql.append("ORDER BY name ");
+        if ("asc".equals(sort)) {
+            sql.append("ORDER BY rental_price ASC ");
+        } else if ("desc".equals(sort)) {
+            sql.append("ORDER BY rental_price DESC ");
+        } else {
+            sql.append("ORDER BY name ");
+        }
+
         sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
 
         try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
             int i = 1;
-            if (keyword != null) {
-                ps.setString(i++, "%" + keyword + "%");
+            if (search != null) {
+                ps.setString(i++, "%" + search + "%");
             }
             if (status != null) {
                 ps.setString(i++, status);
@@ -227,12 +232,12 @@ public class EquipmentDAO {
         return list;
     }
 
-    public int count(String keyword, String status, String type) {
+    public int count(String search, String status, String type) {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(*) FROM Equipment WHERE 1=1 "
         );
 
-        if (keyword != null) {
+        if (search != null) {
             sql.append("AND name LIKE ? ");
         }
         if (status != null) {
@@ -245,8 +250,8 @@ public class EquipmentDAO {
         try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
             int i = 1;
-            if (keyword != null) {
-                ps.setString(i++, "%" + keyword + "%");
+            if (search != null) {
+                ps.setString(i++, "%" + search + "%");
             }
             if (status != null) {
                 ps.setString(i++, status);
