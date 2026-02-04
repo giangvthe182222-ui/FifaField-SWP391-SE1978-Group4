@@ -44,7 +44,6 @@ GO
 CREATE TABLE Manager (
     user_id VARCHAR(36) PRIMARY KEY,
     start_date DATE,
-	location_id VARCHAR(36),
     CONSTRAINT FK_Manager_User FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 GO
@@ -146,13 +145,20 @@ CREATE TABLE Voucher (
     voucher_id VARCHAR(36) PRIMARY KEY,
     code NVARCHAR(50) UNIQUE,
     discount_value DECIMAL(5,2),
-	description NVARCHAR(255),
+    description NVARCHAR(255),
     start_date DATE,
-	end_date DATE,
-	used_count INT DEFAULT 0,
-    status NVARCHAR(20)
+    end_date DATE,
+    location_id VARCHAR(36),
+    used_count INT DEFAULT 0,
+    status NVARCHAR(20),
+
+    CONSTRAINT FK_Voucher_Location
+        FOREIGN KEY (location_id)
+        REFERENCES Location(location_id)
 );
 GO
+
+
 
 CREATE TABLE Customer_Voucher (
     customer_id VARCHAR(36) NOT NULL,

@@ -1,48 +1,59 @@
 # Copilot instructions — FifaField (SWP391)
 
-This repository is a Jakarta EE (servlet/JSP) web app using Ant/NetBeans structure. Insert concise, actionable guidance below so an AI coding assistant can be productive immediately.
+Concise, repo-specific guidance to make an AI coding assistant productive immediately.
 
-- **Project layout**: source lives under `src/java` with packages mirrored as folders:
-  - `src/java/Controller/*` — servlet controllers (e.g. [LoginServlet](src/java/Controller/Auth/LoginServlet.java#L1)).
-  - `src/java/DAO/*` — database access objects (e.g. [AuthDAO](src/java/DAO/AuthDAO.java#L1)).
-  - `src/java/Models/*` — domain models.
-  - `src/java/Utils/*` — helpers, including [DBConnection](src/java/Utils/DBConnection.java#L1).
-  - Views are JSPs under `web/View/*` and the deployed webapp is in `web/`.
+- **Big picture:** A Jakarta EE (Jakarta Servlet/JSP) web app using an Ant / NetBeans layout. Java source is in `src/java`, views are classic JSPs in `web/View`, and build outputs appear in `build/web` and `dist/`. Persistence is Microsoft SQL Server with simple DAO classes using plain JDBC.
 
-- **Build / run**:
-  - This is an Ant / NetBeans project. Use the IDE or run the default Ant targets via the provided `build.xml` at repository root. See [build.xml](build.xml#L1).
-  - Deployment expects a Jakarta EE servlet container that supports `jakarta.servlet` imports (Tomcat 10+, Jetty with Jakarta support, or a compatible app server).
+- **Key locations (quick reference):**
+  - `src/java/Controller/*` — servlets handling routes (e.g. `Controller.Auth.LoginServlet`).
+  - `src/java/DAO/*` — database access (e.g. `AuthDAO.registerCustomer`, `GoogleAuthDAO.findOrCreateUserByGoogle`).
+  - `src/java/Utils/DBConnection.java` — DB connection string and `main()` to test connectivity.
+  - `src/java/Utils/EmailUtil.java` — SMTP / email sending logic (contains embedded SMTP creds).
+  - `web/WEB-INF/web.xml` — servlet declarations & mappings (most routes are declared here).
+  - `web/View/*` — JSP pages (scriptlet-style, e.g. `web/View/Auth/login.jsp`).
+  - `database/FFFDataBase.sql` — full schema and triggers (note: Role table must contain expected role names).
 
-- **Database**:
-  - SQL Server is used. Connection config is in [src/java/Utils/DBConnection.java](src/java/Utils/DBConnection.java#L1). Default URL/user/password are embedded (`FifaFieldDB`, `sa`, `123`) — update for local dev.
-  - Schema and seed SQL are in `database/FFFDataBase.sql`.
-  - DAOs use plain JDBC with try-with-resources and explicit transactions for multi-step inserts (see `AuthDAO.registerCustomer`).
+- **Build, run & debug:**
+  - Recommended: open in NetBeans and Run/Deploy to a Tomcat 10+ server (Jakarta namespace).
+  - CLI: run `ant` (or `ant dist`) in project root to compile and produce `build/web/` and `dist/FifaField.war`.
+  - Java target: Java 8 (see `nbproject/project.properties` - `javac.source=1.8`).
+  - Quick DB smoke test: run the `main` in `src/java/Utils/DBConnection.java` to confirm connectivity.
 
-- **Routing & servlets**:
-  - URL → servlet mappings are defined in `web/WEB-INF/web.xml` (e.g. `/login` → `Controller.Auth.LoginServlet`). Inspect that file for endpoints.
-  - Many servlets forward to JSPs under `web/View/*` — follow the pattern: Controller reads request params → uses DAO → sets request/session attributes → forwards or redirects.
+- **Important patterns & conventions:**
+  - Plain JDBC with try-with-resources everywhere; multi-step DB changes follow the pattern: setAutoCommit(false) → try { ... commit() } catch { rollback() }.
+  - GUIDs are produced by SQL Server: `SELECT CONVERT(VARCHAR(36), NEWID())` (see `AuthDAO.newGuid`).
+  - Password length is constrained to NVARCHAR(20). Several DAOs throw SQLException if `password.length() > 20` (see `AuthDAO`).
+  - Role names are looked up by string (e.g. `customer`, `staff`); ensure the `Role` table contains these names. Note: one filter checks for `ADMIN` (case-insensitive), so be consistent with role naming.
+  - Views use JSP scriptlets and the request/session attribute conventions (Controller sets attributes → JSP reads them directly).
 
-- **Conventions & gotchas discovered**:
-  - Passwords stored in DB as NVARCHAR(20). Code enforces a 20-char max in `AuthDAO.registerCustomer` — do not change client-side validation without migrating DB.
-  - GUIDs are generated using SQL Server `NEWID()` via DAO helper methods.
-  - Role names like `customer` are expected to exist in `Role` table; DAOs fetch role ids by name.
-  - Plaintext DB credentials and plaintext passwords are present — when editing auth flows, preserve compatibility or update schema and all call-sites.
+- **Secrets & external integrations (explicit places to check):**
+  - DB creds: `src/java/Utils/DBConnection.java` (default: `FifaFieldDB`, user `sa`, password `123`).
+  - SMTP creds: `src/java/Utils/EmailUtil.java` (embedded Gmail + app password).
+  - Google OAuth: `src/java/Controller/Auth/GoogleLoginServlet.java` contains a `CLIENT_ID` placeholder and `REDIRECT_URI` constant.
+  - These are currently embedded in source — rotate to environment/config before production.
 
-- **Where to make common changes**:
-  - Add new endpoints: create a servlet under `src/java/Controller/*`, register it in `web/WEB-INF/web.xml`, and add a JSP under `web/View/*`.
-  - DB changes: update `database/FFFDataBase.sql`, then update DAOs accordingly. Follow existing try-with-resources and explicit transaction patterns.
-  - UI changes: edit JSPs in `web/View/*` and CSS in `web/assets/css`.
+- **Common gotchas & troubleshooting pointers:**
+  - Container compatibility: requires Tomcat 10+ (Jakarta package names). Using Tomcat 9/older will cause class mismatch errors.
+  - If roles are missing (`customer`/`staff`/`ADMIN`) some registration flows will throw errors — check `Role` table seeds.
+  - Email send fails if SMTP credentials are revoked or Google blocks the app — check `EmailUtil` and Gmail app password settings.
+  - Watch for small package vs folder naming inconsistencies (e.g., `package filter;` vs folder `Filter/`) — NetBeans usually compiles fine, but be cautious when moving files.
 
-- **Dependencies & libraries**:
-  - Project jars live in `lib/` and `web/WEB-INF/lib/` (check `nbproject` and `build.xml` for classpath configuration).
+- **Files to inspect first for common tasks:**
+  - Authentication & user flows: `src/java/Controller/Auth/*`, `src/java/DAO/AuthDAO.java`, `src/java/DAO/GoogleAuthDAO.java`.
+  - DB schema and migrations: `database/FFFDataBase.sql` (triggers auto-populate `Location_Equipment` on inserts).
+  - Email and OTP: `src/java/Utils/EmailUtil.java`, `src/java/DAO/PasswordResetDAO.java`.
+  - UI templates: `web/View/*` (look for scriptlet usage when altering pages).
 
-- **Testing & debugging notes**:
-  - No automated test suite present — use local Tomcat and the DB to test flows.
-  - To quickly verify DB connectivity, run `main` in `src/java/Utils/DBConnection.java`.
+- **How to add a feature (quick checklist):**
+  1. Add servlet under `src/java/Controller/<Area>/` and implement `doGet`/`doPost`.
+  2. Register servlet and URL mapping in `web/WEB-INF/web.xml` (this project declares mappings manually).
+  3. Add/modify a JSP under `web/View/<Area>/` and static assets under `web/assets/`.
+  4. Update DAO(s) under `src/java/DAO/` and the DB seed in `database/FFFDataBase.sql` if schema changes are required.
+  5. Build (`ant`) and deploy to Tomcat 10+; run DB `main()` if DB issues appear.
 
-- **When editing code, follow these concrete patterns**:
-  - Use DAO classes for all DB access; keep SQL in DAO methods.
-  - Use `request.getSession(true).setAttribute("userId", ...)` to set logged-in user (see `LoginServlet`).
-  - Use `response.sendRedirect(request.getContextPath() + "/View/...jsp")` for post-POST redirects when the project uses redirects.
+- **Small, safe tasks the agent can perform automatically:**
+  - Scan codebase for TODOs, embedded secrets, or missing role seeds.
+  - Add unit-style smoke tests that run `DBConnection.main()` or validate servlet URL lists.
+  - Generate quick edit+deploy checklist with exact `ant` targets and deploy instructions for Tomcat.
 
-If anything here is unclear or you'd like more examples (e.g., typical edit+deploy cycle, or mapping of a specific endpoint), tell me which area to expand and I'll iterate.
+If anything in this file is unclear or you'd like more examples (e.g., exact SQL seed snippet for `Role`, or a sample servlet + JSP pair), tell me which part to expand and I'll iterate. 
