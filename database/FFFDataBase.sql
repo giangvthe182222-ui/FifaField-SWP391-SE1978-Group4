@@ -44,7 +44,6 @@ GO
 CREATE TABLE Manager (
     user_id VARCHAR(36) PRIMARY KEY,
     start_date DATE,
-	location_id VARCHAR(36),
     CONSTRAINT FK_Manager_User FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 GO
