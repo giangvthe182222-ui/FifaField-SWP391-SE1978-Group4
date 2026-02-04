@@ -1,14 +1,9 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
 <%
-    String error = (String) request.getAttribute("error");
-    String emailValue = (String) request.getAttribute("emailValue");
-
-    String success = (String) session.getAttribute("success");
-    if (success != null) {
-        session.removeAttribute("success"); // chỉ hiển thị 1 lần
-    }
-
-    if (emailValue == null) emailValue = "";
+String error = (String) request.getAttribute("error");
+String success = (String) request.getAttribute("success");
+String emailValue = (String) request.getAttribute("emailValue");
+if (emailValue == null) emailValue = "";
 %>
 
 <!DOCTYPE html>
