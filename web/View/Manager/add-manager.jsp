@@ -54,25 +54,31 @@
         <!-- FULL NAME -->
         <div class="mb-6">
             <label for="fullName" class="block text-sm font-semibold text-slate-700 mb-2">Họ và tên</label>
-            <input type="text" id="fullName" name="fullName" required
-                   class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                   placeholder="Nhập họ tên">
+                 <input type="text" id="fullName" name="fullName" required
+                     pattern="^[A-Za-zÀ-ỹĐđƠơƯưẠ-ỹ\s.'-]+$"
+                     title="Chỉ nhập chữ cái và khoảng trắng"
+                     class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                     placeholder="Nhập họ tên">
         </div>
 
         <!-- EMAIL -->
         <div class="mb-6">
             <label for="email" class="block text-sm font-semibold text-slate-700 mb-2">Email</label>
-            <input type="email" id="email" name="email" required
-                   class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                   placeholder="example@gmail.com">
+                 <input type="email" id="email" name="email" required
+                     pattern="^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$"
+                     title="Định dạng email không hợp lệ"
+                     class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                     placeholder="example@gmail.com">
         </div>
 
         <!-- PHONE -->
         <div class="mb-6">
             <label for="phone" class="block text-sm font-semibold text-slate-700 mb-2">Số điện thoại</label>
-            <input type="tel" id="phone" name="phone" required
-                   class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                   placeholder="0123456789">
+                 <input type="tel" id="phone" name="phone" required
+                     pattern="^\d{9,15}$"
+                     title="Số điện thoại chỉ gồm 9-15 chữ số"
+                     class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                     placeholder="0123456789">
         </div>
 
         <!-- GENDER -->
