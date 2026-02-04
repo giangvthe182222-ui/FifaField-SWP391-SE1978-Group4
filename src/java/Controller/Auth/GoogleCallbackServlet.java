@@ -1,12 +1,13 @@
 package Controller.Auth;
 
+import DAO.AuthDAO;
 import DAO.GoogleAuthDAO;
 import jakarta.servlet.http.*;
 import jakarta.servlet.ServletException;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
- 
+
 public class GoogleCallbackServlet extends HttpServlet {
 
     private static final String CLIENT_ID = "740421080506-eprsofumm8uoc5dasvbde1v8l8sq4hd2.apps.googleusercontent.com";
@@ -46,6 +47,17 @@ public class GoogleCallbackServlet extends HttpServlet {
             String sub = JsonMini.get(userInfo, "sub");
             String email = JsonMini.get(userInfo, "email");
             String name = JsonMini.get(userInfo, "name");
+
+            // CHAN: neu email da ton tai thi khong cho login Google
+            AuthDAO authDao = new AuthDAO();
+            if (authDao.emailExists(email.trim())) {
+                HttpSession s = req.getSession(true);
+                s.setAttribute("flash_error", "Email đã tồn tại. Vui lòng đăng nhập bằng mật khẩu.");
+                req.getSession(true).setAttribute("flash_error",
+                        "Email đã tồn tại. Vui lòng đăng nhập bằng mật khẩu.");
+                resp.sendRedirect(req.getContextPath() + "/login");
+                return;
+            }
 
             if (sub == null || email == null) {
                 throw new RuntimeException("Missing sub/email");
