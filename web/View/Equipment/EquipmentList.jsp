@@ -27,6 +27,7 @@
 
 <jsp:include page="/View/Layout/Header.jsp"/>
 
+
 <div class="max-w-7xl mx-auto px-6 py-10 space-y-8">
 
     <!-- HEADER -->

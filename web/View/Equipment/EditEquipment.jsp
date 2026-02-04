@@ -15,7 +15,7 @@
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
         <script src="https://unpkg.com/lucide@latest"></script>
 
-        <!-- Reuse AddEquipment CSS -->
+
         <link rel="stylesheet"
               href="${pageContext.request.contextPath}/assets/css/AddEquipment.css">
 
@@ -54,7 +54,27 @@
 
         <!-- CONTENT -->
         <div class="max-w-3xl mx-auto px-6 pt-12">
-
+            <div class="max-w-7xl mx-auto px-6 pt-6">
+                <a href="${pageContext.request.contextPath}/equipment-list"
+                   class="inline-flex items-center gap-2
+                   text-gray-400 hover:text-[#008751]
+                   transition group">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="26" height="26"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2.5"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         class="group-hover:-translate-x-1 transition-transform">
+                    <path d="M22 12H4"/>
+                    <path d="M11 19l-7-7 7-7"/>
+                    </svg>
+                </a>
+            </div>
+            
+                   <div></div>
             <!-- ALERT -->
             <c:if test="${not empty error}">
                 <div class="mb-6 p-4 bg-red-50 border-2 border-red-100
@@ -210,13 +230,12 @@
                 </form>
             </div>
         </div>
-<p class="text-red-500 text-sm">
-    Debug typeList size: ${fn:length(typeList)}
-</p>
-    
-        <script>
+
+
+       
+        <jsp:include page="/View/Layout/Footer.jsp"/>
+    </body>
+    <script>
             lucide.createIcons();
         </script>
-    </body>
-    <jsp:include page="/View/Layout/Footer.jsp"/>
 </html>
