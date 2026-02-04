@@ -15,7 +15,10 @@ public class EquipmentDAO {
     public EquipmentDAO(DBConnection db) {
         this.db = db;
     }
-
+    //Created By: Giangvthe182222
+    //Function: Add Equipment 
+    //Description: Add a new equipment structure to database for all locations
+    //Note: Adding a new equipment structure will add information of equipment control to all location 
     public boolean addEquipment(Equipment e) {
         String sql = "INSERT INTO Equipment (equipment_id, name, equipment_type, image_url, rental_price, damage_fee, status, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -36,7 +39,11 @@ public class EquipmentDAO {
         }
         return false;
     }
-
+    
+    //Created By: Giangvthe182222
+    //Function: Get Equipment By Id
+    //Description: Find an equipment structure by the id
+    //Note: provided to get specific equipment for viewing and editing
     public Equipment getById(UUID id) {
         String sql = "SELECT * FROM Equipment WHERE equipment_id = ?";
 
@@ -54,6 +61,10 @@ public class EquipmentDAO {
         return null;
     }
     
+    //Created By: Giangvthe182222
+    //Function: Update Equipment 
+    //Description: Update an equipment structure 
+    //Note: Provided for update servlet to process updating equipment structure logic
     public boolean update(Equipment e) {
         String sql = "UPDATE Equipment SET name = ?, equipment_type = ?, image_url = ?, rental_price = ?, damage_fee = ?, status = ?, description = ? WHERE equipment_id = ?";
 
@@ -74,7 +85,10 @@ public class EquipmentDAO {
         }
         return false;
     }
-
+    //Created By: Giangvthe182222
+    //Function: Update Equipment Status
+    //Description: Update the status of an equipment structure
+    //Note: Updating the status to unavailable will set all the location equipment to unavailable status
     public boolean updateStatus(UUID id, String status) {
         String sql = "UPDATE Equipment SET status = ? WHERE equipment_id = ?";
 
@@ -89,7 +103,10 @@ public class EquipmentDAO {
         }
         return false;
     }
-
+    //Created By: Giangvthe182222
+    //Function: Get All Equipment 
+    //Description: Get all the information of equipment structures
+    //Note: Provided for the list servlet to get equipment structures information
     public List<Equipment> getAll() {
         List<Equipment> list = new ArrayList<>();
         String sql = "SELECT * FROM Equipment";
@@ -104,7 +121,11 @@ public class EquipmentDAO {
         }
         return list;
     }
-
+    
+    //Created By: Giangvthe182222
+    //Function: Get All Equipment Types
+    //Description: Get all the types of equipment structures
+    //Note: Provided for the list servlet to filter types for equipments and add, edit to get types selection
     public List<String> getAllTypes() {
         List<String> list = new ArrayList<>();
         String sql = "SELECT DISTINCT equipment_type FROM Equipment";
@@ -119,7 +140,10 @@ public class EquipmentDAO {
         }
         return list;
     }
-
+    //Created By: Giangvthe182222
+    //Function: Filter Equipment 
+    //Description: Filter equipment structure list by keyword, status, and type
+    //Note: Used for filtering without pagination
     public List<Equipment> filter(String keyword, String status, String type) {
         List<Equipment> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT * FROM Equipment WHERE 1=1 ");
@@ -157,7 +181,10 @@ public class EquipmentDAO {
         }
         return list;
     }
-
+    //Created By: Giangvthe182222
+    //Function: Map ResultSet to Equipment
+    //Description: Convert a database row into an Equipment object
+    //Note: Centralized mapping to avoid code duplication
     private Equipment map(ResultSet rs) throws SQLException {
         Equipment e = new Equipment();
         e.setEquipmentId(UUID.fromString(rs.getString("equipment_id")));
@@ -171,7 +198,10 @@ public class EquipmentDAO {
 
         return e;
     }
-
+    //Created By: Giangvthe182222
+    //Function: Filter Equipment with Pagination
+    //Description: Filter, sort, and paginate equipment list
+    //Note: Used for equipment list screen with paging controls
     public List<Equipment> filter(
             String search,
             String status,
@@ -180,11 +210,11 @@ public class EquipmentDAO {
             int page,
             int pageSize
     ) {
+        //final sql command for filtering equipment structures
         List<Equipment> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
                 "SELECT * FROM Equipment WHERE 1=1 "
         );
-
         if (search != null) {
             sql.append("AND name LIKE ? ");
         }
@@ -194,7 +224,6 @@ public class EquipmentDAO {
         if (type != null) {
             sql.append("AND equipment_type = ? ");
         }
-
         if ("asc".equals(sort)) {
             sql.append("ORDER BY rental_price ASC ");
         } else if ("desc".equals(sort)) {
@@ -202,10 +231,12 @@ public class EquipmentDAO {
         } else {
             sql.append("ORDER BY name ");
         }
-
+        //Set row offset to show equipment structures
         sql.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
-
-        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+        
+        //Assign parameters to each filter parameters, from search, status, type to page size
+        try (Connection c = db.getConnection(); 
+        PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
             int i = 1;
             if (search != null) {
@@ -217,7 +248,7 @@ public class EquipmentDAO {
             if (type != null) {
                 ps.setString(i++, type);
             }
-
+            
             ps.setInt(i++, (page - 1) * pageSize);
             ps.setInt(i, pageSize);
 
@@ -231,7 +262,10 @@ public class EquipmentDAO {
         }
         return list;
     }
-
+    //Created By: Giangvthe182222
+    //Function: Count Equipment
+    //Description: Count total number of equipment structures based on filters
+    //Note: Used to calculate total pages for pagination
     public int count(String search, String status, String type) {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(*) FROM Equipment WHERE 1=1 "
@@ -247,7 +281,8 @@ public class EquipmentDAO {
             sql.append("AND equipment_type = ? ");
         }
 
-        try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql.toString())) {
+        try (Connection c = db.getConnection(); 
+            PreparedStatement ps = c.prepareStatement(sql.toString())) {
 
             int i = 1;
             if (search != null) {

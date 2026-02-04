@@ -100,8 +100,8 @@
                             </div>
                             <select name="status" 
                                     class="w-full pl-12 pr-10 py-4 bg-gray-50 border border-gray-100 rounded-2xl input-focus-ring appearance-none font-bold text-sm text-gray-700 cursor-pointer transition-all">
-                                <option value="available" ${locationEquipment.status == 'available' ? 'selected' : ''}>SẴN SÀNG (Available)</option>
-                                <option value="unavailable" ${locationEquipment.status == 'unavailable' ? 'selected' : ''}>KHÔNG TRỐNG (Unavailable)</option>
+                                <option value="available" ${locationEquipment.status == 'available' ? 'selected' : ''}>available</option>
+                                <option value="unavailable" ${locationEquipment.status == 'unavailable' ? 'selected' : ''}>unavailable</option>
                             </select>
                             <div class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
