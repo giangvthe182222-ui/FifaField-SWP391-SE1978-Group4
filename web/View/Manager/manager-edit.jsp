@@ -65,19 +65,23 @@
                 <!-- FULL NAME -->
                 <div class="mb-6">
                     <label for="fullName" class="block text-sm font-semibold text-slate-700 mb-2">Họ và tên</label>
-                    <input type="text" id="fullName" name="fullName" required
-                           value="${manager.fullName}"
-                           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                           placeholder="Nhập họ tên">
+                          <input type="text" id="fullName" name="fullName" required
+                              value="${manager.fullName}"
+                              pattern="^[A-Za-zÀ-ỹĐđƠơƯưẠ-ỹ\s.'-]+$"
+                              title="Chỉ nhập chữ cái và khoảng trắng"
+                              class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                              placeholder="Nhập họ tên">
                 </div>
 
                 <!-- PHONE -->
                 <div class="mb-6">
                     <label for="phone" class="block text-sm font-semibold text-slate-700 mb-2">Số điện thoại</label>
-                    <input type="tel" id="phone" name="phone" required
-                           value="${manager.phone}"
-                           class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                           placeholder="0123456789">
+                          <input type="tel" id="phone" name="phone" required
+                              value="${manager.phone}"
+                              pattern="^\d{9,15}$"
+                              title="Số điện thoại chỉ gồm 9-15 chữ số"
+                              class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                              placeholder="0123456789">
                 </div>
 
                 <!-- GENDER -->
@@ -142,7 +146,7 @@
                         <i data-lucide="check" class="w-4 h-4"></i>
                         Cập nhật
                     </button>
-                    <a href="${pageContext.request.contextPath}/manager-detail?manager_id=${manager.userId}"
+                    <a href="${pageContext.request.contextPath}/manager-list"
                        class="flex-1 bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-semibold hover:bg-slate-300 transition flex items-center justify-center gap-2">
                         <i data-lucide="x" class="w-4 h-4"></i>
                         Hủy

@@ -36,8 +36,11 @@
                     <a href="${pageContext.request.contextPath}/locations/edit?location_id=${location.locationId}"
                        class="px-6 py-3 bg-[#008751] text-white rounded-xl font-black">Sửa cụm sân</a>
 
-                    <a href="${pageContext.request.contextPath}/locations"
-                       class="px-6 py-3 border rounded-xl font-black">Quay về danh sách</a>
+                          <a href="${pageContext.request.contextPath}/locations/vouchers?location_id=${location.locationId}"
+                              class="px-6 py-3 bg-[#004d40] text-white rounded-xl font-black">Vouchers</a>
+
+                          <a href="${pageContext.request.contextPath}/locations"
+                              class="px-6 py-3 border rounded-xl font-black">Quay về danh sách</a>
                 </div>
             </div>
         </div>
