@@ -6,6 +6,10 @@ import Utils.DBConnection;
 import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.math.BigDecimal;
 
 public class VoucherDAO {
 
@@ -44,14 +48,10 @@ public class VoucherDAO {
             ps.setString(6, status);
             ps.setString(7, id);
             return ps.executeUpdate() > 0;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.math.BigDecimal;
-
-public class VoucherDAO {
-
-    private Voucher mapResultSet(ResultSet rs) throws SQLException {
+        }
+    }
+    
+    public Voucher mapResultSet(ResultSet rs) throws SQLException {
         Voucher v = new Voucher();
         v.setVoucherId(UUID.fromString(rs.getString("voucher_id")));
         v.setCode(rs.getString("code"));
