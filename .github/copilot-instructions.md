@@ -1,71 +1,48 @@
-# Copilot Instructions for FifaFieldSystem
+# Copilot instructions — FifaField (SWP391)
 
-## Project Overview
-- **Type:** Java web application (likely using JSP/Servlets, Ant build)
-- **Structure:**
-  - `src/`: Java source code (Controllers, DAOs, Models, Services, Utils)
-  - `web/`: JSP views, static assets, and web configuration
-  - `database/`: SQL scripts for schema and data
-  - `lib/`: External JAR dependencies
-  - `build.xml`: Ant build script
+This repository is a Jakarta EE (servlet/JSP) web app using Ant/NetBeans structure. Insert concise, actionable guidance below so an AI coding assistant can be productive immediately.
 
-## Key Architectural Patterns
-- **MVC:**
-  - Controllers in `src/java/Controller/`
-  - Data access in `src/java/DAO/`
-  - Models in `src/java/Models/`
-  - Views in `web/View/`
-- **JSP for UI:** All user-facing pages are JSPs under `web/View/`
-- **DAO Pattern:** All database access is through DAO classes (see `src/java/DAO/`)
-- **Utils:** Shared utilities (e.g., `DBConnection.java`, `EmailUtil.java`)
+- **Project layout**: source lives under `src/java` with packages mirrored as folders:
+  - `src/java/Controller/*` — servlet controllers (e.g. [LoginServlet](src/java/Controller/Auth/LoginServlet.java#L1)).
+  - `src/java/DAO/*` — database access objects (e.g. [AuthDAO](src/java/DAO/AuthDAO.java#L1)).
+  - `src/java/Models/*` — domain models.
+  - `src/java/Utils/*` — helpers, including [DBConnection](src/java/Utils/DBConnection.java#L1).
+  - Views are JSPs under `web/View/*` and the deployed webapp is in `web/`.
 
-## Developer Workflows
-- **Build:**
-  - Use `build.xml` with Ant (`ant` command) to build/deploy
-  - Output goes to `build/` directory
-- **Run/Debug:**
-  - Deploy `build/` output to a servlet container (e.g., Tomcat)
-  - Web root is `web/`
-- **Database:**
-  - SQL scripts in `database/` (e.g., `FFFDataBase.sql`)
-  - Update schema/data via these scripts
-- **Dependencies:**
-  - Place JARs in `lib/` and reference in Ant build
+- **Build / run**:
+  - This is an Ant / NetBeans project. Use the IDE or run the default Ant targets via the provided `build.xml` at repository root. See [build.xml](build.xml#L1).
+  - Deployment expects a Jakarta EE servlet container that supports `jakarta.servlet` imports (Tomcat 10+, Jetty with Jakarta support, or a compatible app server).
 
-## Project-Specific Conventions
-- **JSP Naming:**
-  - Views grouped by feature (e.g., `View/Equipment/`, `View/Auth/`)
-  - Use camel case for JSPs (e.g., `AddEquipment.jsp`)
-- **Java Packages:**
-  - `Controller`, `DAO`, `Models`, `Service`, `Utils` are top-level under `src/java/`
-- **Web Config:**
-  - `web/WEB-INF/web.xml` for servlet config
-  - `web/META-INF/context.xml` for context params
-- **Static Assets:**
-  - CSS/images in `web/assets/`
+- **Database**:
+  - SQL Server is used. Connection config is in [src/java/Utils/DBConnection.java](src/java/Utils/DBConnection.java#L1). Default URL/user/password are embedded (`FifaFieldDB`, `sa`, `123`) — update for local dev.
+  - Schema and seed SQL are in `database/FFFDataBase.sql`.
+  - DAOs use plain JDBC with try-with-resources and explicit transactions for multi-step inserts (see `AuthDAO.registerCustomer`).
 
-## Integration Points
-- **Email:**
-  - `Utils/EmailUtil.java` handles email sending
-- **Database:**
-  - All DB access via `Utils/DBConnection.java` and DAOs
-- **Authentication:**
-  - `Controller/Auth/`, `DAO/AuthDAO.java`, and related JSPs
+- **Routing & servlets**:
+  - URL → servlet mappings are defined in `web/WEB-INF/web.xml` (e.g. `/login` → `Controller.Auth.LoginServlet`). Inspect that file for endpoints.
+  - Many servlets forward to JSPs under `web/View/*` — follow the pattern: Controller reads request params → uses DAO → sets request/session attributes → forwards or redirects.
 
-## Examples
-- To add a new feature:
-  1. Create Model in `Models/`
-  2. Add DAO in `DAO/`
-  3. Add Controller in `Controller/`
-  4. Add JSP in `web/View/<Feature>/`
+- **Conventions & gotchas discovered**:
+  - Passwords stored in DB as NVARCHAR(20). Code enforces a 20-char max in `AuthDAO.registerCustomer` — do not change client-side validation without migrating DB.
+  - GUIDs are generated using SQL Server `NEWID()` via DAO helper methods.
+  - Role names like `customer` are expected to exist in `Role` table; DAOs fetch role ids by name.
+  - Plaintext DB credentials and plaintext passwords are present — when editing auth flows, preserve compatibility or update schema and all call-sites.
 
-- To update DB schema: Edit `database/FFFDataBase.sql` and update DAOs as needed.
+- **Where to make common changes**:
+  - Add new endpoints: create a servlet under `src/java/Controller/*`, register it in `web/WEB-INF/web.xml`, and add a JSP under `web/View/*`.
+  - DB changes: update `database/FFFDataBase.sql`, then update DAOs accordingly. Follow existing try-with-resources and explicit transaction patterns.
+  - UI changes: edit JSPs in `web/View/*` and CSS in `web/assets/css`.
 
-## References
-- **Build:** `build.xml`
-- **Web Config:** `web/WEB-INF/web.xml`, `web/META-INF/context.xml`
-- **DB Connection:** `src/java/Utils/DBConnection.java`
-- **Email:** `src/java/Utils/EmailUtil.java`
+- **Dependencies & libraries**:
+  - Project jars live in `lib/` and `web/WEB-INF/lib/` (check `nbproject` and `build.xml` for classpath configuration).
 
----
-For more details, inspect the relevant directories and files as listed above. If any conventions or workflows are unclear, ask for clarification or check with the project maintainers.
+- **Testing & debugging notes**:
+  - No automated test suite present — use local Tomcat and the DB to test flows.
+  - To quickly verify DB connectivity, run `main` in `src/java/Utils/DBConnection.java`.
+
+- **When editing code, follow these concrete patterns**:
+  - Use DAO classes for all DB access; keep SQL in DAO methods.
+  - Use `request.getSession(true).setAttribute("userId", ...)` to set logged-in user (see `LoginServlet`).
+  - Use `response.sendRedirect(request.getContextPath() + "/View/...jsp")` for post-POST redirects when the project uses redirects.
+
+If anything here is unclear or you'd like more examples (e.g., typical edit+deploy cycle, or mapping of a specific endpoint), tell me which area to expand and I'll iterate.

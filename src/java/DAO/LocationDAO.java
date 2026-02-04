@@ -101,4 +101,43 @@ public class LocationDAO {
             throw e; // ném tiếp để servlet xử lý
         }
     }
+
+    public Location getLocationById(UUID id) throws SQLException {
+        String sql = "SELECT location_id, location_name, address, phone_number, image_url, status " +
+                     "FROM dbo.Location WHERE location_id = ?";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, id.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Location loc = new Location();
+                    loc.setLocationId(UUID.fromString(rs.getString("location_id")));
+                    loc.setLocationName(rs.getNString("location_name"));
+                    loc.setAddress(rs.getNString("address"));
+                    loc.setPhoneNumber(rs.getString("phone_number"));
+                    loc.setImageUrl(rs.getString("image_url"));
+                    loc.setStatus(rs.getNString("status"));
+                    return loc;
+                }
+                return null;
+            }
+        }
+    }
+
+    public boolean updateLocation(Location loc) throws SQLException {
+        String sql = "UPDATE dbo.Location SET location_name = ?, address = ?, phone_number = ?, image_url = ?, status = ? " +
+                     "WHERE location_id = ?";
+
+        try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setNString(1, loc.getLocationName());
+            ps.setNString(2, loc.getAddress());
+            ps.setString(3, loc.getPhoneNumber());
+            ps.setString(4, loc.getImageUrl());
+            ps.setNString(5, loc.getStatus());
+            ps.setString(6, loc.getLocationId().toString());
+
+            int rows = ps.executeUpdate();
+            return rows == 1;
+        }
+    }
 }
