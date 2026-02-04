@@ -21,14 +21,14 @@ public class FieldScheduleServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        UUID fieldId = UUID.fromString(
-                request.getParameter("fieldId") != null
-                        ? request.getParameter("fieldId")
-                        : "36BB5060-CC7E-466F-975E-C72DF50E8C18"
-        );
-
-        /* ===== FILTER PARAM ===== */
-        String weekRaw = request.getParameter("week");   // yyyy-MM-dd
+UUID fieldId;
+try {
+    fieldId = UUID.fromString(request.getParameter("fieldId"));
+} catch (Exception e) {
+    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid fieldId format");
+    return;
+}
+        String weekRaw = request.getParameter("date");   
         String status = request.getParameter("status");
         String fromTimeRaw = request.getParameter("fromTime");
         String toTimeRaw = request.getParameter("toTime");
@@ -90,10 +90,14 @@ public class FieldScheduleServlet extends HttpServlet {
 
             schedulesByDate.get(d).add(s);
         }
-
-        /* ===== ATTR ===== */
         request.setAttribute("field", field);
         request.setAttribute("schedulesByDate", schedulesByDate);
+        Map<LocalDate, String> displayDateMap = new LinkedHashMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("EEEE\ndd/MM", Locale.forLanguageTag("vi"));
+        for (LocalDate d : schedulesByDate.keySet()) {
+            displayDateMap.put(d, d.format(formatter));
+        }
+        request.setAttribute("displayDateMap", displayDateMap);
 
         request.setAttribute("week", weekStart);
         request.setAttribute("weekStart", weekStart);

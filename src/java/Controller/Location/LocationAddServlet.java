@@ -6,9 +6,14 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.UUID;
+import jakarta.servlet.http.Part;
+
+@MultipartConfig
 
 @WebServlet(name = "LocationAddServlet", urlPatterns = {"/locations/add"})
 public class LocationAddServlet extends HttpServlet {
@@ -34,6 +39,21 @@ public class LocationAddServlet extends HttpServlet {
         String phone = request.getParameter("phoneNumber");
         String imageUrl = request.getParameter("imageUrl");
         String status = request.getParameter("status");
+
+        // handle uploaded file (if provided)
+        try {
+            Part imgPart = request.getPart("image");
+            if (imgPart != null && imgPart.getSize() > 0) {
+                String fileName = Paths.get(imgPart.getSubmittedFileName()).getFileName().toString();
+                String uploadDir = getServletContext().getRealPath("/uploads");
+                new File(uploadDir).mkdirs();
+                imageUrl = "uploads/" + UUID.randomUUID() + "_" + fileName;
+                imgPart.write(getServletContext().getRealPath("/") + imageUrl);
+            }
+        } catch (Exception ex) {
+            // keep fallback behavior if upload failed
+            ex.printStackTrace();
+        }
 
         // ===== FALLBACK =====
         if (imageUrl == null || imageUrl.isBlank()) {
