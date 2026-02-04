@@ -82,49 +82,71 @@ public class VoucherDAO {
         return list;
     }
 
-    public boolean addVoucherToLocation(UUID locationId, String code, BigDecimal discountValue, String description, LocalDate startDate, LocalDate endDate) {
+    public boolean addVoucherToLocation(UUID locationId, String voucherName, String code, BigDecimal discountValue, LocalDate startDate, LocalDate endDate) throws SQLException {
         String insertVoucher = "INSERT INTO Voucher(voucher_id, code, discount_value, description, start_date, end_date, used_count, status) VALUES(?, ?, ?, ?, ?, ?, 0, ?)";
         String insertMapping = "INSERT INTO Location_Voucher(location_id, voucher_id) VALUES(?, ?)";
 
         UUID vid = UUID.randomUUID();
+        Connection con = null;
 
-        try (Connection con = DBConnection.getConnection()) {
+        try {
+            con = DBConnection.getConnection();
+            if (con == null) {
+                throw new SQLException("Không thể kết nối đến database");
+            }
             con.setAutoCommit(false);
 
-            try (PreparedStatement ps1 = con.prepareStatement(insertVoucher);
-                 PreparedStatement ps2 = con.prepareStatement(insertMapping)) {
-
+            try (PreparedStatement ps1 = con.prepareStatement(insertVoucher)) {
                 ps1.setString(1, vid.toString());
                 ps1.setNString(2, code);
-                if (discountValue != null) ps1.setBigDecimal(3, discountValue); else ps1.setNull(3, Types.DECIMAL);
-                ps1.setNString(4, description != null ? description : "");
-                if (startDate != null) ps1.setDate(5, Date.valueOf(startDate)); else ps1.setNull(5, Types.DATE);
-                if (endDate != null) ps1.setDate(6, Date.valueOf(endDate)); else ps1.setNull(6, Types.DATE);
+                if (discountValue != null) {
+                    ps1.setBigDecimal(3, discountValue);
+                } else {
+                    throw new SQLException("Phần trăm giảm giá không được để trống");
+                }
+                ps1.setNString(4, voucherName);
+                ps1.setDate(5, java.sql.Date.valueOf(startDate));
+                ps1.setDate(6, java.sql.Date.valueOf(endDate));
                 ps1.setNString(7, "active");
 
                 int r1 = ps1.executeUpdate();
+                if (r1 != 1) {
+                    con.rollback();
+                    throw new SQLException("Lỗi: Không thể thêm voucher vào database");
+                }
+            }
 
+            try (PreparedStatement ps2 = con.prepareStatement(insertMapping)) {
                 ps2.setString(1, locationId.toString());
                 ps2.setString(2, vid.toString());
                 int r2 = ps2.executeUpdate();
-
-                if (r1 == 1 && r2 == 1) {
-                    con.commit();
-                    return true;
-                } else {
+                if (r2 != 1) {
                     con.rollback();
-                    return false;
+                    throw new SQLException("Lỗi: Không thể thêm mapping Location_Voucher");
                 }
-            } catch (Exception ex) {
-                con.rollback();
-                ex.printStackTrace();
-                return false;
-            } finally {
-                con.setAutoCommit(true);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+
+            con.commit();
+            return true;
+
+        } catch (SQLException e) {
+            if (con != null) {
+                try {
+                    con.rollback();
+                } catch (SQLException rollbackEx) {
+                    rollbackEx.printStackTrace();
+                }
+            }
+            throw e;
+        } finally {
+            if (con != null) {
+                try {
+                    con.setAutoCommit(true);
+                    con.close();
+                } catch (SQLException closeEx) {
+                    closeEx.printStackTrace();
+                }
+            }
         }
     }
 }
