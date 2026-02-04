@@ -72,6 +72,12 @@ public class UpdateLocationEquipmentServlet extends HttpServlet {
                     Integer.parseInt(request.getParameter("quantity"));
             String status =
                     request.getParameter("status");
+            if(quantity == 0) status = "unavailable";
+            if (!"available".equals(status) && !"unavailable".equals(status)) {
+                request.setAttribute("error", "Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')");
+                request.getRequestDispatcher("/View/Equipment/UpdateLocationEquipment.jsp").forward(request, response);
+                return;
+            }
 
             LocationEquipmentDAO dao =
                     new LocationEquipmentDAO(new DBConnection());

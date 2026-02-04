@@ -45,44 +45,53 @@ public class LocationEquipmentListServlet extends HttpServlet {
         String type   = request.getParameter("type");
         String status = request.getParameter("status");
         String sort   = request.getParameter("sort");
-
-        // ===== 4. DAO =====
-        LocationEquipmentDAO dao = new LocationEquipmentDAO(new DBConnection());
-
-        List<LocationEquipmentViewModel> list =
-                dao.getFiltered(
-                        locationId,
-                        search,
-                        type,
-                        status,
-                        sort,
-                        page,
-                        pageSize
-                );
-
-        int totalItems = dao.countFiltered(
-                locationId,
-                search,
-                type,
-                status
+    // ===== 4. DAO =====
+    LocationEquipmentDAO dao = new LocationEquipmentDAO(new DBConnection());
+    List<LocationEquipmentViewModel> list =
+        dao.getFiltered(
+            locationId,
+            search,
+            type,
+            status,
+            sort,
+            page,
+            pageSize
         );
+    int totalItems = dao.countFiltered(
+        locationId,
+        search,
+        type,
+        status
+    );
+    int totalPages = (int) Math.ceil((double) totalItems / pageSize);
 
-        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+    // ===== Lấy tên location =====
+    String locationName = null;
+    try {
+        DAO.LocationDAO locationDAO = new DAO.LocationDAO();
+        List<Models.Location> locations = locationDAO.getAllLocations();
+        for (Models.Location loc : locations) {
+        if (loc.getLocationId().equals(locationId)) {
+            locationName = loc.getLocationName();
+            break;
+        }
+        }
+    } catch (Exception ex) {
+        // ignore, locationName sẽ null nếu lỗi
+    }
 
-        // ===== 5. SET ATTRIBUTE CHO JSP =====
-        request.setAttribute("locationEquipmentList", list);
-        request.setAttribute("locationId", locationId);
-
-        request.setAttribute("currentPage", page);
-        request.setAttribute("totalPages", totalPages);
-
-        request.setAttribute("search", search);
-        request.setAttribute("type", type);
-        request.setAttribute("status", status);
-        request.setAttribute("sort", sort);
-
-        request.getRequestDispatcher(
-                "/View/Equipment/LocationEquipmentList.jsp"
-        ).forward(request, response);
+    // ===== 5. SET ATTRIBUTE CHO JSP =====
+    request.setAttribute("locationEquipmentList", list);
+    request.setAttribute("locationId", locationId);
+    request.setAttribute("locationName", locationName);
+    request.setAttribute("currentPage", page);
+    request.setAttribute("totalPages", totalPages);
+    request.setAttribute("search", search);
+    request.setAttribute("type", type);
+    request.setAttribute("status", status);
+    request.setAttribute("sort", sort);
+    request.getRequestDispatcher(
+        "/View/Equipment/LocationEquipmentList.jsp"
+    ).forward(request, response);
     }
 }

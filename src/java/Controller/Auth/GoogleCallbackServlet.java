@@ -9,8 +9,8 @@ import java.nio.charset.StandardCharsets;
  
 public class GoogleCallbackServlet extends HttpServlet {
 
-    private static final String CLIENT_ID = "546134683118-2hnlovqa88eg8ol483e9gp5lsm2av7pn.apps.googleusercontent.com";
-    private static final String CLIENT_SECRET = "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";
+    private static final String CLIENT_ID = "740421080506-eprsofumm8uoc5dasvbde1v8l8sq4hd2.apps.googleusercontent.com";
+    private static final String CLIENT_SECRET = "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";
     private static final String REDIRECT_URI = "http://localhost:8080/FifaField/oauth2/callback";
 
     @Override

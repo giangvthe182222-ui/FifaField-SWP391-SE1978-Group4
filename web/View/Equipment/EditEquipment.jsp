@@ -1,5 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+
 <!DOCTYPE html>
 <html lang="vi">
     <head>
@@ -38,8 +40,8 @@
                 const fee = document.forms["editForm"]["damage_fee"].value;
 
                 if (parseFloat(price) <= 0 || parseFloat(fee) <= 0) {
-                    alert("Giá thuê và Phí hỏng hóc phải lớn hơn 0");
-                    return false;
+                alert("Giá thuê và Phí hỏng hóc phải lớn hơn 0");
+                return false;
                 }
                 return true;
             }
@@ -97,11 +99,22 @@
                             <div class="relative">
                                 <i data-lucide="tag"
                                    class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                                <input type="text" name="equipment_type" required
+
+                                <input type="text"
+                                       name="equipment_type"
+                                       list="equipmentTypeList"
+                                       required
                                        class="input-fancy"
                                        value="${equipment.equipmentType}">
+
+                                <datalist id="equipmentTypeList">
+                                    <c:forEach items="${typeList}" var="t">
+                                        <option value="${t}"></option>
+                                    </c:forEach>
+                                </datalist>
                             </div>
                         </div>
+
 
                         <div class="space-y-2">
                             <label class="label-fancy">Giá thuê (VNĐ)</label>
@@ -184,6 +197,8 @@
                     </div>
 
                     <button type="submit"
+                            type="button"
+                            onclick="window.location.href = '${pageContext.request.contextPath}/equipment-list"
                             class="w-full py-6 bg-emerald-600 hover:bg-emerald-700
                             text-white font-black rounded-[1.5rem]
                             shadow-2xl uppercase tracking-[0.2em]
@@ -195,7 +210,10 @@
                 </form>
             </div>
         </div>
-
+<p class="text-red-500 text-sm">
+    Debug typeList size: ${fn:length(typeList)}
+</p>
+    
         <script>
             lucide.createIcons();
         </script>

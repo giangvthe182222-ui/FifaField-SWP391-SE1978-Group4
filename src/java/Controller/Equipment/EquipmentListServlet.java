@@ -16,19 +16,21 @@ import java.util.List;
         urlPatterns = "/equipment-list"
 )
 public class EquipmentListServlet extends HttpServlet {
-
+    //Setting Page size
     private static final int PAGE_SIZE = 8;
-
+    //Created by: Giangvthe182222
+    //Function: Get Equipment List
+    //Description: Get the equipment structure list by filter, pagination for equipment struture list page
+    //Note:
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        // ================= FILTER PARAM =================
-        String keyword = trimToNull(request.getParameter("keyword"));
+        //Initialize search parameter, trimToNull to advoid spaces
+        String search = trimToNull(request.getParameter("search"));
         String status = trimToNull(request.getParameter("status"));
         String type = trimToNull(request.getParameter("type"));
-
-        // ================= PAGINATION PARAM =================
+        String sort = trimToNull(request.getParameter("sort"));
+        //ensure first page is always 1
         int page = 1;
         String pageRaw = request.getParameter("page");
         if (pageRaw != null) {
@@ -39,35 +41,29 @@ public class EquipmentListServlet extends HttpServlet {
                 page = 1;
             }
         }
-
-        // ================= DAO =================
+        
         EquipmentDAO dao = new EquipmentDAO(new DBConnection());
-
+        //filter + pagination
         List<Equipment> equipmentList =
-                dao.filter(keyword, status, type, page, PAGE_SIZE);
-
-        int totalRecords = dao.count(keyword, status, type);
+                dao.filter(search, status, type, sort, page, PAGE_SIZE);
+        //total equipment structures after filter
+        int totalRecords = dao.count(search, status, type);
+        //total pages by total records
         int totalPages = (int) Math.ceil((double) totalRecords / PAGE_SIZE);
 
-        // ================= ATTRIBUTE =================
         request.setAttribute("equipmentList", equipmentList);
         request.setAttribute("typeList", dao.getAllTypes());
 
         request.setAttribute("currentPage", page);
         request.setAttribute("totalPages", totalPages);
 
-        request.setAttribute("keyword", keyword);
+        request.setAttribute("search", search);
         request.setAttribute("status", status);
         request.setAttribute("type", type);
+        request.setAttribute("sort", sort);
 
-        // ================= FORWARD =================
         request.getRequestDispatcher("/View/Equipment/EquipmentList.jsp")
                .forward(request, response);
-
-        // ================= LOG =================
-        System.out.println(">>> EquipmentListServlet called");
-        System.out.println("Page: " + page + "/" + totalPages);
-        System.out.println("Total records: " + totalRecords);
     }
 
     @Override
@@ -75,8 +71,7 @@ public class EquipmentListServlet extends HttpServlet {
             throws ServletException, IOException {
         doGet(request, response);
     }
-
-    // ================= UTILS =================
+    //trim to null function
     private String trimToNull(String s) {
         if (s == null) return null;
         s = s.trim();

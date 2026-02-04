@@ -44,7 +44,6 @@ GO
 CREATE TABLE Manager (
     user_id VARCHAR(36) PRIMARY KEY,
     start_date DATE,
-	location_id VARCHAR(36),
     CONSTRAINT FK_Manager_User FOREIGN KEY (user_id) REFERENCES Users(user_id)
 );
 GO
@@ -236,3 +235,22 @@ BEGIN
     FROM Location l
     CROSS JOIN inserted i;
 END;
+
+GO
+CREATE TRIGGER trg_AfterInsertLocation
+ON Location
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    INSERT INTO Location_Equipment (location_id, equipment_id, quantity, status)
+    SELECT 
+        i.location_id,
+        e.equipment_id,
+        0 AS quantity,
+        'unavailable' AS status
+    FROM inserted i
+    CROSS JOIN Equipment e;
+END;
+GO
