@@ -153,6 +153,16 @@ CREATE TABLE Voucher (
 );
 GO
 
+-- Mapping table to assign vouchers to locations
+CREATE TABLE Location_Voucher (
+    location_id VARCHAR(36) NOT NULL,
+    voucher_id VARCHAR(36) NOT NULL,
+    CONSTRAINT PK_Location_Voucher PRIMARY KEY (location_id, voucher_id),
+    CONSTRAINT FK_LV_Location FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    CONSTRAINT FK_LV_Voucher FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id)
+);
+GO
+
 CREATE TABLE Customer_Voucher (
     customer_id VARCHAR(36) NOT NULL,
     voucher_id VARCHAR(36) NOT NULL,

@@ -78,6 +78,25 @@ public class AddManagerServlet extends HttpServlet {
             return;
         }
 
+        // Additional server-side validation
+        if (!fullName.matches("^[\\p{L} .'-]+$")) {
+            request.setAttribute("error", "Họ tên chỉ được chứa chữ cái, khoảng trắng và dấu hợp lệ");
+            doGet(request, response);
+            return;
+        }
+
+        if (!phone.matches("^\\d{9,15}$")) {
+            request.setAttribute("error", "Số điện thoại chỉ chứa 9-15 chữ số");
+            doGet(request, response);
+            return;
+        }
+
+        if (!email.matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            request.setAttribute("error", "Định dạng email không hợp lệ");
+            doGet(request, response);
+            return;
+        }
+
         try {
             LocalDate startDate = LocalDate.parse(startDateStr);
             UUID locationId = UUID.fromString(locationIdStr);
