@@ -97,6 +97,26 @@ public class AddManagerServlet extends HttpServlet {
             return;
         }
 
+        // Check for duplicate email and phone in database
+        try {
+            ManagerDAO managerDAO = new ManagerDAO();
+            if (managerDAO.emailExists(email)) {
+                request.setAttribute("error", "Email đã tồn tại trong hệ thống");
+                doGet(request, response);
+                return;
+            }
+            if (managerDAO.phoneExists(phone)) {
+                request.setAttribute("error", "Số điện thoại đã tồn tại trong hệ thống");
+                doGet(request, response);
+                return;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            request.setAttribute("error", "Lỗi khi kiểm tra dữ liệu: " + e.getMessage());
+            doGet(request, response);
+            return;
+        }
+
         try {
             LocalDate startDate = LocalDate.parse(startDateStr);
             UUID locationId = UUID.fromString(locationIdStr);
