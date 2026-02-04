@@ -70,6 +70,7 @@ public class AuthDAO {
             e.printStackTrace();
         }
         return null;
+    }
     // register staff: create Gmail_Account, Users (role 'staff') and Staff record
     public void registerStaff(
             String fullName,
