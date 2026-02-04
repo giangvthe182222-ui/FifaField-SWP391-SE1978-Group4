@@ -13,6 +13,7 @@ public class Location {
     private String status;
 //    private LocalDateTime createdAt;
     private UUID managerId;
+    private String managerName;
 
     public Location() {}
 
@@ -83,5 +84,13 @@ public class Location {
 
     public void setManagerId(UUID managerId) {
         this.managerId = managerId;
+    }
+
+    public String getManagerName() {
+        return managerName;
+    }
+
+    public void setManagerName(String managerName) {
+        this.managerName = managerName;
     }
 }

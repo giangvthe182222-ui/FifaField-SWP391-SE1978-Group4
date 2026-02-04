@@ -31,8 +31,8 @@ public class LocationDAO {
 
         String sql =
             "INSERT INTO dbo.Location " +
-            "(location_id, location_name, address, phone_number, image_url, status) " +
-            "VALUES (?, ?, ?, ?, ?, ?)";
+            "(location_id, location_name, address, phone_number, image_url, status, manager_id) " +
+            "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -50,6 +50,7 @@ public class LocationDAO {
             ps.setString(4, loc.getPhoneNumber());
             ps.setString(5, loc.getImageUrl());
             ps.setNString(6, loc.getStatus());
+            if (loc.getManagerId() != null) ps.setString(7, loc.getManagerId().toString()); else ps.setNull(7, Types.VARCHAR);
 
             int rows = ps.executeUpdate();
 
@@ -63,9 +64,10 @@ public class LocationDAO {
         List<Location> locations = new ArrayList<>();
 
         String sql = 
-            "SELECT location_id, location_name, address, phone_number, image_url, status " +
-            "FROM dbo.Location " +
-            "ORDER BY location_name ASC";
+            "SELECT l.location_id, l.location_name, l.address, l.phone_number, l.image_url, l.status, l.manager_id, u.full_name AS manager_name " +
+            "FROM dbo.Location l " +
+            "LEFT JOIN Users u ON l.manager_id = u.user_id " +
+            "ORDER BY l.location_name ASC";
 
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -85,8 +87,9 @@ public class LocationDAO {
                 loc.setPhoneNumber(rs.getString("phone_number"));
                 loc.setImageUrl(rs.getString("image_url"));
                 loc.setStatus(rs.getNString("status"));
-                // nếu model có managerId thì thêm dòng này:
-                // loc.setManagerId(rs.getString("manager_id") != null ? UUID.fromString(rs.getString("manager_id")) : null);
+                String mgr = rs.getString("manager_id");
+                if (mgr != null && !mgr.isBlank()) loc.setManagerId(UUID.fromString(mgr));
+                loc.setManagerName(rs.getString("manager_name"));
 
                 locations.add(loc);
                 count++;
@@ -103,8 +106,8 @@ public class LocationDAO {
     }
 
     public Location getLocationById(UUID id) throws SQLException {
-        String sql = "SELECT location_id, location_name, address, phone_number, image_url, status " +
-                     "FROM dbo.Location WHERE location_id = ?";
+        String sql = "SELECT l.location_id, l.location_name, l.address, l.phone_number, l.image_url, l.status, l.manager_id, u.full_name AS manager_name " +
+                 "FROM dbo.Location l LEFT JOIN Users u ON l.manager_id = u.user_id WHERE l.location_id = ?";
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, id.toString());
@@ -117,6 +120,9 @@ public class LocationDAO {
                     loc.setPhoneNumber(rs.getString("phone_number"));
                     loc.setImageUrl(rs.getString("image_url"));
                     loc.setStatus(rs.getNString("status"));
+                    String mgr = rs.getString("manager_id");
+                    if (mgr != null && !mgr.isBlank()) loc.setManagerId(UUID.fromString(mgr));
+                    loc.setManagerName(rs.getString("manager_name"));
                     return loc;
                 }
                 return null;
@@ -125,8 +131,8 @@ public class LocationDAO {
     }
 
     public boolean updateLocation(Location loc) throws SQLException {
-        String sql = "UPDATE dbo.Location SET location_name = ?, address = ?, phone_number = ?, image_url = ?, status = ? " +
-                     "WHERE location_id = ?";
+        String sql = "UPDATE dbo.Location SET location_name = ?, address = ?, phone_number = ?, image_url = ?, status = ?, manager_id = ? " +
+                 "WHERE location_id = ?";
 
         try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setNString(1, loc.getLocationName());
@@ -134,7 +140,8 @@ public class LocationDAO {
             ps.setString(3, loc.getPhoneNumber());
             ps.setString(4, loc.getImageUrl());
             ps.setNString(5, loc.getStatus());
-            ps.setString(6, loc.getLocationId().toString());
+            if (loc.getManagerId() != null) ps.setString(6, loc.getManagerId().toString()); else ps.setNull(6, Types.VARCHAR);
+            ps.setString(7, loc.getLocationId().toString());
 
             int rows = ps.executeUpdate();
             return rows == 1;
