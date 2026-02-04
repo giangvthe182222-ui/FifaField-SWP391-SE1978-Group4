@@ -23,8 +23,13 @@ public class AddEquipmentServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        DBConnection db = new DBConnection();
+        EquipmentDAO dao = new EquipmentDAO(db);
+        request.setAttribute("typeList",dao.getAllTypes()); 
         request.getRequestDispatcher("View/Equipment/AddEquipment.jsp")
                .forward(request, response);
+        
+        
     }
 
     @Override
@@ -43,12 +48,12 @@ public class AddEquipmentServlet extends HttpServlet {
         BigDecimal rental = null;
         BigDecimal damage = null;
 
-        // Validate status
+       
         if (!"available".equals(status) && !"unavailable".equals(status)) {
             error = "Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')";
         }
 
-        // Validate numbers
+        
         try {
             rental = new BigDecimal(rentalRaw);
             damage = new BigDecimal(damageRaw);
@@ -59,7 +64,7 @@ public class AddEquipmentServlet extends HttpServlet {
             error = "Giá trị số không hợp lệ";
         }
 
-        // Validate required fields
+        
         if (name == null || name.isBlank() || type == null || type.isBlank()) {
             error = "Vui lòng nhập đầy đủ tên và loại thiết bị";
         }
@@ -85,7 +90,7 @@ public class AddEquipmentServlet extends HttpServlet {
             return;
         }
 
-        // ===== CREATE MODEL =====
+        
         UUID equipmentId = UUID.randomUUID();
 
         Equipment e = new Equipment();

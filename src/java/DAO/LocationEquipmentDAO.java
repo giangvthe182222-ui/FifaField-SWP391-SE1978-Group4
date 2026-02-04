@@ -217,5 +217,22 @@ public class LocationEquipmentDAO {
         }
         return null;
     }
-    
+
+    public boolean updateStatus(UUID locationId, UUID equipmentId) {
+    String sql = "UPDATE Location_Equipment SET status = CASE WHEN quantity <= 0 THEN 'unavailable' ELSE 'available' END WHERE location_id = ? AND equipment_id = ?";
+
+    try (Connection c = db.getConnection();
+         PreparedStatement ps = c.prepareStatement(sql)) {
+
+        ps.setString(1, locationId.toString());
+        ps.setString(2, equipmentId.toString());
+
+        return ps.executeUpdate() > 0;
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return false;
+}
+
 }

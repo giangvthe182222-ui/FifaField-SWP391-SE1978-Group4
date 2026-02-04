@@ -91,12 +91,25 @@
                     </div>
 
                     <div class="space-y-2">
-                        <label class="label-fancy">Loại thiết bị</label>
-                        <div class="relative">
-                            <i data-lucide="tag" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                            <input type="text" name="equipment_type" required class="input-fancy" placeholder="Ví dụ: Dụng cụ thi đấu">
+                            <label class="label-fancy">Loại thiết bị</label>
+                            <div class="relative">
+                                <i data-lucide="tag"
+                                   class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+
+                                <input type="text"
+                                       name="equipment_type"
+                                       list="equipmentTypeList"
+                                       required
+                                       class="input-fancy"
+                                       value="">
+
+                                <datalist id="equipmentTypeList">
+                                    <c:forEach items="${typeList}" var="t">
+                                        <option value="${t}"></option>
+                                    </c:forEach>
+                                </datalist>
+                            </div>
                         </div>
-                    </div>
 
                     <div class="space-y-2">
                         <label class="label-fancy">Giá thuê (VNĐ)</label>
