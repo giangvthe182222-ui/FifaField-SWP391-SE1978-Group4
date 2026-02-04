@@ -80,7 +80,7 @@
                             <div class="absolute left-4 top-1/2 -translate-y-1/2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                             </div>
-                            <input type="email" name="email" required placeholder="example@fifafield.com"
+                            <input type="email" name="email" value="${email}" required placeholder="example@fifafield.com"
 class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#008751]/5 focus:border-[#008751] focus:bg-white transition-all text-sm font-bold text-gray-700">
                         </div>
                     </div>
@@ -194,8 +194,8 @@ class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focu
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
                             </div>
                             <select name="status" required class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-[#008751]/5 focus:border-[#008751] appearance-none font-bold text-sm text-gray-700 cursor-pointer">
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
+                                <option value="active" <c:if test="${status == 'active'}">selected</c:if>>Active</option>
+                                <option value="inactive" <c:if test="${status == 'inactive'}">selected</c:if>>Inactive</option>
                             </select>
                         </div>
                     </div>
