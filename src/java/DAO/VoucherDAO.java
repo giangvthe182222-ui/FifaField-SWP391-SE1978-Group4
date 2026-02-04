@@ -68,7 +68,7 @@ public class VoucherDAO {
 
     public List<Voucher> getByLocation(UUID locationId) {
         List<Voucher> list = new ArrayList<>();
-        String sql = "SELECT v.* FROM Voucher v JOIN Location_Voucher lv ON v.voucher_id = lv.voucher_id WHERE lv.location_id = ?";
+        String sql = "SELECT v.* FROM Voucher v WHERE v.location_id = ? ORDER BY v.start_date DESC";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, locationId.toString());
@@ -82,71 +82,41 @@ public class VoucherDAO {
         return list;
     }
 
+    public List<Voucher> getAllVouchers() {
+        List<Voucher> list = new ArrayList<>();
+        String sql = "SELECT * FROM Voucher ORDER BY start_date DESC";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql); ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public boolean addVoucherToLocation(UUID locationId, String voucherName, String code, BigDecimal discountValue, LocalDate startDate, LocalDate endDate) throws SQLException {
-        String insertVoucher = "INSERT INTO Voucher(voucher_id, code, discount_value, description, start_date, end_date, used_count, status) VALUES(?, ?, ?, ?, ?, ?, 0, ?)";
-        String insertMapping = "INSERT INTO Location_Voucher(location_id, voucher_id) VALUES(?, ?)";
+        String insertVoucher = "INSERT INTO Voucher(voucher_id, code, discount_value, description, start_date, end_date, location_id, used_count, status) VALUES(?, ?, ?, ?, ?, ?, ?, 0, ?)";
 
         UUID vid = UUID.randomUUID();
-        Connection con = null;
-
-        try {
-            con = DBConnection.getConnection();
-            if (con == null) {
-                throw new SQLException("Không thể kết nối đến database");
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(insertVoucher)) {
+            if (con == null) throw new SQLException("Không thể kết nối đến database");
+            ps.setString(1, vid.toString());
+            ps.setNString(2, code);
+            if (discountValue != null) {
+                ps.setBigDecimal(3, discountValue);
+            } else {
+                throw new SQLException("Phần trăm giảm giá không được để trống");
             }
-            con.setAutoCommit(false);
+            ps.setNString(4, voucherName);
+            ps.setDate(5, java.sql.Date.valueOf(startDate));
+            ps.setDate(6, java.sql.Date.valueOf(endDate));
+            if (locationId != null) ps.setString(7, locationId.toString()); else ps.setNull(7, Types.VARCHAR);
+            ps.setNString(8, "active");
 
-            try (PreparedStatement ps1 = con.prepareStatement(insertVoucher)) {
-                ps1.setString(1, vid.toString());
-                ps1.setNString(2, code);
-                if (discountValue != null) {
-                    ps1.setBigDecimal(3, discountValue);
-                } else {
-                    throw new SQLException("Phần trăm giảm giá không được để trống");
-                }
-                ps1.setNString(4, voucherName);
-                ps1.setDate(5, java.sql.Date.valueOf(startDate));
-                ps1.setDate(6, java.sql.Date.valueOf(endDate));
-                ps1.setNString(7, "active");
-
-                int r1 = ps1.executeUpdate();
-                if (r1 != 1) {
-                    con.rollback();
-                    throw new SQLException("Lỗi: Không thể thêm voucher vào database");
-                }
-            }
-
-            try (PreparedStatement ps2 = con.prepareStatement(insertMapping)) {
-                ps2.setString(1, locationId.toString());
-                ps2.setString(2, vid.toString());
-                int r2 = ps2.executeUpdate();
-                if (r2 != 1) {
-                    con.rollback();
-                    throw new SQLException("Lỗi: Không thể thêm mapping Location_Voucher");
-                }
-            }
-
-            con.commit();
-            return true;
-
-        } catch (SQLException e) {
-            if (con != null) {
-                try {
-                    con.rollback();
-                } catch (SQLException rollbackEx) {
-                    rollbackEx.printStackTrace();
-                }
-            }
-            throw e;
-        } finally {
-            if (con != null) {
-                try {
-                    con.setAutoCommit(true);
-                    con.close();
-                } catch (SQLException closeEx) {
-                    closeEx.printStackTrace();
-                }
-            }
+            int rows = ps.executeUpdate();
+            return rows == 1;
         }
     }
 }
