@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 public class VoucherDAO {
 
     public Voucher getVoucherById(String id) throws SQLException {
-        String sql = "SELECT voucher_id, location_id, code, discount_value, description, start_date, end_date, used_count, status, created_at FROM Voucher WHERE voucher_id = ?";
+        String sql = "SELECT voucher_id, location_id, code, discount_value, description, start_date, end_date, used_count, status FROM Voucher WHERE voucher_id = ?";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
@@ -29,7 +29,6 @@ public class VoucherDAO {
                     Date ed = rs.getDate("end_date"); if (ed != null) v.setEndDate(ed.toLocalDate());
                     v.setUsedCount(rs.getInt("used_count"));
                     v.setStatus(rs.getString("status"));
-                    Timestamp ct = rs.getTimestamp("created_at"); if (ct != null) v.setCreatedAt(ct.toLocalDateTime());
                     return v;
                 }
             }

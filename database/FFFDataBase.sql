@@ -60,6 +60,8 @@ CREATE TABLE Location (
 );
 GO
 
+
+
 CREATE TABLE Staff (
     user_id VARCHAR(36) PRIMARY KEY,
     employee_code NVARCHAR(50) UNIQUE,
@@ -140,7 +142,7 @@ CREATE TABLE Staff_Shift (
     CONSTRAINT FK_SS_Manager FOREIGN KEY (assigned_by) REFERENCES Manager(user_id)
 );
 GO
-
+drop table Voucher
 CREATE TABLE Voucher (
     voucher_id VARCHAR(36) PRIMARY KEY,
     code NVARCHAR(50) UNIQUE,
@@ -159,6 +161,15 @@ CREATE TABLE Voucher (
 GO
 
 
+-- Mapping table to assign vouchers to locations
+CREATE TABLE Location_Voucher (
+    location_id VARCHAR(36) NOT NULL,
+    voucher_id VARCHAR(36) NOT NULL,
+    CONSTRAINT PK_Location_Voucher PRIMARY KEY (location_id, voucher_id),
+    CONSTRAINT FK_LV_Location FOREIGN KEY (location_id) REFERENCES Location(location_id),
+    CONSTRAINT FK_LV_Voucher FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id)
+);
+GO
 
 CREATE TABLE Customer_Voucher (
     customer_id VARCHAR(36) NOT NULL,
