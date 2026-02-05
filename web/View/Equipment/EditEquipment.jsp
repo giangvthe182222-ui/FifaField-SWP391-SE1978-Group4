@@ -224,7 +224,7 @@
                             shadow-2xl uppercase tracking-[0.2em]
                             flex items-center justify-center gap-3">
                         <i data-lucide="save" class="w-5 h-5"></i>
-                        CẬP NHẬT THIẾT BỊ
+                        CẬP NHẬT 
                     </button>
 
                 </form>

@@ -180,13 +180,14 @@
                     </div>
 
                     <button type="submit" class="w-full py-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-[1.5rem] shadow-2xl shadow-emerald-100 transition-all active:scale-[0.98] uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3">
-                        <i data-lucide="plus-circle" class="w-5 h-5"></i> XÁC NHẬN THÊM THIẾT BỊ
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i> THÊM DỤNG CỤ 
                     </button>
                 </form>
             </div>
         </div>
 
         <script>lucide.createIcons();</script>
+        <jsp:include page="/View/Layout/Footer.jsp"/>
     </body>
-    <jsp:include page="/View/Layout/Footer.jsp"/>
+   
 </html>

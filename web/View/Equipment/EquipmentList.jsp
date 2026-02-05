@@ -124,82 +124,109 @@
     <!-- GRID -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
 
-        <c:forEach var="e" items="${equipmentList}">
-            <div class="equipment-card bg-white border-2 border-gray-50 rounded-[2.8rem]
-                        overflow-hidden transition-all hover:shadow-2xl
-                        hover:shadow-[#008751]/5 hover:border-[#008751]
-                        flex flex-col">
+       <c:forEach var="e" items="${equipmentList}">
+    <div class="equipment-card
+                bg-white border-2 border-gray-50 rounded-[2.8rem]
+                overflow-hidden transition-all
+                hover:shadow-2xl hover:shadow-[#008751]/5
+                hover:border-[#008751]
+                flex flex-col group">
 
-                <!-- IMAGE (hover zoom + overlay) -->
-                <div class="relative h-52 bg-gray-100 overflow-hidden group">
-                    <img src="${e.imageUrl}"
-                         class="w-full h-full object-cover
-                                group-hover:scale-110 transition-transform duration-700">
-                    <div class="absolute inset-0 bg-gradient-to-t
-                                from-black/30 to-transparent
-                                opacity-0 group-hover:opacity-100 transition-opacity">
-                    </div>
-                </div>
+        <!-- IMAGE -->
+        <div class="relative h-52 bg-gray-100 overflow-hidden">
+            <img src="${e.imageUrl}"
+                 class="w-full h-full object-cover
+                        transition-transform duration-700
+                        group-hover:scale-110">
+        </div>
 
-                <!-- CONTENT -->
-                <div class="p-6 flex flex-col gap-4 flex-1">
+        <!-- CONTENT -->
+        <div class="p-6 flex flex-col gap-4 flex-1">
 
-                    <h3 class="text-lg font-black leading-tight">
-                        ${e.name}
-                    </h3>
+            <h3 class="text-lg font-black leading-tight">
+                ${e.name}
+            </h3>
 
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        ${e.equipmentType}
+            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                ${e.equipmentType}
+            </p>
+
+            <div class="grid grid-cols-2 gap-4 py-4 border-y border-gray-100">
+                <div>
+                    <p class="text-[9px] font-black text-gray-400 uppercase">Giá thuê</p>
+                    <p class="text-sm font-medium text-gray-700">
+                        ${e.rentalPrice}đ
                     </p>
+                </div>
+                <div>
+                    <p class="text-[9px] font-black text-gray-400 uppercase">Phí hỏng</p>
+                    <p class="text-sm font-medium text-gray-700">
+                        ${e.damageFee}đ
+                    </p>
+                </div>
+            </div>
 
-                    <div class="grid grid-cols-2 gap-4 py-4 border-y border-gray-100">
-                        <div>
-                            <p class="text-[9px] font-black text-gray-400 uppercase">Giá thuê</p>
-                            <p class="text-sm font-medium text-gray-700">
-                                ${e.rentalPrice}đ
-                            </p>
-                        </div>
-                        <div>
-                            <p class="text-[9px] font-black text-gray-400 uppercase">Phí hỏng</p>
-                            <p class="text-sm font-medium text-gray-700">
-                                ${e.damageFee}đ
-                            </p>
-                        </div>
-                    </div>
+            <!-- FOOTER -->
+            <div class="flex justify-between items-center mt-auto">
 
-                    <!-- FOOTER -->
-                    <div class="flex justify-between items-center mt-auto">
+                <!-- STATUS -->
+                <form action="update-equipment-status"
+                      method="post">
 
-                        <!-- STATUS EDIT -->
-                        <form action="update-equipment-status" method="post">
-                            <input type="hidden" name="id" value="${e.equipmentId}">
-                            <select name="newStatus"
-                                    onchange="if(confirm('Thay đổi trạng thái?'))this.form.submit();else this.value='${e.status}'"
-                                    class="px-4 py-2 rounded-xl text-[10px] font-black uppercase
-                                    ${e.status=='available'
+                    <input type="hidden" name="id" value="${e.equipmentId}">
+
+                    <select name="newStatus"
+                            onchange="if(confirm('Thay đổi trạng thái?'))
+                                      this.form.submit();
+                                      else this.value='${e.status}'"
+                            class="px-4 py-2 rounded-xl
+                                   text-[10px] font-black uppercase
+                                   ${e.status=='available'
                                       ? 'bg-emerald-100 text-emerald-700'
                                       : 'bg-gray-100 text-gray-600'}">
-                                <option value="available" ${e.status=='available'?'selected':''}>available</option>
-                                <option value="unavailable" ${e.status=='unavailable'?'selected':''}>unavailable</option>
-                            </select>
-                        </form>
+                        <option value="available"
+                                ${e.status=='available'?'selected':''}>
+                            available
+                        </option>
+                        <option value="unavailable"
+                                ${e.status=='unavailable'?'selected':''}>
+                            unavailable
+                        </option>
+                    </select>
+                </form>
 
-                        <!-- ACTION -->
-                        <div class="flex gap-2">
-<!--                            <a href="equipment-detail?id=${e.equipmentId}"
-                               class="p-2 rounded-xl hover:bg-emerald-50 text-gray-500 hover:text-emerald-600">
-                                <i data-lucide="eye" class="w-4 h-4"></i>
-                            </a>-->
-                            <a href="edit-equipment?id=${e.equipmentId}"
-                               class="p-2 rounded-xl hover:bg-blue-50 text-gray-500 hover:text-blue-600">
-                                <i data-lucide="edit-3" class="w-4 h-4"></i>
-                            </a>
-                        </div>
-                    </div>
+                <!-- ACTIONS -->
+                <div class="flex gap-2">
+
+                    <!-- VIEW -->
+                    <a href="equipment-detail?id=${e.equipmentId}"
+                       class="p-2 rounded-xl
+                              hover:bg-emerald-50
+                              text-gray-500 hover:text-emerald-600
+                              transition"
+                       title="Xem chi tiết">
+                        <i data-lucide="eye" class="w-4 h-4"></i>
+                    </a>
+
+                    <!-- EDIT -->
+                    <a href="edit-equipment?id=${e.equipmentId}"
+                       class="p-2 rounded-xl
+                              hover:bg-blue-50
+                              text-gray-500 hover:text-blue-600
+                              transition"
+                       title="Chỉnh sửa">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                    </a>
 
                 </div>
             </div>
-        </c:forEach>
+
+        </div>
+    </div>
+</c:forEach>
+
+
+
 
         <c:if test="${empty equipmentList}">
             <div class="col-span-full py-32 text-center text-gray-400 font-bold">
