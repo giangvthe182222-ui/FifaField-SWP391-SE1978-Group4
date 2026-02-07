@@ -142,7 +142,7 @@ CREATE TABLE Staff_Shift (
     CONSTRAINT FK_SS_Manager FOREIGN KEY (assigned_by) REFERENCES Manager(user_id)
 );
 GO
-drop table Voucher
+
 CREATE TABLE Voucher (
     voucher_id VARCHAR(36) PRIMARY KEY,
     code NVARCHAR(50) UNIQUE,
@@ -168,16 +168,6 @@ CREATE TABLE Location_Voucher (
     CONSTRAINT PK_Location_Voucher PRIMARY KEY (location_id, voucher_id),
     CONSTRAINT FK_LV_Location FOREIGN KEY (location_id) REFERENCES Location(location_id),
     CONSTRAINT FK_LV_Voucher FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id)
-);
-GO
-
-CREATE TABLE Customer_Voucher (
-    customer_id VARCHAR(36) NOT NULL,
-    voucher_id VARCHAR(36) NOT NULL,
-    is_used BIT DEFAULT 0,
-    CONSTRAINT PK_Customer_Voucher PRIMARY KEY (customer_id, voucher_id),
-    CONSTRAINT FK_CV_Customer FOREIGN KEY (customer_id) REFERENCES Customer(user_id),
-    CONSTRAINT FK_CV_Voucher FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id)
 );
 GO
 
