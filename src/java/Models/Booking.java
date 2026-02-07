@@ -14,7 +14,6 @@ import java.math.BigDecimal;
 public class Booking {
     private UUID bookingId;
     private UUID bookerId;
-    private UUID customerId;
     private UUID scheduleId;
     private UUID voucherId;
     private LocalDateTime bookingTime;
@@ -29,7 +28,6 @@ public class Booking {
                    BigDecimal totalPrice) {
         this.bookingId = bookingId;
         this.bookerId = bookerId;
-        this.customerId = customerId;
         this.scheduleId = scheduleId;
         this.voucherId = voucherId;
         this.bookingTime = bookingTime;
@@ -42,9 +40,6 @@ public class Booking {
 
     public UUID getBookerId() { return bookerId; }
     public void setBookerId(UUID bookerId) { this.bookerId = bookerId; }
-
-    public UUID getCustomerId() { return customerId; }
-    public void setCustomerId(UUID customerId) { this.customerId = customerId; }
 
     public UUID getScheduleId() { return scheduleId; }
     public void setScheduleId(UUID scheduleId) { this.scheduleId = scheduleId; }
