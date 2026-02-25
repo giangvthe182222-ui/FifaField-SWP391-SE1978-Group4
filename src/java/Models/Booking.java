@@ -14,26 +14,32 @@ import java.math.BigDecimal;
 public class Booking {
     private UUID bookingId;
     private UUID bookerId;
+    private UUID fieldId;
     private UUID scheduleId;
     private UUID voucherId;
+    
     private LocalDateTime bookingTime;
     private String status;
     private BigDecimal totalPrice;
 
     public Booking() {}
 
-    public Booking(UUID bookingId, UUID bookerId, UUID customerId,
+    public Booking(UUID bookingId, UUID bookerId, UUID fieldId,
                    UUID scheduleId, UUID voucherId,
                    LocalDateTime bookingTime, String status,
                    BigDecimal totalPrice) {
         this.bookingId = bookingId;
         this.bookerId = bookerId;
+        this.fieldId = fieldId;
         this.scheduleId = scheduleId;
         this.voucherId = voucherId;
         this.bookingTime = bookingTime;
         this.status = status;
         this.totalPrice = totalPrice;
     }
+
+    public UUID getFieldId() { return fieldId; }
+    public void setFieldId(UUID fieldId) { this.fieldId = fieldId; }
 
     public UUID getBookingId() { return bookingId; }
     public void setBookingId(UUID bookingId) { this.bookingId = bookingId; }

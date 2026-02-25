@@ -79,6 +79,8 @@ public class LoginServlet extends HttpServlet {
                 redirectUrl = "/View/Auth/homepage.jsp"; // Assuming staff dashboard
                 break;
             case "customer":
+                redirectUrl = "/booking";
+                break;
             default:
                 redirectUrl = "/View/Auth/homepage.jsp";
                 break;
