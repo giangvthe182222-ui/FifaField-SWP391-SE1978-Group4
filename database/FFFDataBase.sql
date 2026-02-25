@@ -174,7 +174,6 @@ GO
 CREATE TABLE Booking (
     booking_id VARCHAR(36) PRIMARY KEY,
     booker_id VARCHAR(36) NOT NULL,
-    customer_id VARCHAR(36) NULL,
     schedule_id VARCHAR(36) NOT NULL,
     field_id VARCHAR(36) NOT NULL,
     voucher_id VARCHAR(36) NULL,
