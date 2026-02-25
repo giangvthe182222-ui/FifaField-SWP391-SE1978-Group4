@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -19,7 +20,7 @@ import java.util.stream.Collectors;
 @WebServlet(name = "BookingServlet", urlPatterns = {"/booking", "/BookingServlet"})
 public class BookingServlet extends HttpServlet {
 
-    @Override       
+    @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -84,18 +85,32 @@ public class BookingServlet extends HttpServlet {
                 vouchers = allVouchers.stream()
                         .filter(v -> v.getStatus() != null && "active".equalsIgnoreCase(v.getStatus()))
                         .filter(v -> (v.getStartDate() == null || !v.getStartDate().isAfter(today))
-                                && (v.getEndDate() == null || !v.getEndDate().isBefore(today)))
+                        && (v.getEndDate() == null || !v.getEndDate().isBefore(today)))
                         .collect(Collectors.toList());
                 request.setAttribute("vouchers", vouchers);
 
                 if (fieldIdParam != null && !fieldIdParam.isBlank()) {
+
                     UUID fieldId = UUID.fromString(fieldIdParam);
                     request.setAttribute("selectedFieldId", fieldId);
 
                     ScheduleDAO scheduleDAO = new ScheduleDAO();
                     List<Schedule> allSchedules = scheduleDAO.getScheduleByField(fieldId);
+
+                    LocalDateTime now = LocalDateTime.now();
+
                     schedules = allSchedules.stream()
-                            .filter(s -> s.getStatus() == null || "available".equalsIgnoreCase(s.getStatus()))
+                            // chỉ lấy available
+                            .filter(s -> s.getStatus() == null
+                            || "available".equalsIgnoreCase(s.getStatus()))
+                            // chỉ lấy lịch chưa quá thời gian
+                            .filter(s -> {
+                                LocalDateTime scheduleDateTime = LocalDateTime.of(
+                                        s.getBookingDate(),
+                                        s.getStartTime()
+                                );
+                                return scheduleDateTime.isAfter(now);
+                            })
                             .collect(Collectors.toList());
                 }
             }

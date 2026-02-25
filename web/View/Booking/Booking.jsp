@@ -362,11 +362,11 @@
         document.querySelectorAll('.equipment-qty').forEach(function(inp) {
             equipmentTotal += (parseInt(inp.value, 10) || 0) * parseNum(inp.getAttribute('data-unit-price'));
         });
-        var subtotal = schedulePrice + equipmentTotal;
+        var subtotal = schedulePrice;
         var discount = 0;
         var vSel = document.getElementById('voucherId');
         if (vSel) discount = parseNum(vSel.options[vSel.selectedIndex].getAttribute('data-discount'));
-        var total = subtotal * (1 - discount / 100);
+        var total = subtotal * (1 - discount / 100) + equipmentTotal;
 
         document.getElementById('schedulePriceText').textContent = fmt(schedulePrice);
         document.getElementById('equipmentPriceText').textContent = fmt(equipmentTotal);
@@ -396,12 +396,14 @@
         arr.forEach(function(d) {
             var dObj = new Date(d);
             var dayNum = dObj.getDate();
+            var dayMonth = dObj.getMonth()+1;
             var dayNames = ['CN','T2','T3','T4','T5','T6','T7'];
             var dayName = dayNames[dObj.getDay()];
+            
             var sel = d === selectedDate ? ' selected' : '';
             html += '<div class="date-card group elite-card shrink-0 min-w-[80px] p-6 border-2 border-gray-100 flex flex-col items-center justify-center cursor-pointer transition-all hover:border-[#008751] bg-white' + sel + '" data-date="' + d + '">' + 
                     '<span class="text-[10px] font-black uppercase tracking-widest opacity-60">' + dayName + '</span>' + 
-                    '<span class="text-2xl font-black mt-1 leading-none">' + dayNum + '</span>' + 
+                    '<span class="text-2xl font-black mt-1 leading-none">' + dayNum + '/'+ dayMonth + '</span>' + 
                     '</div>';
         });
         var row = document.getElementById('dateRow');
