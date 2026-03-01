@@ -9,6 +9,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .manager-card:hover { transform: translateY(-5px); }
@@ -56,93 +57,76 @@
         </div>
     </c:if>
 
-    <!-- MANAGER GRID -->
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <c:choose>
-            <c:when test="${empty managers}">
-                <div class="col-span-full py-32 bg-white rounded-[3rem] border border-gray-100 flex flex-col items-center justify-center text-center space-y-4">
-                    <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-200">
-                        <i data-lucide="users" class="w-10 h-10"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight">Trống danh sách</h3>
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Chưa có tài khoản quản lý nào được khởi tạo</p>
-                    </div>
-                </div>
-            </c:when>
-            <c:otherwise>
-                <c:forEach items="${managers}" var="manager">
-                    <div class="manager-card group bg-white rounded-[3rem] border border-gray-100 shadow-xl shadow-gray-200/50 transition-all flex flex-col relative overflow-hidden">
-                        
-                        <!-- Ghost Icon Decor -->
-                        <div class="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-all pointer-events-none">
-                            <i data-lucide="shield-check" class="w-32 h-32"></i>
-                        </div>
-
-                        <!-- Top Info -->
-                        <div class="p-8 space-y-6 flex-1 relative z-10">
-                            <div class="flex justify-between items-start">
-                                <div class="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-gray-900/20 group-hover:bg-[#008751] transition-all duration-500">
-                                    ${manager.fullName.charAt(0)}
-                                </div>
-                                <div class={`px-3 py-1.5 rounded-full text-[8px] font-black tracking-widest uppercase flex items-center gap-2 
-                                    ${manager.status == 'active' ? 'bg-emerald-50 text-[#008751]' : 'bg-gray-100 text-gray-400'}`}>
-                                    <span class={`w-1.5 h-1.5 rounded-full ${manager.status == 'active' ? 'bg-[#008751] animate-pulse' : 'bg-gray-400'}`}></span>
-                                    ${manager.status == 'active' ? 'ĐANG HOẠT ĐỘNG' : 'TẠM KHÓA'}
-                                </div>
-                            </div>
-
-                            <div>
-                                <h3 class="text-2xl font-black text-gray-900 tracking-tighter leading-none group-hover:text-[#008751] transition-colors">${manager.fullName}</h3>
-                                <p class="text-[10px] font-black text-[#008751] uppercase tracking-[0.2em] mt-2 opacity-70">${manager.locationName}</p>
-</div>
-
-                            <!-- Detail List -->
-                            <div class="space-y-4 pt-6 border-t border-gray-50">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
-                                        <i data-lucide="mail" class="w-4 h-4"></i>
+    <!-- MANAGER TABLE -->
+    <div class="overflow-x-auto bg-white shadow rounded-lg">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avatar</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Họ tên</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cụm sân</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SĐT</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày bắt đầu</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Hành động</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-100">
+                <c:choose>
+                    <c:when test="${empty managers}">
+                        <tr>
+                            <td colspan="8" class="py-12 text-center text-gray-500">Trống danh sách - chưa có tài khoản quản lý nào được khởi tạo</td>
+                        </tr>
+                    </c:when>
+                    <c:otherwise>
+                        <c:forEach items="${managers}" var="manager">
+                            <tr x-data="{ open:false, status:'${manager.status}' }" class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center text-white font-black text-sm">
+                                        ${manager.fullName.charAt(0)}
                                     </div>
-                                    <span class="text-xs font-bold text-gray-600 truncate">${manager.email}</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
-                                        <i data-lucide="phone" class="w-4 h-4"></i>
-                                    </div>
-                                    <span class="text-xs font-bold text-gray-600">${manager.phone}</span>
-                                </div>
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400">
-                                        <i data-lucide="calendar" class="w-4 h-4"></i>
-                                    </div>
-                                    <div>
-                                        <p class="text-[8px] font-black text-gray-300 uppercase tracking-widest leading-none mb-1">Ngày bắt đầu</p>
-                                        <p class="text-[10px] font-black text-gray-600 uppercase tracking-tight">${manager.startDate}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${manager.fullName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${manager.locationName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 truncate">${manager.email}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${manager.phone}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">${manager.startDate}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <div class="relative inline-block text-left">
+                                        <button @click.prevent="open = !open" type="button"
+                                            :class="status == 'active' ? 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-[#008751]' : 'inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600'"
+                                            class="focus:outline-none">
+                                            <span :class="status == 'active' ? 'w-2 h-2 rounded-full mr-2 bg-[#008751] animate-pulse' : 'w-2 h-2 rounded-full mr-2 bg-gray-400'"></span>
+                                            <span x-text="status == 'active' ? 'ĐANG HOẠT ĐỘNG' : 'TẠM KHÓA'"></span>
+                                            <svg class="ml-2 h-3 w-3 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                                            </svg>
+                                        </button>
 
-                        <!-- Actions Area -->
-                        <div class="flex border-t border-gray-50 bg-gray-50/30">
-                            <a href="${pageContext.request.contextPath}/manager-detail?manager_id=${manager.userId}" 
-                               class="flex-1 py-5 flex items-center justify-center gap-2 text-[9px] font-black text-gray-400 hover:text-gray-900 hover:bg-white transition-all uppercase tracking-widest border-r border-gray-50">
-                                <i data-lucide="eye" class="w-3.5 h-3.5"></i> CHI TIẾT
-                            </a>
-                            <a href="${pageContext.request.contextPath}/manager-edit?manager_id=${manager.userId}" 
-                               class="flex-1 py-5 flex items-center justify-center gap-2 text-[9px] font-black text-blue-500 hover:bg-white transition-all uppercase tracking-widest border-r border-gray-50">
-                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> SỬA
-                            </a>
-                            <a href="#"
-onclick="if(confirm('Bạn chắc chắn muốn xóa?')) { window.location='${pageContext.request.contextPath}/manager-delete?manager_id=${manager.userId}'; } return false;"
-                               class="flex-1 py-5 flex items-center justify-center gap-2 text-[9px] font-black text-rose-500 hover:bg-white transition-all uppercase tracking-widest">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> XÓA
-                            </a>
-                        </div>
-                    </div>
-                </c:forEach>
-            </c:otherwise>
-        </c:choose>
+                                        <div x-show="open" x-cloak @click.away="open=false"
+                                            class="origin-top-left absolute left-0 mt-2 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                                            <div class="py-1">
+                                                <a href="#" @click.prevent="status='active'; open=false"
+                                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Active</a>
+                                                <a href="#" @click.prevent="status='deactivated'; open=false"
+                                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Deactivated</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-right">
+                                    <a href="${pageContext.request.contextPath}/manager-detail?manager_id=${manager.userId}"
+                                       class="text-indigo-600 hover:text-indigo-900 mr-4">View</a>
+                                    <a href="${pageContext.request.contextPath}/manager-edit?manager_id=${manager.userId}"
+                                       class="text-yellow-600 hover:text-yellow-800">Edit</a>
+                                </td>
+                            </tr>
+                        </c:forEach>
+                    </c:otherwise>
+                </c:choose>
+            </tbody>
+        </table>
     </div>
 
     <!-- SUMMARY SECTION -->
