@@ -94,6 +94,93 @@
                 </c:choose>
                 <button class="flex-1 bg-[#008751] text-white py-4 rounded-2xl font-black uppercase shadow-xl">Tạo sân</button>
             </div>
+            
+            <!-- Sample week pricing for schedule generation -->
+            <div class="mt-6">
+                <h2 class="text-sm font-black uppercase text-slate-400 mb-2">Mẫu giá theo tuần (6 khung/1 ngày — 1h30 mỗi khung)</h2>
+                <input type="hidden" name="sampleWeek" id="sampleWeek" />
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm border-collapse">
+                        <thead>
+                            <tr class="text-left">
+                                <th class="p-2">Ngày</th>
+                                <th class="p-2">Khung 1</th>
+                                <th class="p-2">Khung 2</th>
+                                <th class="p-2">Khung 3</th>
+                                <th class="p-2">Khung 4</th>
+                                <th class="p-2">Khung 5</th>
+                                <th class="p-2">Khung 6</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="p-2 font-bold">Mon</td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_0_0" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_0_1" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_0_2" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_0_3" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_0_4" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_0_5" /></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-bold">Tue</td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_1_0" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_1_1" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_1_2" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_1_3" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_1_4" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_1_5" /></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-bold">Wed</td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_2_0" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_2_1" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_2_2" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_2_3" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_2_4" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_2_5" /></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-bold">Thu</td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_3_0" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_3_1" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_3_2" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_3_3" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_3_4" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_3_5" /></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-bold">Fri</td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_4_0" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_4_1" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_4_2" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_4_3" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_4_4" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_4_5" /></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-bold">Sat</td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_5_0" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_5_1" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_5_2" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_5_3" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_5_4" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_5_5" /></td>
+                            </tr>
+                            <tr>
+                                <td class="p-2 font-bold">Sun</td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_6_0" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_6_1" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_6_2" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_6_3" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_6_4" /></td>
+                                <td class="p-2"><input type="number" step="0.01" class="w-full px-3 py-2 rounded" id="p_6_5" /></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-xs text-slate-500 mt-2">Gợi ý theo loại sân sẽ được điền tự động. Bạn có thể thay đổi từng ô trước khi tạo sân.</div>
+            </div>
         </form>
     </div>
 </div>
@@ -116,6 +203,72 @@
                 previewFA.classList.add('hidden');
                 phFA.style.display = 'flex';
             }
+        });
+    }
+</script>
+
+<script>
+    // Prefill sample week suggestions and serialize values before submit
+    function getDefaultsForType(type) {
+        // prices are in basic currency unit (e.g., VND)
+        if (type === '11-a-side') {
+            // higher base prices for 11-a-side
+            return [
+                [300000, 300000, 350000, 400000, 450000, 400000], // Mon
+                [300000, 300000, 350000, 400000, 450000, 400000], // Tue
+                [300000, 300000, 350000, 400000, 450000, 400000], // Wed
+                [300000, 300000, 350000, 400000, 450000, 400000], // Thu
+                [350000, 350000, 400000, 450000, 500000, 450000], // Fri
+                [400000, 400000, 450000, 500000, 600000, 550000], // Sat
+                [350000, 350000, 400000, 450000, 500000, 450000]  // Sun
+            ];
+        }
+        // default 7-a-side
+        return [
+            [150000,150000,180000,200000,220000,200000],
+            [150000,150000,180000,200000,220000,200000],
+            [150000,150000,180000,200000,220000,200000],
+            [150000,150000,180000,200000,220000,200000],
+            [170000,170000,200000,230000,250000,230000],
+            [200000,200000,240000,280000,320000,300000],
+            [180000,180000,220000,250000,280000,260000]
+        ];
+    }
+
+    function fillDefaults() {
+        const typeSel = document.querySelector('select[name="fieldType"]');
+        const type = typeSel ? typeSel.value : '7-a-side';
+        const defaults = getDefaultsForType(type);
+        for (let d=0; d<7; d++) {
+            for (let s=0; s<6; s++) {
+                const el = document.getElementById('p_' + d + '_' + s);
+                if (el) el.value = defaults[d][s];
+            }
+        }
+    }
+
+    // serialize into comma-separated CSV (42 values)
+    function serializeSampleWeek() {
+        const vals = [];
+        for (let d=0; d<7; d++) for (let s=0; s<6; s++) {
+            const el = document.getElementById('p_' + d + '_' + s);
+            vals.push(el && el.value ? el.value : '0');
+        }
+        document.getElementById('sampleWeek').value = vals.join(',');
+    }
+
+    // fill defaults on load
+    fillDefaults();
+
+    // refill defaults if field type changes
+    const typeSel = document.querySelector('select[name="fieldType"]');
+    if (typeSel) typeSel.addEventListener('change', fillDefaults);
+
+    // before submit, set hidden sampleWeek
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e){
+            serializeSampleWeek();
         });
     }
 </script>

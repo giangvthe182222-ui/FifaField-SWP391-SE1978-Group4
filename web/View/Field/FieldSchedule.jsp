@@ -54,9 +54,8 @@
                     <select name="status" onchange="this.form.submit()"
                             class="filter-select min-w-[200px] pl-5 pr-10 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:outline-none focus:border-[#008751] font-black text-[10px] uppercase tracking-widest text-gray-500 cursor-pointer transition-all">
                         <option value="">Tất cả trạng thái</option>
-                        <option value="available" ${param.status == 'available' ? 'selected' : ''}>SẴN SÀNG (Available)</option>
-                        <option value="booked" ${param.status == 'booked' ? 'selected' : ''}>ĐÃ ĐẶT (Booked)</option>
-                        <option value="maintenance" ${param.status == 'maintenance' ? 'selected' : ''}>BẢO TRÌ (Maintenance)</option>
+                        <option value="available" ${param.status == 'available' ? 'selected' : ''}>available (Available)</option>
+                        <option value="unavailable" ${param.status == 'unavailable' ? 'selected' : ''}>unavailable (Unavailable)</option>
                     </select>
                 </div>
                 <div class="p-3 bg-emerald-50 text-[#008751] rounded-2xl border border-emerald-100">
@@ -119,14 +118,15 @@
                         <c:forEach items="${entry.value}" var="s">
                             <div class="group bg-white border-2 border-gray-50 rounded-[2.2rem] p-6 shadow-sm hover:shadow-xl transition-all hover:border-[#008751] hover:-translate-y-1 relative overflow-hidden">
                                 <!-- Status Line Decor -->
-                                <div class="absolute top-0 left-0 w-1.5 h-full transition-all
-                                    ${s.status == 'available' ? 'bg-[#008751]' : 
-                                      s.status == 'booked' ? 'bg-blue-600' : 'bg-amber-400'}">
-                                </div>
+                                                                <div class="absolute top-0 left-0 w-1.5 h-full transition-all ${s.status == 'available' ? 'bg-[#008751]' : 'bg-amber-400'}"></div>
 
                                 <div class="flex justify-between items-start mb-6">
                                     <div class="text-lg font-black text-gray-900 group-hover:text-[#008751] transition-colors leading-none tracking-tight">
                                         ${s.startTime} <span class="text-gray-200 mx-1">-</span> ${s.endTime}
+                                    </div>
+                                    <div class="ml-4">
+                                        <a href="${pageContext.request.contextPath}/schedule-edit?scheduleId=${s.scheduleId}&fieldId=${field.fieldId}"
+                                           class="text-xs font-black text-[#008751] uppercase px-3 py-2 border rounded-2xl hover:bg-[#008751] hover:text-white transition">Chỉnh sửa</a>
                                     </div>
                                     <div class="p-2 bg-gray-50 rounded-xl text-gray-300 group-hover:text-[#008751] group-hover:bg-emerald-50 transition-all">
                                         <i data-lucide="clock" class="w-4 h-4"></i>
@@ -142,13 +142,10 @@
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Trạng thái</span>
-                                        <div class={`px-3 py-1.5 rounded-full text-[8px] font-black tracking-widest uppercase 
-                                            ${s.status == 'available' ? 'bg-emerald-50 text-[#008751]' : 
-                                              s.status == 'booked' ? 'bg-blue-50 text-blue-600' : 'bg-amber-50 text-amber-500'}`}>
+                                        <div class={`px-3 py-1.5 rounded-full text-[8px] font-black tracking-widest uppercase ${s.status == 'available' ? 'bg-emerald-50 text-[#008751]' : 'bg-amber-50 text-amber-500'}`}>
                                             <c:choose>
-                                                <c:when test="${s.status == 'available'}">SẴN SÀNG</c:when>
-                                                <c:when test="${s.status == 'booked'}">ĐÃ ĐẶT</c:when>
-                                                <c:otherwise>BẢO TRÌ</c:otherwise>
+                                                <c:when test="${s.status == 'available'}">available</c:when>
+                                                <c:otherwise>unavailable</c:otherwise>
                                             </c:choose>
                                         </div>
                                     </div>
