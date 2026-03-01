@@ -1,6 +1,8 @@
 package Controller.Auth;
 
+import DAO.AuthDAO;
 import DAO.GoogleAuthDAO;
+import Models.User;
 import jakarta.servlet.http.*;
 import jakarta.servlet.ServletException;
 import java.io.*;
@@ -57,8 +59,11 @@ public class GoogleCallbackServlet extends HttpServlet {
             GoogleAuthDAO dao = new GoogleAuthDAO();
             String userId = dao.findOrCreateUserByGoogle(sub, email, name);
 
-            req.getSession(true).setAttribute("userId", userId);
-            resp.sendRedirect(req.getContextPath() + "/View/Auth/homepage.jsp");
+            AuthDAO authDAO = new AuthDAO();
+            User user = authDAO.getUserById(userId);
+
+            req.getSession(true).setAttribute("user", user);
+            resp.sendRedirect(req.getContextPath() + "/View/Customer/home.jsp");
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -31,6 +31,10 @@
         <url-pattern>/reset-password</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
+        <servlet-name>LogoutServlet</servlet-name>
+        <url-pattern>/logout</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
         <servlet-name>GoogleCallbackServlet</servlet-name>
         <url-pattern>/oauth2/callback</url-pattern>
     </servlet-mapping>
@@ -78,6 +82,10 @@
     <servlet>
         <servlet-name>GoogleCallbackServlet</servlet-name>
         <servlet-class>Controller.Auth.GoogleCallbackServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>LogoutServlet</servlet-name>
+        <servlet-class>Controller.Auth.LogoutServlet</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>GoogleLoginServlet</servlet-name>

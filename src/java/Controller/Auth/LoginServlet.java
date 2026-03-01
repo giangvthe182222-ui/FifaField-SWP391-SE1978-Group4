@@ -82,7 +82,7 @@ public class LoginServlet extends HttpServlet {
                 redirectUrl = "/booking";
                 break;
             default:
-                redirectUrl = "/View/Auth/homepage.jsp";
+                redirectUrl = "/View/Customer/home.jsp";
                 break;
         }
 
