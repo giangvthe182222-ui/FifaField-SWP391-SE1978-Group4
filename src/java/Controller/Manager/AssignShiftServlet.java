@@ -7,7 +7,6 @@ import Models.StaffViewModel;
 import Models.Shift;
 import Models.StaffShift;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,7 +17,6 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-@WebServlet("/manager/assign-shift")
 public class AssignShiftServlet extends HttpServlet {
 
     @Override
@@ -40,25 +38,53 @@ public class AssignShiftServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Server-side validation
+        String staffId = request.getParameter("staffId");
+        String shiftId = request.getParameter("shiftId");
+        String date = request.getParameter("workingDate");
+        String fieldId = request.getParameter("fieldId");
+
+        if (staffId == null || staffId.isEmpty() || shiftId == null || shiftId.isEmpty() || date == null || date.isEmpty() || fieldId == null || fieldId.isEmpty()) {
+            request.setAttribute("error", "Vui lòng điền đầy đủ thông tin: nhân viên, ca, ngày và mã sân.");
+            doGet(request, response);
+            return;
+        }
+
         try {
-            String staffId = request.getParameter("staffId");
-            String shiftId = request.getParameter("shiftId");
-            String date = request.getParameter("workingDate");
-            // assignedBy: take current user id from session if available
-            String assignedBy = (String) request.getSession().getAttribute("userId");
-            if (assignedBy == null) assignedBy = request.getParameter("assignedBy");
+            // get assignedBy from session user object
+            Models.User user = (Models.User) request.getSession().getAttribute("user");
+            if (user == null) {
+                request.setAttribute("error", "Người dùng chưa đăng nhập.");
+                response.sendRedirect(request.getContextPath() + "/login");
+                return;
+            }
+
+            UUID staffUuid = UUID.fromString(staffId);
+            UUID shiftUuid = UUID.fromString(shiftId);
+            UUID fieldUuid = UUID.fromString(fieldId);
+            UUID assignedBy = user.getUserId();
+
+            java.time.LocalDate workingDate = LocalDate.parse(date);
+            if (workingDate.isBefore(java.time.LocalDate.now())) {
+                request.setAttribute("error", "Ngày phân ca không được là quá khứ.");
+                doGet(request, response);
+                return;
+            }
 
             StaffShift ss = new StaffShift();
-            ss.setStaffId(UUID.fromString(staffId));
-            ss.setShiftId(UUID.fromString(shiftId));
-            ss.setFieldId(UUID.fromString(request.getParameter("fieldId")));
-            ss.setWorkingDate(LocalDate.parse(date));
-            ss.setAssignedBy(UUID.fromString(assignedBy));
+            ss.setStaffId(staffUuid);
+            ss.setShiftId(shiftUuid);
+            ss.setFieldId(fieldUuid);
+            ss.setWorkingDate(workingDate);
+            ss.setAssignedBy(assignedBy);
             ss.setStatus("assigned");
 
             StaffShiftDAO dao = new StaffShiftDAO();
             dao.assignShift(ss);
             response.sendRedirect(request.getContextPath() + "/manager/assign-shift");
+        } catch (IllegalArgumentException iae) {
+            request.setAttribute("error", "Định dạng ID/Ngày không hợp lệ.");
+            doGet(request, response);
         } catch (Exception ex) {
             ex.printStackTrace();
             request.setAttribute("error", "Lỗi khi phân ca: " + ex.getMessage());

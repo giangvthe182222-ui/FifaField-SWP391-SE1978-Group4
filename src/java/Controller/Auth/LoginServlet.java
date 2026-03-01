@@ -73,7 +73,7 @@ public class LoginServlet extends HttpServlet {
                 redirectUrl = "/admin-dashboard";
                 break;
             case "manager":
-                redirectUrl = "/View/Auth/homepage.jsp"; // Assuming manager dashboard
+                redirectUrl = "/manager/dashboard";
                 break;
             case "staff":
                 redirectUrl = "/View/Auth/homepage.jsp"; // Assuming staff dashboard

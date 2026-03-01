@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app version="5.0" xmlns="https://jakarta.ee/xml/ns/jakartaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee                              https://jakarta.ee/xml/ns/jakartaee/web-app_5_0.xsd">
     <display-name>MyWebApp</display-name>
+    <!-- Filters -->
+    <filter>
+        <filter-name>ManagerFilter</filter-name>
+        <filter-class>Filter.ManagerFilter</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>ManagerFilter</filter-name>
+        <url-pattern>/manager/*</url-pattern>
+    </filter-mapping>
     <!-- Welcome file -->
     <servlet>
         <servlet-name>RegisterSendOtpServlet</servlet-name>
@@ -118,6 +127,30 @@
         <servlet-name>EditVoucherServlet</servlet-name>
         <servlet-class>Controller.Voucher.EditVoucherServlet</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>ManagerDashboardServlet</servlet-name>
+        <servlet-class>Controller.Manager.ManagerDashboardServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>AssignShiftServlet</servlet-name>
+        <servlet-class>Controller.Manager.AssignShiftServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>StaffShiftsServlet</servlet-name>
+        <servlet-class>Controller.Manager.StaffShiftsServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ShiftsListServlet</servlet-name>
+        <servlet-class>Controller.Shift.ShiftsListServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>AddShiftServlet</servlet-name>
+        <servlet-class>Controller.Shift.AddShiftServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>EditShiftServlet</servlet-name>
+        <servlet-class>Controller.Shift.EditShiftServlet</servlet-class>
+    </servlet>
     <servlet-mapping>
         <servlet-name>AddStaffServlet</servlet-name>
         <url-pattern>/staff/add</url-pattern>
@@ -153,5 +186,29 @@
     <servlet-mapping>
         <servlet-name>EditVoucherServlet</servlet-name>
         <url-pattern>/voucher/edit</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ManagerDashboardServlet</servlet-name>
+        <url-pattern>/manager/dashboard</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AssignShiftServlet</servlet-name>
+        <url-pattern>/manager/assign-shift</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>StaffShiftsServlet</servlet-name>
+        <url-pattern>/manager/staff-shifts</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ShiftsListServlet</servlet-name>
+        <url-pattern>/shifts</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AddShiftServlet</servlet-name>
+        <url-pattern>/shifts/add</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>EditShiftServlet</servlet-name>
+        <url-pattern>/shifts/edit</url-pattern>
     </servlet-mapping>
 </web-app>

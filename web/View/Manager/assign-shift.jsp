@@ -16,7 +16,7 @@
         <div class="text-red-600 mb-3">${error}</div>
     </c:if>
 
-    <form method="post" action="${pageContext.request.contextPath}/manager/assign-shift" class="bg-white p-6 rounded shadow space-y-4">
+    <form id="assignShiftForm" method="post" action="${pageContext.request.contextPath}/manager/assign-shift" onsubmit="return validateAssignShiftForm()" class="bg-white p-6 rounded shadow space-y-4">
         <div>
             <label class="block text-sm font-medium">Nhân viên</label>
             <select name="staffId" class="mt-1 block w-full border px-3 py-2 rounded">
@@ -46,6 +46,7 @@
         </div>
 
         <div>
+            <div id="formError" class="text-red-600 mb-2" style="display:none"></div>
             <button type="submit" class="px-4 py-2 bg-[#008751] text-white rounded">Phân ca</button>
             <a href="${pageContext.request.contextPath}/manager/assign-shift" class="ml-3 text-gray-600">Làm lại</a>
         </div>
@@ -54,4 +55,41 @@
 </main>
 <jsp:include page="/View/Layout/Footer.jsp" />
 </body>
+<script>
+    function validateAssignShiftForm() {
+        var staffId = document.querySelector('[name="staffId"]').value;
+        var shiftId = document.querySelector('[name="shiftId"]').value;
+        var workingDateEl = document.querySelector('[name="workingDate"]');
+        var workingDate = workingDateEl.value;
+        var errorEl = document.getElementById('formError');
+        errorEl.style.display = 'none';
+        errorEl.textContent = '';
+
+        if (!staffId) {
+            errorEl.textContent = 'Vui lòng chọn nhân viên.';
+            errorEl.style.display = 'block';
+            return false;
+        }
+        if (!shiftId) {
+            errorEl.textContent = 'Vui lòng chọn ca.';
+            errorEl.style.display = 'block';
+            return false;
+        }
+        if (!workingDate) {
+            errorEl.textContent = 'Vui lòng chọn ngày làm việc.';
+            errorEl.style.display = 'block';
+            return false;
+        }
+        var selected = new Date(workingDate);
+        var today = new Date();
+        today.setHours(0,0,0,0);
+        if (selected < today) {
+            errorEl.textContent = 'Ngày làm việc không được ở quá khứ.';
+            errorEl.style.display = 'block';
+            workingDateEl.focus();
+            return false;
+        }
+        return true;
+    }
+</script>
 </html>

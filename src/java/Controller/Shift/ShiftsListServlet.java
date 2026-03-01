@@ -3,7 +3,6 @@ package Controller.Shift;
 import DAO.ShiftDAO;
 import Models.Shift;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -12,7 +11,6 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 
-@WebServlet("/shifts")
 public class ShiftsListServlet extends HttpServlet {
 
     @Override
