@@ -12,7 +12,7 @@ public class AdminFilter implements Filter {
     // Paths (prefixes) that require ADMIN role
     private static final String[] ADMIN_PATH_PREFIXES = new String[]{
         "/admin-dashboard",
-        "/staff",
+//        "/staff",
         "/manager",
         "/locations",
         "/equipment",

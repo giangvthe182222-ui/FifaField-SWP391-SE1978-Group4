@@ -181,7 +181,6 @@ CREATE TABLE Booking (
     status NVARCHAR(30),
     total_price DECIMAL(10,2),
     CONSTRAINT FK_Booking_Booker FOREIGN KEY (booker_id) REFERENCES Users(user_id),
-    CONSTRAINT FK_Booking_Customer FOREIGN KEY (customer_id) REFERENCES Customer(user_id),
     CONSTRAINT FK_Booking_Field FOREIGN KEY (field_id) REFERENCES Field(field_id),
     CONSTRAINT FK_Booking_Schedule FOREIGN KEY (schedule_id) REFERENCES Schedule(schedule_id),
     CONSTRAINT FK_Booking_Voucher FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id)
