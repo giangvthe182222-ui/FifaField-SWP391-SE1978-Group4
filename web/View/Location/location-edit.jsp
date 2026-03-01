@@ -63,6 +63,16 @@
             </div>
 
             <div>
+                <label class="text-xs font-black uppercase text-slate-400">Quản lý</label>
+                <select name="managerId" class="w-full px-5 py-4 mt-2 rounded-2xl bg-slate-50 border font-bold">
+                    <option value="">-- Không chọn --</option>
+                    <c:forEach var="m" items="${managers}">
+                        <option value="${m.userId}" ${location.managerId != null && location.managerId.toString() == m.userId.toString() ? 'selected' : ''}>${m.fullName}</option>
+                    </c:forEach>
+                </select>
+            </div>
+
+            <div>
                 <label class="text-xs font-black uppercase text-slate-400">Trạng thái</label>
                 <select name="status" class="w-full px-5 py-4 mt-2 rounded-2xl bg-slate-50 border font-bold">
                     <option value="ACTIVE" ${location.status == 'ACTIVE' ? 'selected' : ''}>ACTIVE</option>
@@ -71,6 +81,7 @@
             </div>
 
             <div class="flex gap-4 pt-4">
+                <button type="button" onclick="history.back()" class="flex-1 text-center py-4 rounded-2xl border font-black uppercase">Quay về</button>
                 <a href="${pageContext.request.contextPath}/locations" class="flex-1 text-center py-4 rounded-2xl border font-black uppercase">Hủy</a>
                 <button class="flex-1 bg-[#008751] text-white py-4 rounded-2xl font-black uppercase shadow-xl">Lưu thay đổi</button>
             </div>

@@ -1,12 +1,14 @@
 package Controller.Auth;
 
+import DAO.AuthDAO;
 import DAO.GoogleAuthDAO;
+import Models.User;
 import jakarta.servlet.http.*;
 import jakarta.servlet.ServletException;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
- 
+
 public class GoogleCallbackServlet extends HttpServlet {
 
     private static final String CLIENT_ID = "740421080506-eprsofumm8uoc5dasvbde1v8l8sq4hd2.apps.googleusercontent.com";
@@ -51,12 +53,17 @@ public class GoogleCallbackServlet extends HttpServlet {
                 throw new RuntimeException("Missing sub/email");
             }
 
-            // upsert user vao DB (tu tao neu chua co)
+            // findOrCreateUserByGoogle handles both cases:
+            //   - returning Google user → looks up by google_sub → returns existing user_id
+            //   - brand new user → creates Gmail_Account + Users + Customer rows
             GoogleAuthDAO dao = new GoogleAuthDAO();
             String userId = dao.findOrCreateUserByGoogle(sub, email, name);
 
-            req.getSession(true).setAttribute("userId", userId);
-            resp.sendRedirect(req.getContextPath() + "/View/Auth/homepage.jsp");
+            AuthDAO authDAO = new AuthDAO();
+            User user = authDAO.getUserById(userId);
+
+            req.getSession(true).setAttribute("user", user);
+            resp.sendRedirect(req.getContextPath() + "/View/Customer/home.jsp");
 
         } catch (Exception e) {
             e.printStackTrace();

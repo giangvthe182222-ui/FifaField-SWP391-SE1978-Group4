@@ -36,9 +36,10 @@ public class AuthDAO {
 
     public User getUserById(String userId) {
         String sql = "SELECT u.user_id, u.gmail_id, u.password, u.full_name, u.phone, u.address, u.gender, u.role_id, u.status, u.created_at, "
-                + "r.role_name, r.description "
+                + "r.role_name, r.description, g.email "
                 + "FROM Users u "
                 + "JOIN Role r ON u.role_id = r.role_id "
+                + "JOIN Gmail_Account g ON u.gmail_id = g.gmail_id "
                 + "WHERE u.user_id = ?";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -48,6 +49,7 @@ public class AuthDAO {
                     User user = new User();
                     user.setUserId(UUID.fromString(rs.getString("user_id")));
                     user.setGmailId(UUID.fromString(rs.getString("gmail_id")));
+                    user.setEmail(rs.getString("email"));
                     user.setPassword(rs.getString("password"));
                     user.setFullName(rs.getString("full_name"));
                     user.setPhone(rs.getString("phone"));

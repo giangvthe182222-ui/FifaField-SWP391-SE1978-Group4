@@ -1,7 +1,9 @@
 package Controller.Location;
 
 import DAO.LocationDAO;
+import DAO.ManagerDAO;
 import Models.Location;
+import Models.Manager;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
@@ -24,8 +26,16 @@ public class LocationAddServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        request.getRequestDispatcher("/View/Location/location-add.jsp")
-                .forward(request, response);
+        try {
+            ManagerDAO managerDAO = new ManagerDAO();
+            java.util.List<Manager> managers = managerDAO.getAllManagers();
+            request.setAttribute("managers", managers);
+        } catch (Exception e) {
+            // ignore loading managers errors, form will still render
+            e.printStackTrace();
+        }
+
+        request.getRequestDispatcher("/View/Location/location-add.jsp").forward(request, response);
     }
 
     @Override
@@ -66,8 +76,8 @@ public class LocationAddServlet extends HttpServlet {
         // ===== BASIC VALIDATE =====
         if (name == null || name.trim().isEmpty()) {
             request.setAttribute("error", "❌ Tên cụm sân không được để trống");
-            request.getRequestDispatcher("/View/Location/location-add.jsp")
-                    .forward(request, response);
+            try { request.setAttribute("managers", new DAO.ManagerDAO().getAllManagers()); } catch (Exception ex) { }
+            request.getRequestDispatcher("/View/Location/location-add.jsp").forward(request, response);
             return;
         }
 
@@ -79,7 +89,13 @@ public class LocationAddServlet extends HttpServlet {
         loc.setPhoneNumber(phone);
         loc.setImageUrl(imageUrl);
         loc.setStatus(status);
-        loc.setManagerId(null);
+        // managerId may be nullable
+        String managerIdParam = request.getParameter("managerId");
+        if (managerIdParam != null && !managerIdParam.isBlank()) {
+            try { loc.setManagerId(UUID.fromString(managerIdParam)); } catch (IllegalArgumentException ex) { loc.setManagerId(null); }
+        } else {
+            loc.setManagerId(null);
+        }
 
         try {
             System.out.println("=== SERVLET ADD LOCATION ===");
@@ -100,8 +116,8 @@ public class LocationAddServlet extends HttpServlet {
                     "error",
                     "❌ INSERT KHÔNG THÀNH CÔNG (ROWS = 0). Có thể trigger rollback hoặc schema sai."
                 );
-                request.getRequestDispatcher("/View/Location/location-add.jsp")
-                        .forward(request, response);
+                try { request.setAttribute("managers", new DAO.ManagerDAO().getAllManagers()); } catch (Exception ex) {}
+                request.getRequestDispatcher("/View/Location/location-add.jsp").forward(request, response);
             }
 
         } catch (SQLException e) {
@@ -115,8 +131,8 @@ public class LocationAddServlet extends HttpServlet {
             e.printStackTrace();
 
             request.setAttribute("error", debugMessage);
-            request.getRequestDispatcher("/View/Location/location-add.jsp")
-                    .forward(request, response);
+                try { request.setAttribute("managers", new DAO.ManagerDAO().getAllManagers()); } catch (Exception ex) {}
+                request.getRequestDispatcher("/View/Location/location-add.jsp").forward(request, response);
 
         } catch (Exception e) {
 
@@ -127,8 +143,8 @@ public class LocationAddServlet extends HttpServlet {
             e.printStackTrace();
 
             request.setAttribute("error", debugMessage);
-            request.getRequestDispatcher("/View/Location/location-add.jsp")
-                    .forward(request, response);
+                try { request.setAttribute("managers", new DAO.ManagerDAO().getAllManagers()); } catch (Exception ex) {}
+                request.getRequestDispatcher("/View/Location/location-add.jsp").forward(request, response);
         }
     }
 }

@@ -16,21 +16,27 @@ import java.util.List;
         urlPatterns = "/equipment-list"
 )
 public class EquipmentListServlet extends HttpServlet {
+
     //Setting Page size
     private static final int PAGE_SIZE = 8;
+
     //Created by: Giangvthe182222
     //Function: Get Equipment List
-    //Description: Get the equipment structure list by filter, pagination for equipment struture list page
+    //Description:Receive filter parameters to paginate and find equipment structure records
     //Note:
+    //  - Page index always starts from 1
+    //  - Invalid page values will be reset to 1
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        //Initialize search parameter, trimToNull to advoid spaces
+
+        //Initialize search parameter, trimToNull to avoid spaces
         String search = trimToNull(request.getParameter("search"));
         String status = trimToNull(request.getParameter("status"));
         String type = trimToNull(request.getParameter("type"));
         String sort = trimToNull(request.getParameter("sort"));
-        //ensure first page is always 1
+
+        //Ensure first page is always 1
         int page = 1;
         String pageRaw = request.getParameter("page");
         if (pageRaw != null) {
@@ -41,16 +47,12 @@ public class EquipmentListServlet extends HttpServlet {
                 page = 1;
             }
         }
-        
+
         EquipmentDAO dao = new EquipmentDAO(new DBConnection());
-        //filter + pagination
         List<Equipment> equipmentList =
                 dao.filter(search, status, type, sort, page, PAGE_SIZE);
-        //total equipment structures after filter
         int totalRecords = dao.count(search, status, type);
-        //total pages by total records
         int totalPages = (int) Math.ceil((double) totalRecords / PAGE_SIZE);
-
         request.setAttribute("equipmentList", equipmentList);
         request.setAttribute("typeList", dao.getAllTypes());
 
@@ -61,17 +63,24 @@ public class EquipmentListServlet extends HttpServlet {
         request.setAttribute("status", status);
         request.setAttribute("type", type);
         request.setAttribute("sort", sort);
-
         request.getRequestDispatcher("/View/Equipment/EquipmentList.jsp")
                .forward(request, response);
     }
 
+    //Created by: Giangvthe182222
+    //Function: Handle POST request
+    //Description: Forward POST request to doGet(), Ensure the same logic is used for both GET and POST
+    //Note: Used when form submits via POST method
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         doGet(request, response);
     }
-    //trim to null function
+
+    //Created by: Giangvthe182222
+    //Function: Trim string value to null
+    //Description: remove spaces and set to null is empty
+    //Note: Helps avoid invalid filter values caused by spaces
     private String trimToNull(String s) {
         if (s == null) return null;
         s = s.trim();

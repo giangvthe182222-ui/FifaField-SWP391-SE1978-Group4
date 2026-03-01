@@ -37,12 +37,14 @@
             </p>
         </div>
 
-        <a href="${pageContext.request.contextPath}/locations/add"
-           class="fifa-gradient text-white px-10 py-6 rounded-[2rem] font-black flex items-center gap-4 transition-all shadow-2xl shadow-[#008751]/40 hover:scale-105 active:scale-95 group">
+          <div class="flex items-center gap-4">
+                <a href="${pageContext.request.contextPath}/locations/add"
+                    class="fifa-gradient text-white px-10 py-6 rounded-[2rem] font-black flex items-center gap-4 transition-all shadow-2xl shadow-[#008751]/40 hover:scale-105 active:scale-95 group">
             <i data-lucide="plus-circle"
                class="w-6 h-6 stroke-[3] group-hover:rotate-90 transition-transform"></i>
             <span class="tracking-tight uppercase">Thêm cụm sân mới</span>
-        </a>
+                </a>
+          </div>
     </div>
 
     <!-- LOCATION GRID -->
@@ -109,6 +111,11 @@
                                     0${loc.phoneNumber}
                                 </p>
                             </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Quản lý</p>
+                            <p class="text-sm font-black text-slate-800 tracking-tight">${loc.managerName != null ? loc.managerName : 'Chưa có quản lý'}</p>
                         </div>
 
                         <!-- ACTION BUTTONS -->

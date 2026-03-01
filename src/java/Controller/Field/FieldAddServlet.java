@@ -15,6 +15,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.UUID;
+import DAO.ScheduleDAO;
 
 @WebServlet(name = "FieldAddServlet", urlPatterns = {"/fields/add"})
 @MultipartConfig
@@ -112,6 +113,16 @@ public class FieldAddServlet extends HttpServlet {
 
             boolean ok = fieldDAO.addField(f);
             if (ok) {
+                // create schedules using provided sample week (optional)
+                String sampleWeek = request.getParameter("sampleWeek");
+                if (sampleWeek != null && !sampleWeek.isBlank()) {
+                    try {
+                        ScheduleDAO scheduleDAO = new ScheduleDAO();
+                        scheduleDAO.createSchedulesFromSample(f.getFieldId(), sampleWeek);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                }
                 response.sendRedirect(request.getContextPath() + "/fields?location_id=" + locationId);
             } else {
                 request.setAttribute("error", "Không thể thêm sân");

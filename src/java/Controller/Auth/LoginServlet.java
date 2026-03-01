@@ -6,14 +6,31 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
- 
+
 public class LoginServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            String flashError = (String) session.getAttribute("flash_error");
+            if (flashError != null) {
+                request.setAttribute("error", flashError);
+                session.removeAttribute("flash_error");
+            }
+
+            String flashSuccess = (String) session.getAttribute("success");
+            if (flashSuccess != null) {
+                request.setAttribute("success", flashSuccess);
+                session.removeAttribute("success");
+            }
+        }
+
         request.getRequestDispatcher("/View/Auth/login.jsp").forward(request, response);
+
     }
 
     @Override
@@ -62,8 +79,10 @@ public class LoginServlet extends HttpServlet {
                 redirectUrl = "/View/Auth/homepage.jsp"; // Assuming staff dashboard
                 break;
             case "customer":
+                redirectUrl = "/booking";
+                break;
             default:
-                redirectUrl = "/View/Auth/homepage.jsp";
+                redirectUrl = "/View/Customer/home.jsp";
                 break;
         }
 

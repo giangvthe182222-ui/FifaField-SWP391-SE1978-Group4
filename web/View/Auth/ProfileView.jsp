@@ -20,14 +20,14 @@
         <div class="grid grid-cols-1 gap-3 text-sm">
             <div><strong>Họ tên:</strong> ${sessionScope.user.fullName}</div>
             <div><strong>Số điện thoại:</strong> ${sessionScope.user.phone}</div>
-            <div><strong>Email liên kết (gmail_id):</strong> ${sessionScope.user.gmailId}</div>
+            <div><strong>Email:</strong> ${sessionScope.user.email}</div>
             <div><strong>Địa chỉ:</strong> ${sessionScope.user.address}</div>
             <div><strong>Giới tính:</strong> ${sessionScope.user.gender}</div>
         </div>
 
         <div class="mt-6">
             <a href="${pageContext.request.contextPath}/auth/profile/edit" class="px-4 py-2 bg-green-600 text-white rounded">Chỉnh sửa</a>
-            <a href="${pageContext.request.contextPath}/" class="px-4 py-2 bg-gray-200 rounded">Quay về</a>
+            <a href="${pageContext.request.contextPath}/View/Customer/home.jsp" class="px-4 py-2 bg-gray-200 rounded">Quay về</a>
         </div>
     </div>
 </main>

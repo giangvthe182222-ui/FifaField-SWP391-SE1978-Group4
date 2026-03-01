@@ -30,6 +30,7 @@
                 <div class="mt-4 flex gap-4">
                     <div class="px-4 py-2 bg-slate-50 rounded-xl border">Hotline: 0${location.phoneNumber}</div>
                     <div class="px-4 py-2 bg-slate-50 rounded-xl border">Trạng thái: ${location.status}</div>
+                    <div class="px-4 py-2 bg-slate-50 rounded-xl border">Quản lý: <span class="font-black">${location.managerName != null ? location.managerName : 'Chưa có'}</span></div>
                 </div>
 
                 <div class="mt-6 flex gap-3">

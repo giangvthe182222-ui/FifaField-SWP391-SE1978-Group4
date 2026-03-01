@@ -1,7 +1,9 @@
 package Controller.Location;
 
 import DAO.LocationDAO;
+import DAO.ManagerDAO;
 import Models.Location;
+import Models.Manager;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -40,6 +42,13 @@ public class LocationEditServlet extends HttpServlet {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND, "Location not found");
                 return;
             }
+
+            // load managers for dropdown
+            try {
+                ManagerDAO managerDAO = new ManagerDAO();
+                java.util.List<Manager> managers = managerDAO.getAllManagers();
+                request.setAttribute("managers", managers);
+            } catch (Exception e) { e.printStackTrace(); }
 
             request.setAttribute("location", loc);
             request.getRequestDispatcher("/View/Location/location-edit.jsp").forward(request, response);
@@ -103,6 +112,13 @@ public class LocationEditServlet extends HttpServlet {
             loc.setPhoneNumber(phone);
             loc.setImageUrl(imageUrl == null || imageUrl.isBlank() ? "default_cluster.jpg" : imageUrl);
             loc.setStatus(status == null || status.isBlank() ? "ACTIVE" : status);
+            // managerId handling
+            String managerIdParam = request.getParameter("managerId");
+            if (managerIdParam != null && !managerIdParam.isBlank()) {
+                try { loc.setManagerId(UUID.fromString(managerIdParam)); } catch (IllegalArgumentException ex) { loc.setManagerId(null); }
+            } else {
+                loc.setManagerId(null);
+            }
 
             boolean updated = locationDAO.updateLocation(loc);
             if (updated) {

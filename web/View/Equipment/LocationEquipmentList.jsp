@@ -58,7 +58,7 @@
                     <a href="${pageContext.request.contextPath}/locations" 
                        class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 hover:text-[#008751] transition-all uppercase tracking-widest mb-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-                        QUAY LẠI
+                        
                     </a>
                     <h1 class="text-4xl font-black text-gray-900 tracking-tight uppercase leading-none">
                         THÔNG TIN DỤNG CỤ <span class="text-[#008751]">TẠI CƠ SỞ</span>
@@ -139,84 +139,146 @@
             <!-- EQUIPMENT GRID -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 <c:forEach items="${locationEquipmentList}" var="e">
-                    <div class="group">
-                        <div class="bg-white border-2 border-gray-50 rounded-[2.8rem] overflow-hidden h-full transition-all hover:shadow-2xl hover:shadow-[#008751]/5 hover:border-[#008751] flex flex-col relative">
+    <div class="group">
+        <div class="bg-white border-2 border-gray-50
+                    rounded-[2.8rem] overflow-hidden h-full
+                    transition-all hover:shadow-2xl
+                    hover:shadow-[#008751]/5 hover:border-[#008751]
+                    flex flex-col relative">
 
-                            <!-- Status Badge Floating -->
-                            <div class="absolute top-4 right-4 z-10">
-                                <span class="px-3 py-1.5 rounded-full text-[8px] font-black tracking-[0.15em] uppercase shadow-lg
-                                      ${e.status == 'available' ? 'bg-emerald-500 text-white' : 'bg-gray-400 text-white'}">
-                                    ${e.status == 'available' ? 'available' : 'unavailable'}
-                                </span>
-                            </div>
+            <!-- Status Badge Floating -->
+            <div class="absolute top-4 right-4 z-10">
+                <span class="px-3 py-1.5 rounded-full
+                      text-[8px] font-black tracking-[0.15em] uppercase shadow-lg
+                      ${e.status == 'available'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-gray-400 text-white'}">
+                    ${e.status}
+                </span>
+            </div>
 
-                            <!-- Image Section -->
-                            <div class="relative h-56 bg-gray-100 overflow-hidden">
+            <!-- Image Section -->
+            <div class="relative h-56 bg-gray-100 overflow-hidden">
+                <img src="${e.imageUrl}" alt="${e.name}"
+                     class="w-full h-full object-cover
+                            group-hover:scale-110
+                            transition-transform duration-700">
+                <div class="absolute inset-0 bg-gradient-to-t
+                            from-black/20 to-transparent
+                            opacity-0 group-hover:opacity-100
+                            transition-opacity"></div>
+            </div>
 
-                                <img src="${e.imageUrl}" alt="${e.name}" 
-                                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            </div>
+            <!-- Content Section -->
+            <div class="p-8 flex-1 flex flex-col justify-between space-y-6">
 
-                            <!-- Content Section -->
-                            <div class="p-8 flex-1 flex flex-col justify-between space-y-6">
-                                <div class="space-y-3">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-[9px] font-black text-gray-300 uppercase tracking-[0.2em]">TYPE: ${e.equipmentType}</span>
-                                    </div>
-                                    <h3 class="text-xl font-black text-gray-900 leading-tight group-hover:text-[#008751] transition-colors">
-                                        ${e.name}
-                                    </h3>
-                                </div>
+                <!-- Title -->
+                <div class="space-y-3">
+                    <span class="text-[9px] font-black text-gray-300
+                                 uppercase tracking-[0.2em]">
+                        TYPE: ${e.equipmentType}
+                    </span>
 
-                                <!-- Info Grid -->
-                                <div class="grid grid-cols-2 gap-4 py-5 border-y border-gray-50">
-                                    <div>
-                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Trong kho</p>
-                                        <p class="text-lg font-black text-gray-900 leading-none">${e.quantity} <span class="text-[10px] font-bold text-gray-400">đv</span></p>
-                                    </div>
-                                    <div>
-                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Giá thuê</p>
-                                        <p class="text-lg font-black text-[#008751] leading-none">
-                                            <fmt:formatNumber value="${e.rentalPrice}" /> <span class="text-[10px] font-bold opacity-60">đ</span>
-                                        </p>
-                                    </div>
-                                </div>
+                    <h3 class="text-xl font-black text-gray-900 leading-tight
+                               group-hover:text-[#008751]
+                               transition-colors">
+                        ${e.name}
+                    </h3>
+                </div>
 
-                                <!-- Footer Detail -->
-                                <div class="flex items-center justify-between text-[10px] font-bold text-gray-400">
-                                    <span class="uppercase tracking-widest">Phí đền bù:</span>
-                                    <span class="text-gray-900 font-black"><fmt:formatNumber value="${e.damageFee}" /> đ</span>
-                                </div>
-
-                                <!-- FOOTER -->
-                                <div class="flex justify-between items-center mt-auto pt-4">
-
-                                    <!-- STATUS EDIT -->
-                                    <form action="update-location-equipment-status" method="post">
-                                        <input type="hidden" name="locationId" value="${locationId}">
-                                        <input type="hidden" name="equipmentId" value="${e.equipmentId}">
-                                        <select name="newStatus"
-                                                onchange="if(confirm('Thay đổi trạng thái?'))this.form.submit();else this.value='${e.status}'"
-                                                class="px-4 py-2 rounded-xl text-[10px] font-black uppercase
-                                                ${e.status=='available'
-                                                  ? 'bg-emerald-100 text-emerald-700'
-                                                  : 'bg-gray-100 text-gray-600'}">
-                                            <option value="available" ${e.status=='available'?'selected':''}>available</option>
-                                            <option value="unavailable" ${e.status=='unavailable'?'selected':''}>unavailable</option>
-                                        </select>
-                                    </form>
-
-                                    <!-- ACTION -->
-                                    <a href="${pageContext.request.contextPath}/update-location-equipment?locationId=${locationId}&equipmentId=${e.equipmentId}"
-                                       class="p-2 rounded-xl hover:bg-blue-50 text-gray-500 hover:text-blue-600">
-                                        <i data-lucide="edit-3" class="w-4 h-4"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
+                <!-- Info Grid -->
+                <div class="grid grid-cols-2 gap-4 py-5
+                            border-y border-gray-50">
+                    <div>
+                        <p class="text-[9px] font-black text-gray-400
+                                  uppercase tracking-widest mb-1.5">
+                            Trong kho
+                        </p>
+                        <p class="text-lg font-black text-gray-900 leading-none">
+                            ${e.quantity}
+                            <span class="text-[10px] font-bold text-gray-400">đv</span>
+                        </p>
                     </div>
-                </c:forEach>
+
+                    <div>
+                        <p class="text-[9px] font-black text-gray-400
+                                  uppercase tracking-widest mb-1.5">
+                            Giá thuê
+                        </p>
+                        <p class="text-lg font-black text-[#008751] leading-none">
+                            <fmt:formatNumber value="${e.rentalPrice}" />
+                            <span class="text-[10px] font-bold opacity-60">đ</span>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Footer Detail -->
+                <div class="flex items-center justify-between
+                            text-[10px] font-bold text-gray-400">
+                    <span class="uppercase tracking-widest">Phí đền bù:</span>
+                    <span class="text-gray-900 font-black">
+                        <fmt:formatNumber value="${e.damageFee}" /> đ
+                    </span>
+                </div>
+
+                <!-- FOOTER -->
+                <div class="flex justify-between items-center mt-auto pt-4">
+
+                    <!-- STATUS EDIT -->
+                    <form action="update-location-equipment-status"
+                          method="post">
+                        <input type="hidden" name="locationId" value="${locationId}">
+                        <input type="hidden" name="equipmentId" value="${e.equipmentId}">
+                        <select name="newStatus"
+                                onchange="if(confirm('Thay đổi trạng thái?'))
+                                          this.form.submit();
+                                          else this.value='${e.status}'"
+                                class="px-4 py-2 rounded-xl
+                                       text-[10px] font-black uppercase
+                                       ${e.status=='available'
+                                         ? 'bg-emerald-100 text-emerald-700'
+                                         : 'bg-gray-100 text-gray-600'}">
+                            <option value="available"
+                                    ${e.status=='available'?'selected':''}>
+                                available
+                            </option>
+                            <option value="unavailable"
+                                    ${e.status=='unavailable'?'selected':''}>
+                                unavailable
+                            </option>
+                        </select>
+                    </form>
+
+                    <!-- ACTION ICONS -->
+                    <div class="flex gap-2">
+
+                        <!-- VIEW -->
+                        <a href="${pageContext.request.contextPath}/location-equipment-detail?locationId=${locationId}&equipmentId=${e.equipmentId}"
+                           class="p-2 rounded-xl
+                                  hover:bg-emerald-50
+                                  text-gray-500 hover:text-emerald-600
+                                  transition"
+                           title="Xem chi tiết">
+                            <i data-lucide="eye" class="w-4 h-4"></i>
+                        </a>
+
+                        <!-- EDIT -->
+                        <a href="${pageContext.request.contextPath}/update-location-equipment?locationId=${locationId}&equipmentId=${e.equipmentId}"
+                           class="p-2 rounded-xl
+                                  hover:bg-blue-50
+                                  text-gray-500 hover:text-blue-600
+                                  transition"
+                           title="Chỉnh sửa">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        </a>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</c:forEach>
+
 
                 <!-- EMPTY STATE -->
                 <c:if test="${empty locationEquipmentList}">

@@ -60,6 +60,8 @@ CREATE TABLE Location (
 );
 GO
 
+
+
 CREATE TABLE Staff (
     user_id VARCHAR(36) PRIMARY KEY,
     employee_code NVARCHAR(50) UNIQUE,
@@ -145,13 +147,19 @@ CREATE TABLE Voucher (
     voucher_id VARCHAR(36) PRIMARY KEY,
     code NVARCHAR(50) UNIQUE,
     discount_value DECIMAL(5,2),
-	description NVARCHAR(255),
+    description NVARCHAR(255),
     start_date DATE,
-	end_date DATE,
-	used_count INT DEFAULT 0,
-    status NVARCHAR(20)
+    end_date DATE,
+    location_id VARCHAR(36),
+    used_count INT DEFAULT 0,
+    status NVARCHAR(20),
+
+    CONSTRAINT FK_Voucher_Location
+        FOREIGN KEY (location_id)
+        REFERENCES Location(location_id)
 );
 GO
+
 
 -- Mapping table to assign vouchers to locations
 CREATE TABLE Location_Voucher (
@@ -163,20 +171,9 @@ CREATE TABLE Location_Voucher (
 );
 GO
 
-CREATE TABLE Customer_Voucher (
-    customer_id VARCHAR(36) NOT NULL,
-    voucher_id VARCHAR(36) NOT NULL,
-    is_used BIT DEFAULT 0,
-    CONSTRAINT PK_Customer_Voucher PRIMARY KEY (customer_id, voucher_id),
-    CONSTRAINT FK_CV_Customer FOREIGN KEY (customer_id) REFERENCES Customer(user_id),
-    CONSTRAINT FK_CV_Voucher FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id)
-);
-GO
-
 CREATE TABLE Booking (
     booking_id VARCHAR(36) PRIMARY KEY,
     booker_id VARCHAR(36) NOT NULL,
-    customer_id VARCHAR(36) NULL,
     schedule_id VARCHAR(36) NOT NULL,
     field_id VARCHAR(36) NOT NULL,
     voucher_id VARCHAR(36) NULL,
@@ -184,7 +181,6 @@ CREATE TABLE Booking (
     status NVARCHAR(30),
     total_price DECIMAL(10,2),
     CONSTRAINT FK_Booking_Booker FOREIGN KEY (booker_id) REFERENCES Users(user_id),
-    CONSTRAINT FK_Booking_Customer FOREIGN KEY (customer_id) REFERENCES Customer(user_id),
     CONSTRAINT FK_Booking_Field FOREIGN KEY (field_id) REFERENCES Field(field_id),
     CONSTRAINT FK_Booking_Schedule FOREIGN KEY (schedule_id) REFERENCES Schedule(schedule_id),
     CONSTRAINT FK_Booking_Voucher FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id)

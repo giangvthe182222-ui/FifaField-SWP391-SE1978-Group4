@@ -37,8 +37,8 @@ public class RegisterServlet extends HttpServlet {
 
         String action = req.getParameter("action");
         if (action == null || action.isBlank()) {
-            // Nếu user bấm submit form tạo tài khoản mà không có action
-            // thì mặc định coi như "create"
+            // Neu user bam submit form tao tai khoan ma khong co action
+            // thi mac dinh coi nhu "create"
             action = "create";
         }
 
@@ -57,7 +57,7 @@ public class RegisterServlet extends HttpServlet {
                 }
 
                 try {
-                    // Nếu email đã tồn tại => không cho đăng ký
+                    // Neu email da ton tai => khong cho dang ky
                     AuthDAO dao = new AuthDAO();
                     if (dao.emailExists(email.trim())) {
                         req.setAttribute("error", "Email đã tồn tại. Vui lòng dùng email khác hoặc đăng nhập.");
@@ -137,7 +137,7 @@ public class RegisterServlet extends HttpServlet {
             }
 
             case "create": {
-                // Chỉ cho create nếu đã verified
+                // Chi cho create neu da verified
                 Boolean v = (Boolean) session.getAttribute("reg_verified");
                 boolean verified = (v != null && v);
                 String verifyKeyForm = req.getParameter("verifyKey");
@@ -175,6 +175,9 @@ public class RegisterServlet extends HttpServlet {
                 String password = req.getParameter("password");
                 String confirm = req.getParameter("confirmPassword");
 
+                // regex cho phep
+                String PASSWORD_REGEX = "^[A-Za-z0-9!@#$%^&*()]+$";
+
                 if (fullName == null || fullName.isBlank()) {
                     req.setAttribute("error", "Vui lòng nhập họ và tên.");
                     req.setAttribute("verified", true);
@@ -210,10 +213,18 @@ public class RegisterServlet extends HttpServlet {
                     return;
                 }
 
+                if (!password.matches(PASSWORD_REGEX)) {
+                    req.setAttribute("error",
+                            "Mật khẩu chỉ được chứa chữ không dấu, số và các ký tự !@#$%^&*(). Không chứa khoảng trắng hoặc ký tự đặc biệt khác.");
+                    req.setAttribute("verified", true); // giu trang thai da xac minh email
+                    forward(req, resp);
+                    return;
+                }
+
                 try {
                     AuthDAO dao = new AuthDAO();
 
-                    // check lại email tồn tại (tránh race)
+                    // check lai email ton tai (tranh race)
                     if (dao.emailExists(emailForm.trim())) {
                         req.setAttribute("error", "Email đã tồn tại. Vui lòng dùng email khác.");
                         req.setAttribute("verified", false);
@@ -224,7 +235,7 @@ public class RegisterServlet extends HttpServlet {
 
                     dao.registerCustomer(fullName.trim(), emailForm.trim(), password, phone, address, gender);
 
-                    // dọn session đăng ký
+                    // don session dang ky
                     session.removeAttribute("reg_email");
                     session.removeAttribute("reg_otp");
                     session.removeAttribute("reg_expire");
@@ -245,7 +256,7 @@ public class RegisterServlet extends HttpServlet {
             }
 
             default: {
-                // Nếu user submit không có action
+                // Neu user submit khong co action
                 req.setAttribute("error", "Hành động không hợp lệ.");
                 forward(req, resp);
             }

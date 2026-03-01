@@ -3,94 +3,112 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="vi">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <!-- Tailwind CSS & Google Fonts -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet"
-      href="${pageContext.request.contextPath}/assets/css/AddEquipment.css">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script>
-        function previewImage(input) {
-            const preview = document.getElementById("preview");
-            const previewContainer = document.getElementById("preview-container");
-            const file = input.files[0];
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    preview.src = e.target.result;
-                    previewContainer.classList.remove("hidden");
-                };
-                reader.readAsDataURL(file);
+        <!-- Tailwind CSS & Google Fonts -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+        <link rel="stylesheet"
+              href="${pageContext.request.contextPath}/assets/css/AddEquipment.css">
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <script>
+            function previewImage(input) {
+                const preview = document.getElementById("preview");
+                const previewContainer = document.getElementById("preview-container");
+                const file = input.files[0];
+
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        preview.src = e.target.result;
+                        previewContainer.classList.remove("hidden");
+                    };
+                    reader.readAsDataURL(file);
+                }
             }
-        }
 
-        function validateForm() {
-            const form = document.forms["addForm"];
-            const price = form["rental_price"].value;
-            const fee = form["damage_fee"].value;
-            const name = form["name"].value;
-            const type = form["equipment_type"].value;
-            const status = form["status"].value;
+            function validateForm() {
+                const form = document.forms["addForm"];
+                const price = form["rental_price"].value;
+                const fee = form["damage_fee"].value;
+                const name = form["name"].value;
+                const type = form["equipment_type"].value;
+                const status = form["status"].value;
 
-            if (!name.trim() || !type.trim()) {
-                alert("Vui lòng nhập đầy đủ tên và loại thiết bị");
-                return false;
+                if (!name.trim() || !type.trim()) {
+                    alert("Vui lòng nhập đầy đủ tên và loại thiết bị");
+                    return false;
+                }
+                if (parseFloat(price) <= 0 || parseFloat(fee) <= 0) {
+                    alert("Giá thuê và Phí hỏng hóc phải lớn hơn 0");
+                    return false;
+                }
+                if (status !== "available" && status !== "unavailable") {
+                    alert("Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')");
+                    return false;
+                }
+                return true;
             }
-            if (parseFloat(price) <= 0 || parseFloat(fee) <= 0) {
-                alert("Giá thuê và Phí hỏng hóc phải lớn hơn 0");
-                return false;
-            }
-            if (status !== "available" && status !== "unavailable") {
-                alert("Trạng thái không hợp lệ (chỉ 'available' hoặc 'unavailable')");
-                return false;
-            }
-            return true;
-        }
-    </script>
-</head>
-<body class="bg-slate-50 min-h-screen pb-20">
+        </script>
+    </head>
+    <body class="bg-slate-50 min-h-screen pb-20">
 
-    <jsp:include page="/View/Layout/Header.jsp"/>
+        <jsp:include page="/View/Layout/Header.jsp"/>
 
-    <div class="max-w-3xl mx-auto px-6 pt-12">
-        
-        <c:if test="${not empty error}">
-            <div class="mb-6 p-4 bg-red-50 border-2 border-red-100 rounded-2xl flex items-center gap-3 text-red-600 font-bold animate-pulse">
-                <i data-lucide="alert-circle"></i> ${error}
+        <div class="max-w-3xl mx-auto px-6 pt-12">
+
+            <c:if test="${not empty error}">
+                <div class="mb-6 p-4 bg-red-50 border-2 border-red-100 rounded-2xl flex items-center gap-3 text-red-600 font-bold animate-pulse">
+                    <i data-lucide="alert-circle"></i> ${error}
+                </div>
+            </c:if>
+
+            <c:if test="${not empty success}">
+                <div class="mb-6 p-4 bg-emerald-50 border-2 border-emerald-100 rounded-2xl flex items-center gap-3 text-emerald-600 font-bold">
+                    <i data-lucide="check-circle"></i> ${success}
+                </div>
+            </c:if>
+            <div class="max-w-7xl mx-auto px-6 pt-6">
+                <a href="${pageContext.request.contextPath}/equipment-list"
+                   class="inline-flex items-center gap-2
+                   text-gray-400 hover:text-[#008751]
+                   transition group">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="26" height="26"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="2.5"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         class="group-hover:-translate-x-1 transition-transform">
+                    <path d="M22 12H4"/>
+                    <path d="M11 19l-7-7 7-7"/>
+                    </svg>
+                </a>
             </div>
-        </c:if>
 
-        <c:if test="${not empty success}">
-            <div class="mb-6 p-4 bg-emerald-50 border-2 border-emerald-100 rounded-2xl flex items-center gap-3 text-emerald-600 font-bold">
-                <i data-lucide="check-circle"></i> ${success}
-            </div>
-        </c:if>
+            <div class="bg-white rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden">
+                <form name="addForm"
+                      action="${pageContext.request.contextPath}/add-equipment"
+                      method="post"
+                      enctype="multipart/form-data"
+                      onsubmit="return validateForm()"
+                      class="p-10 md:p-14 space-y-8">
 
-       
-        <div class="bg-white rounded-[3rem] shadow-2xl border border-slate-200 overflow-hidden">
-            <form name="addForm"
-                  action="${pageContext.request.contextPath}/add-equipment"
-                  method="post"
-                  enctype="multipart/form-data"
-                  onsubmit="return validateForm()"
-                  class="p-10 md:p-14 space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    
-                    <div class="space-y-2">
-                        <label class="label-fancy">Tên thiết bị</label>
-                        <div class="relative">
-                            <i data-lucide="package" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                            <input type="text" name="name" required class="input-fancy" placeholder="Ví dụ: Bóng Pro 2024">
+                        <div class="space-y-2">
+                            <label class="label-fancy">Tên thiết bị</label>
+                            <div class="relative">
+                                <i data-lucide="package" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+                                <input type="text" name="name" required class="input-fancy" placeholder="Ví dụ: Bóng Pro 2024">
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="space-y-2">
+                        <div class="space-y-2">
                             <label class="label-fancy">Loại thiết bị</label>
                             <div class="relative">
                                 <i data-lucide="tag"
@@ -111,64 +129,65 @@
                             </div>
                         </div>
 
-                    <div class="space-y-2">
-                        <label class="label-fancy">Giá thuê (VNĐ)</label>
-                        <div class="relative">
-                            <i data-lucide="dollar-sign" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                            <input type="number" step="0.01" name="rental_price" required class="input-fancy" placeholder="0.00">
-                        </div>
-                    </div>
-
-                    <div class="space-y-2">
-                        <label class="label-fancy">Phí đền bù hỏng hóc</label>
-                        <div class="relative">
-                            <i data-lucide="shield-alert" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                            <input type="number" step="0.01" name="damage_fee" required class="input-fancy" placeholder="0.00">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="space-y-4">
-                    <label class="label-fancy">Hình ảnh thiết bị</label>
-                    <div class="flex items-center justify-center w-full">
-                        <label class="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-100 border-dashed rounded-[2rem] cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
-                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
-                                <i data-lucide="upload-cloud" class="w-10 h-10 text-slate-400 mb-3"></i>
-                                <p class="text-sm text-slate-500 font-medium">Nhấn để tải ảnh hoặc kéo thả</p>
-                                <p class="text-[10px] text-slate-400 uppercase font-black">PNG, JPG (MAX. 800x400px)</p>
+                        <div class="space-y-2">
+                            <label class="label-fancy">Giá thuê (VNĐ)</label>
+                            <div class="relative">
+                                <i data-lucide="dollar-sign" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+                                <input type="number" step="0.01" name="rental_price" required class="input-fancy" placeholder="0.00">
                             </div>
-                            <input type="file" name="image" accept="image/*" class="hidden" onchange="previewImage(this)" required />
-                        </label>
-                    </div>
-                    
-                    <div id="preview-container" class="hidden mt-4 p-4 bg-slate-50 rounded-[2rem] border-2 border-slate-100">
-                        <p class="text-[10px] font-black text-slate-400 uppercase mb-3 text-center">Xem trước ảnh</p>
-                        <img id="preview" class="max-h-60 mx-auto rounded-2xl shadow-lg border-4 border-white" />
-                    </div>
-                </div>
+                        </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div class="md:col-span-1 space-y-2">
-                        <label class="label-fancy">Trạng thái</label>
-                        <select name="status" class="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-sm outline-none focus:border-emerald-500 transition-all appearance-none cursor-pointer">
-                            <option value="available">Available</option>
-                            <option value="unavailable">Unavailable</option>
-                        </select>
+                        <div class="space-y-2">
+                            <label class="label-fancy">Phí đền bù hỏng hóc</label>
+                            <div class="relative">
+                                <i data-lucide="shield-alert" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+                                <input type="number" step="0.01" name="damage_fee" required class="input-fancy" placeholder="0.00">
+                            </div>
+                        </div>
                     </div>
-                    <div class="md:col-span-2 space-y-2">
-                        <label class="label-fancy">Mô tả chi tiết</label>
-                        <textarea name="description" class="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 outline-none transition-all font-medium h-[120px] resize-none" placeholder="Nhập ghi chú về thiết bị..."></textarea>
-                    </div>
-                </div>
 
-                <button type="submit" class="w-full py-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-[1.5rem] shadow-2xl shadow-emerald-100 transition-all active:scale-[0.98] uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3">
-                    <i data-lucide="plus-circle" class="w-5 h-5"></i> XÁC NHẬN THÊM THIẾT BỊ
-                </button>
-            </form>
+                    <div class="space-y-4">
+                        <label class="label-fancy">Hình ảnh thiết bị</label>
+                        <div class="flex items-center justify-center w-full">
+                            <label class="flex flex-col items-center justify-center w-full h-40 border-2 border-slate-100 border-dashed rounded-[2rem] cursor-pointer bg-slate-50 hover:bg-slate-100 transition-all">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i data-lucide="upload-cloud" class="w-10 h-10 text-slate-400 mb-3"></i>
+                                    <p class="text-sm text-slate-500 font-medium">Nhấn để tải ảnh hoặc kéo thả</p>
+                                    <p class="text-[10px] text-slate-400 uppercase font-black">PNG, JPG (MAX. 800x400px)</p>
+                                </div>
+                                <input type="file" name="image" accept="image/*" class="hidden" onchange="previewImage(this)" required />
+                            </label>
+                        </div>
+
+                        <div id="preview-container" class="hidden mt-4 p-4 bg-slate-50 rounded-[2rem] border-2 border-slate-100">
+                            <p class="text-[10px] font-black text-slate-400 uppercase mb-3 text-center">Xem trước ảnh</p>
+                            <img id="preview" class="max-h-60 mx-auto rounded-2xl shadow-lg border-4 border-white" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="md:col-span-1 space-y-2">
+                            <label class="label-fancy">Trạng thái</label>
+                            <select name="status" class="w-full px-5 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-black text-sm outline-none focus:border-emerald-500 transition-all appearance-none cursor-pointer">
+                                <option value="available">Available</option>
+                                <option value="unavailable">Unavailable</option>
+                            </select>
+                        </div>
+                        <div class="md:col-span-2 space-y-2">
+                            <label class="label-fancy">Mô tả chi tiết</label>
+                            <textarea name="description" class="w-full p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:border-emerald-500 outline-none transition-all font-medium h-[120px] resize-none" placeholder="Nhập ghi chú về thiết bị..."></textarea>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-[1.5rem] shadow-2xl shadow-emerald-100 transition-all active:scale-[0.98] uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i> THÊM DỤNG CỤ 
+                    </button>
+                </form>
+            </div>
         </div>
-    </div>
 
-    <script>lucide.createIcons();</script>
-</body>
-<jsp:include page="/View/Layout/Footer.jsp"/>
+        <script>lucide.createIcons();</script>
+        <jsp:include page="/View/Layout/Footer.jsp"/>
+    </body>
+   
 </html>
