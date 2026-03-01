@@ -37,7 +37,7 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-20">
                     <div class="flex items-center">
-                        <a href="homepage.jsp" class="flex items-center gap-2 group">
+                        <a href="home.jsp" class="flex items-center gap-2 group">
                             <div class="bg-emerald-600 p-2 rounded-xl text-white group-hover:scale-110 transition-transform">
                                 <i data-lucide="trophy" class="w-6 h-6"></i>
                             </div>
@@ -47,22 +47,32 @@
 
                     <!-- Desktop Nav -->
                     <div class="hidden md:flex items-center gap-8">
-                        <a href="homepage.jsp" class="flex items-center gap-2 font-bold text-emerald-600 transition-colors">
+                        <a href="home.jsp" class="flex items-center gap-2 font-bold text-emerald-600 transition-colors">
                             <i data-lucide="home" class="w-[18px] h-[18px]"></i> Home
                         </a>
-                        <a href="browse.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
+                        <a href="field-list.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
                             <i data-lucide="search" class="w-[18px] h-[18px]"></i> Browse Fields
                         </a>
                         <a href="bookings.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
                             <i data-lucide="calendar" class="w-[18px] h-[18px]"></i> My Bookings
                         </a>
                         <span class="font-bold text-slate-700">Hello, <%= currentUser.getFullName() %></span>
-                        <a href="<%= request.getContextPath() %>/auth/profile" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20">
-                            Profile
-                        </a>
-                        <a href="<%= request.getContextPath() %>/logout" class="bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-bold hover:bg-slate-300 transition-all">
-                            Logout
-                        </a>
+                        <!-- Profile dropdown -->
+                        <div class="relative group">
+                            <button class="text-slate-600 hover:text-emerald-600 transition-colors focus:outline-none">
+                                <i data-lucide="user" class="w-6 h-6"></i>
+                            </button>
+                            <div class="absolute right-0 top-full mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                                <a href="<%= request.getContextPath() %>/auth/profile"
+                                   class="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
+                                    <i data-lucide="user" class="w-4 h-4"></i> Profile Detail
+                                </a>
+                                <a href="<%= request.getContextPath() %>/logout"
+                                   class="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors border-t border-slate-100">
+                                    <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+                                </a>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Mobile Menu Button -->
@@ -77,7 +87,7 @@
             <!-- Mobile Nav Menu (Hidden by default) -->
             <div id="mobile-menu" class="hidden md:hidden bg-white border-b border-slate-200 animate-in fade-in slide-in-from-top-4 duration-200">
                 <div class="px-4 pt-2 pb-6 space-y-2">
-                    <a href="homepage.jsp" class="flex items-center gap-3 p-4 rounded-xl font-bold bg-emerald-50 text-emerald-600">
+                    <a href="home.jsp" class="flex items-center gap-3 p-4 rounded-xl font-bold bg-emerald-50 text-emerald-600">
                         <i data-lucide="home"></i> Home
                     </a>
                     <a href="browse.jsp" class="flex items-center gap-3 p-4 rounded-xl font-bold text-slate-600">
@@ -86,14 +96,11 @@
                     <a href="bookings.jsp" class="flex items-center gap-3 p-4 rounded-xl font-bold text-slate-600">
                         <i data-lucide="calendar"></i> My Bookings
                     </a>
-                    <div class="pt-2 space-y-2">
-                        <p class="px-4 font-bold text-slate-700">Hello, <%= currentUser.getFullName() %></p>
-                        <a href="<%= request.getContextPath() %>/auth/profile" class="flex items-center justify-center gap-2 p-4 bg-emerald-600 text-white rounded-xl font-bold">
-                            <i data-lucide="user"></i> Profile
-                        </a>
-                        <a href="<%= request.getContextPath() %>/logout" class="flex items-center justify-center gap-2 p-4 bg-slate-200 text-slate-700 rounded-xl font-bold">
-                            <i data-lucide="log-out"></i> Logout
-                        </a>
+                    <div class="pt-2 flex items-center gap-4 px-4 border-t border-slate-100">
+                        <i data-lucide="user" class="w-5 h-5 text-slate-500"></i>
+                        <span class="font-bold text-slate-700 flex-1"><%= currentUser.getFullName() %></span>
+                        <a href="<%= request.getContextPath() %>/auth/profile" class="text-sm font-semibold text-emerald-600 hover:underline">Profile</a>
+                        <a href="<%= request.getContextPath() %>/logout" class="text-sm font-semibold text-red-500 hover:underline">Logout</a>
                     </div>
                 </div>
             </div>
