@@ -53,11 +53,6 @@
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>
     </welcome-file-list>
-    <!-- Servlet -->
-    <servlet>
-        <servlet-name>MainServlet</servlet-name>
-        <servlet-class>com.example.controller.MainServlet</servlet-class>
-    </servlet>
     <!-- Servlet Mapping -->
     <servlet>
         <servlet-name>ForgotPasswordServlet</servlet-name>
@@ -123,10 +118,6 @@
         <servlet-name>EditVoucherServlet</servlet-name>
         <servlet-class>Controller.Voucher.EditVoucherServlet</servlet-class>
     </servlet>
-    <servlet-mapping>
-        <servlet-name>MainServlet</servlet-name>
-        <url-pattern>/main</url-pattern>
-    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>AddStaffServlet</servlet-name>
         <url-pattern>/staff/add</url-pattern>
