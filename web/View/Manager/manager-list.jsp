@@ -18,7 +18,7 @@
 </head>
 <body class="antialiased text-gray-900 flex flex-col min-h-screen pb-10">
 
-<jsp:include page="/View/Layout/Header.jsp" />
+<jsp:include page="/View/Layout/HeaderManager.jsp" />
 
 <!-- MAIN CONTENT -->
 <main class="max-w-7xl mx-auto px-6 py-12 space-y-10 w-full flex-grow">

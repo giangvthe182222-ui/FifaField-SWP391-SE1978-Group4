@@ -4,7 +4,7 @@
     <div class="max-w-7xl mx-auto flex items-center justify-between">
 
         <!-- LOGO -->
-        <a href="/" class="flex items-center gap-2">
+        <a href="${pageContext.request.contextPath}/View/Customer/home.jsp" class="flex items-center gap-2">
             <div class="bg-[#008751] p-1.5 rounded-lg">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2"
                      viewBox="0 0 24 24">
@@ -19,11 +19,11 @@
             </span>
         </a>
 
-        <!-- NAV - MANAGER -->
+        <!-- NAV - CUSTOMER -->
         <nav class="hidden lg:flex items-center gap-4">
 
-            <!-- Dashboard -->
-            <a href="${pageContext.request.contextPath}/manager/dashboard"
+            <!-- Trang chủ -->
+            <a href="${pageContext.request.contextPath}/View/Customer/home.jsp"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -31,53 +31,11 @@
                     <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                     <path d="M9 22V12h6v10"/>
                 </svg>
-                Bảng điều khiển
-            </a>
-
-            <!-- Đặt sân -->
-            <a href="${pageContext.request.contextPath}/bookings"
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <path d="M16 2v4M8 2v4M3 10h18"/>
-                </svg>
-                Đặt sân
-            </a>
-
-            <!-- Ca làm việc -->
-            <a href="${pageContext.request.contextPath}/manager/shifts"
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 6v6l4 2"/>
-                </svg>
-                Ca làm việc
-            </a>
-
-            <!-- Nhân viên -->
-<<<<<<< HEAD
-            <a href="${pageContext.request.contextPath}/staff-list"
-=======
-            <a href="${pageContext.request.contextPath}/manager/staff"
->>>>>>> 632c2005f9e187880302f853f17eb4f76ccc500b
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <path d="M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3"/>
-                    <path d="M8 11c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3z"/>
-                    <path d="M2 21c0-3 3-5 6-5"/>
-                    <path d="M14 16c3 0 6 2 6 5"/>
-                </svg>
-                Nhân viên
+                Trang chủ
             </a>
 
             <!-- Cụm sân -->
-            <a href="${pageContext.request.contextPath}/locations"
+            <a href="${pageContext.request.contextPath}/View/Location/location-list.jsp"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -86,6 +44,18 @@
                     <circle cx="12" cy="10" r="3"/>
                 </svg>
                 Cụm sân
+            </a>
+
+            <!-- Đặt sân của tôi -->
+            <a href="${pageContext.request.contextPath}/View/Booking/BookingHistory.jsp"
+               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
+               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
+                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <path d="M16 2v4M8 2v4M3 10h18"/>
+                </svg>
+                Đặt sân của tôi
             </a>
 
             <!-- Dụng cụ -->
@@ -99,16 +69,18 @@
                 Dụng cụ
             </a>
 
-            <!-- Lịch cá nhân -->
-            <a href="${pageContext.request.contextPath}/manager/schedule"
+            <!-- Mã giảm giá -->
+            <a href="${pageContext.request.contextPath}/customer/vouchers"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
                      viewBox="0 0 24 24">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <path d="M7 9h10m-10 8h10M9 4V2m6 2V2"/>
+                    <rect x="3" y="5" width="18" height="14" rx="2" ry="2"/>
+                    <path d="M3 10h18M3 14h18"/>
+                    <circle cx="7" cy="12" r="1" fill="currentColor"/>
+                    <circle cx="17" cy="12" r="1" fill="currentColor"/>
                 </svg>
-                Lịch cá nhân
+                Mã giảm giá
             </a>
 
         </nav>

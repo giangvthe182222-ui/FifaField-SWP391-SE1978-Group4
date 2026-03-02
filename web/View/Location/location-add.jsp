@@ -12,7 +12,7 @@
 <body class="bg-slate-100 min-h-screen">
 
     <!-- HEADER -->
-    <jsp:include page="/View/Layout/Header.jsp"/>
+    <jsp:include page="/View/Layout/HeaderAdmin.jsp"/>
 
     <!-- CONTENT -->
     <div class="flex items-center justify-center min-h-[calc(100vh-120px)]">

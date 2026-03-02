@@ -19,11 +19,11 @@
             </span>
         </a>
 
-        <!-- NAV - MANAGER -->
+        <!-- NAV - STAFF -->
         <nav class="hidden lg:flex items-center gap-4">
 
             <!-- Dashboard -->
-            <a href="${pageContext.request.contextPath}/manager/dashboard"
+            <a href="${pageContext.request.contextPath}/staff/dashboard"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -32,6 +32,30 @@
                     <path d="M9 22V12h6v10"/>
                 </svg>
                 Bảng điều khiển
+            </a>
+
+            <!-- Ca của tôi -->
+            <a href="${pageContext.request.contextPath}/staff/my-shifts"
+               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
+               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
+                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+                Ca của tôi
+            </a>
+
+            <!-- Lịch cá nhân -->
+            <a href="${pageContext.request.contextPath}/staff/schedule"
+               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
+               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
+                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <path d="M7 9h10m-10 8h10M9 4V2m6 2V2"/>
+                </svg>
+                Lịch cá nhân
             </a>
 
             <!-- Đặt sân -->
@@ -46,36 +70,6 @@
                 Đặt sân
             </a>
 
-            <!-- Ca làm việc -->
-            <a href="${pageContext.request.contextPath}/manager/shifts"
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 6v6l4 2"/>
-                </svg>
-                Ca làm việc
-            </a>
-
-            <!-- Nhân viên -->
-<<<<<<< HEAD
-            <a href="${pageContext.request.contextPath}/staff-list"
-=======
-            <a href="${pageContext.request.contextPath}/manager/staff"
->>>>>>> 632c2005f9e187880302f853f17eb4f76ccc500b
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <path d="M16 11c1.7 0 3-1.3 3-3s-1.3-3-3-3"/>
-                    <path d="M8 11c1.7 0 3-1.3 3-3S9.7 5 8 5 5 6.3 5 8s1.3 3 3 3z"/>
-                    <path d="M2 21c0-3 3-5 6-5"/>
-                    <path d="M14 16c3 0 6 2 6 5"/>
-                </svg>
-                Nhân viên
-            </a>
-
             <!-- Cụm sân -->
             <a href="${pageContext.request.contextPath}/locations"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
@@ -86,29 +80,6 @@
                     <circle cx="12" cy="10" r="3"/>
                 </svg>
                 Cụm sân
-            </a>
-
-            <!-- Dụng cụ -->
-            <a href="${pageContext.request.contextPath}/equipment-list"
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <path d="M12 6v12m6-6H6"/>
-                </svg>
-                Dụng cụ
-            </a>
-
-            <!-- Lịch cá nhân -->
-            <a href="${pageContext.request.contextPath}/manager/schedule"
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <path d="M7 9h10m-10 8h10M9 4V2m6 2V2"/>
-                </svg>
-                Lịch cá nhân
             </a>
 
         </nav>

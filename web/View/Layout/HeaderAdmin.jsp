@@ -19,11 +19,11 @@
             </span>
         </a>
 
-        <!-- NAV - MANAGER -->
+        <!-- NAV - ADMIN -->
         <nav class="hidden lg:flex items-center gap-4">
 
             <!-- Dashboard -->
-            <a href="${pageContext.request.contextPath}/manager/dashboard"
+            <a href="${pageContext.request.contextPath}/admin-dashboard"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -34,36 +34,8 @@
                 Bảng điều khiển
             </a>
 
-            <!-- Đặt sân -->
-            <a href="${pageContext.request.contextPath}/bookings"
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <path d="M16 2v4M8 2v4M3 10h18"/>
-                </svg>
-                Đặt sân
-            </a>
-
-            <!-- Ca làm việc -->
-            <a href="${pageContext.request.contextPath}/manager/shifts"
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 6v6l4 2"/>
-                </svg>
-                Ca làm việc
-            </a>
-
             <!-- Nhân viên -->
-<<<<<<< HEAD
             <a href="${pageContext.request.contextPath}/staff-list"
-=======
-            <a href="${pageContext.request.contextPath}/manager/staff"
->>>>>>> 632c2005f9e187880302f853f17eb4f76ccc500b
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -74,6 +46,18 @@
                     <path d="M14 16c3 0 6 2 6 5"/>
                 </svg>
                 Nhân viên
+            </a>
+
+            <!-- Quản lý -->
+            <a href="${pageContext.request.contextPath}/manager-list"
+               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
+               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
+                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24">
+                    <path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z"/>
+                    <path d="M9 12l2 2 4-4"/>
+                </svg>
+                Quản lý
             </a>
 
             <!-- Cụm sân -->
@@ -99,16 +83,16 @@
                 Dụng cụ
             </a>
 
-            <!-- Lịch cá nhân -->
-            <a href="${pageContext.request.contextPath}/manager/schedule"
+            <!-- Đặt sân -->
+            <a href="${pageContext.request.contextPath}/bookings"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
                      viewBox="0 0 24 24">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <path d="M7 9h10m-10 8h10M9 4V2m6 2V2"/>
+                    <path d="M16 2v4M8 2v4M3 10h18"/>
                 </svg>
-                Lịch cá nhân
+                Đặt sân
             </a>
 
         </nav>

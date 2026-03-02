@@ -27,8 +27,8 @@
         <!-- Navbar -->
         <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-20">
-                    <div class="flex items-center">
+                <div class="flex justify-between h-20 items-center">
+                    <div class="flex items-center flex-shrink-0">
                         <a href="homepage.jsp" class="flex items-center gap-2 group">
                             <div class="bg-emerald-600 p-2 rounded-xl text-white group-hover:scale-110 transition-transform">
                                 <i data-lucide="trophy" class="w-6 h-6"></i>
@@ -37,8 +37,8 @@
                         </a>
                     </div>
 
-                    <!-- Desktop Nav -->
-                    <div class="hidden md:flex items-center gap-8">
+                    <!-- Desktop Nav - Center -->
+                    <div class="hidden md:flex items-center gap-8 flex-1 justify-center">
                         <a href="homepage.jsp" class="flex items-center gap-2 font-bold text-emerald-600 transition-colors">
                             <i data-lucide="home" class="w-[18px] h-[18px]"></i> Home
                         </a>
@@ -48,6 +48,10 @@
                         <a href="bookings.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
                             <i data-lucide="calendar" class="w-[18px] h-[18px]"></i> My Bookings
                         </a>
+                    </div>
+
+                    <!-- Right - Sign In -->
+                    <div class="hidden md:flex items-center flex-shrink-0">
                         <a href="login.jsp" class="bg-emerald-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20">
                             Sign In
                         </a>

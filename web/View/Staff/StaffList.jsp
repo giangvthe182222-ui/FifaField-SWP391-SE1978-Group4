@@ -11,7 +11,7 @@
 </head>
 <body class="antialiased text-gray-900">
 
-<jsp:include page="/View/Layout/Header.jsp"/>
+<jsp:include page="/View/Layout/HeaderStaff.jsp"/>
 
 <main class="max-w-6xl mx-auto px-6 py-12">
     <div class="flex items-center justify-between mb-6">

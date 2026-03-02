@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-50">
-<jsp:include page="/View/Layout/Header.jsp" />
+<jsp:include page="/View/Layout/HeaderAdmin.jsp" />
 <main class="max-w-6xl mx-auto p-6">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Quản lý ca</h1>

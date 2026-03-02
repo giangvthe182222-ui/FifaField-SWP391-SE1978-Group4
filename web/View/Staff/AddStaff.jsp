@@ -17,7 +17,7 @@
 </head>
 <body class="antialiased text-gray-900">
 
-<jsp:include page="/View/Layout/Header.jsp"/>
+<jsp:include page="/View/Layout/HeaderStaff.jsp"/>
 
 <main class="max-w-4xl mx-auto px-6 py-12 space-y-8">
     

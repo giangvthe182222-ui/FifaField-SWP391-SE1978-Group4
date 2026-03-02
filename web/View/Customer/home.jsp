@@ -35,8 +35,8 @@
         <!-- Navbar -->
         <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-20">
-                    <div class="flex items-center">
+                <div class="flex justify-between h-20 items-center">
+                    <div class="flex items-center flex-shrink-0">
                         <a href="home.jsp" class="flex items-center gap-2 group">
                             <div class="bg-emerald-600 p-2 rounded-xl text-white group-hover:scale-110 transition-transform">
                                 <i data-lucide="trophy" class="w-6 h-6"></i>
@@ -45,17 +45,21 @@
                         </a>
                     </div>
 
-                    <!-- Desktop Nav -->
-                    <div class="hidden md:flex items-center gap-8">
+                    <!-- Desktop Nav - Center -->
+                    <div class="hidden md:flex items-center gap-8 flex-1 justify-center">
                         <a href="home.jsp" class="flex items-center gap-2 font-bold text-emerald-600 transition-colors">
                             <i data-lucide="home" class="w-[18px] h-[18px]"></i> Home
                         </a>
-                        <a href="field-list.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
+                        <a href="${pageContext.request.contextPath}/View/Location/location-list.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
                             <i data-lucide="search" class="w-[18px] h-[18px]"></i> Browse Fields
                         </a>
-                        <a href="bookings.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
+                        <a href="${pageContext.request.contextPath}/View/Booking/BookingHistory.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
                             <i data-lucide="calendar" class="w-[18px] h-[18px]"></i> My Bookings
                         </a>
+                    </div>
+
+                    <!-- Right - User & Profile -->
+                    <div class="hidden md:flex items-center gap-4 flex-shrink-0">
                         <span class="font-bold text-slate-700">Hello, <%= currentUser.getFullName() %></span>
                         <!-- Profile dropdown -->
                         <div class="relative group">
@@ -63,13 +67,13 @@
                                 <i data-lucide="user" class="w-6 h-6"></i>
                             </button>
                             <div class="absolute right-0 top-full mt-2 w-44 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
-                                <a href="<%= request.getContextPath() %>/auth/profile"
+                                <a href="${pageContext.request.contextPath}/auth/profile"
                                    class="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
-                                    <i data-lucide="user" class="w-4 h-4"></i> Profile Detail
+                                    <i data-lucide="user" class="w-4 h-4"></i> Thông tin cá nhân
                                 </a>
-                                <a href="<%= request.getContextPath() %>/logout"
+                                <a href="${pageContext.request.contextPath}/logout"
                                    class="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors border-t border-slate-100">
-                                    <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+                                    <i data-lucide="log-out" class="w-4 h-4"></i> Đăng xuất
                                 </a>
                             </div>
                         </div>
@@ -99,8 +103,8 @@
                     <div class="pt-2 flex items-center gap-4 px-4 border-t border-slate-100">
                         <i data-lucide="user" class="w-5 h-5 text-slate-500"></i>
                         <span class="font-bold text-slate-700 flex-1"><%= currentUser.getFullName() %></span>
-                        <a href="<%= request.getContextPath() %>/auth/profile" class="text-sm font-semibold text-emerald-600 hover:underline">Profile</a>
-                        <a href="<%= request.getContextPath() %>/logout" class="text-sm font-semibold text-red-500 hover:underline">Logout</a>
+                        <a href="${pageContext.request.contextPath}/auth/profile" class="text-sm font-semibold text-emerald-600 hover:underline">Profile</a>
+                        <a href="${pageContext.request.contextPath}/logout" class="text-sm font-semibold text-red-500 hover:underline">Logout</a>
                     </div>
                 </div>
             </div>
@@ -126,11 +130,11 @@
                         Join 10,000+ players booking top-rated premium football pitches across the city. Professional quality, instant booking.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="browse.jsp" class="flex items-center justify-center gap-2 bg-emerald-600 text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 active:scale-[0.98]">
+                        <a href="<%=request.getContextPath()%>/booking" class="flex items-center justify-center gap-2 bg-emerald-600 text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 active:scale-[0.98]">
                             BOOK A PITCH
                             <i data-lucide="chevron-right"></i>
                         </a>
-                        <button class="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-white/20 transition-all">
+                        <button href= "/View/Location/location-detail.jsp" class="flex items-center justify-center gap-2 bg-white/10 backdrop-blur-md border border-white/20 text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-white/20 transition-all">
                             OUR LOCATIONS
                         </button>
                     </div>
@@ -293,7 +297,7 @@
                     <a href="#" class="text-slate-400 hover:text-white transition-colors"><i data-lucide="twitter"></i></a>
                 </div>
                 <div class="pt-12 border-t border-slate-800 text-xs text-slate-500 font-bold uppercase tracking-[0.2em]">
-                    &copy; 2024 FIFA FIELD. DEVELOPED FOR CHAMPIONS.
+                    &copy; 2026 FIFA FIELD. DEVELOPED FOR CHAMPIONS.
                 </div>
             </div>
         </footer>
