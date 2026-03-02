@@ -81,4 +81,22 @@ public class FieldDAO {
         }
     }
 
+    // fetch every field in the system
+    public List<Field> getAllFields() {
+        List<Field> list = new ArrayList<>();
+        String sql = "SELECT * FROM Field";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                list.add(mapResultSet(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
 }

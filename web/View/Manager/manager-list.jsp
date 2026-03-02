@@ -151,7 +151,7 @@
 
 </main>
 
-<jsp:include page="/View/Layout/Footer.jsp" />
+<jsp:include page="/View/Layout/FooterManager.jsp" />
 
 <script>
     lucide.createIcons();

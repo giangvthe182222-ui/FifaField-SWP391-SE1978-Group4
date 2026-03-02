@@ -140,6 +140,14 @@
         <servlet-class>Controller.Manager.StaffShiftsServlet</servlet-class>
     </servlet>
     <servlet>
+        <servlet-name>EditStaffShiftServlet</servlet-name>
+        <servlet-class>Controller.Manager.EditStaffShiftServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>DeleteStaffShiftServlet</servlet-name>
+        <servlet-class>Controller.Manager.DeleteStaffShiftServlet</servlet-class>
+    </servlet>
+    <servlet>
         <servlet-name>ShiftsListServlet</servlet-name>
         <servlet-class>Controller.Shift.ShiftsListServlet</servlet-class>
     </servlet>
@@ -198,6 +206,14 @@
     <servlet-mapping>
         <servlet-name>StaffShiftsServlet</servlet-name>
         <url-pattern>/manager/staff-shifts</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>EditStaffShiftServlet</servlet-name>
+        <url-pattern>/manager/staff-shift/edit</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>DeleteStaffShiftServlet</servlet-name>
+        <url-pattern>/manager/staff-shift/delete</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ShiftsListServlet</servlet-name>
