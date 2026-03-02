@@ -13,7 +13,6 @@ public class AdminFilter implements Filter {
     private static final String[] ADMIN_PATH_PREFIXES = new String[]{
         "/admin-dashboard",
 //        "/staff",
-        "/manager",
         "/locations",
         "/equipment",
         "/location-equipment",
@@ -25,7 +24,7 @@ public class AdminFilter implements Filter {
     private boolean isAdminPath(HttpServletRequest req) {
         String path = req.getRequestURI().substring(req.getContextPath().length()).toLowerCase();
         // Block direct access to JSP admin folder as well
-        if (path.contains("/view/admin") || path.contains("/view/layout/admin") || path.contains("/view/manager") ) return true;
+        if (path.contains("/view/admin") || path.contains("/view/layout/admin")) return true;
         for (String prefix : ADMIN_PATH_PREFIXES) {
             if (path.equals(prefix) || path.startsWith(prefix + "/") || path.startsWith(prefix + "?") || path.startsWith(prefix)) {
                 return true;
