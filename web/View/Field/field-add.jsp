@@ -9,7 +9,7 @@
 </head>
 <body class="bg-slate-100 min-h-screen">
 
-<jsp:include page="/View/Layout/Header.jsp" />
+<jsp:include page="/View/Layout/HeaderAdmin.jsp" />
 
 <div class="flex items-center justify-center min-h-[calc(100vh-120px)]">
     <div class="bg-white w-full max-w-xl rounded-[2.5rem] p-10 shadow-2xl">

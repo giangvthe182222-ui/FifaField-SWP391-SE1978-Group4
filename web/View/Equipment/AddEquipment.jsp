@@ -55,7 +55,7 @@
     </head>
     <body class="bg-slate-50 min-h-screen pb-20">
 
-        <jsp:include page="/View/Layout/Header.jsp"/>
+        <jsp:include page="/View/Layout/HeaderAdmin.jsp"/>
 
         <div class="max-w-3xl mx-auto px-6 pt-12">
 

@@ -11,7 +11,7 @@
 </head>
 <body class="antialiased text-gray-900">
 
-<jsp:include page="/View/Layout/Header.jsp"/>
+<jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
 
 <main class="max-w-3xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black mb-4">Hồ sơ cá nhân</h1>

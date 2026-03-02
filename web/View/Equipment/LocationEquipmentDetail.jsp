@@ -15,7 +15,7 @@
 
 <body class="bg-slate-50 min-h-screen font-[Inter]">
 
-<jsp:include page="/View/Layout/Header.jsp"/>
+<jsp:include page="/View/Layout/HeaderAdmin.jsp"/>
 
 <div class="max-w-5xl mx-auto px-6 pt-10">
 

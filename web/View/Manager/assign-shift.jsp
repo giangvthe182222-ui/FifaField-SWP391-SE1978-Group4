@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-50">
-<jsp:include page="/View/Layout/Header.jsp" />
+<jsp:include page="/View/Layout/HeaderManager.jsp" />
 <main class="max-w-6xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-4">Phân ca cho nhân viên</h1>
     <c:if test="${not empty error}">

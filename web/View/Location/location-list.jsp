@@ -14,7 +14,7 @@
     </style>
 </head>
 
-<jsp:include page="/View/Layout/Header.jsp"/>
+<jsp:include page="/View/Layout/HeaderAdmin.jsp"/>
 
 <body class="bg-[#f8fafc] min-h-screen">
 

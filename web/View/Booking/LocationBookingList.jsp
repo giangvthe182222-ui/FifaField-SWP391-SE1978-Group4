@@ -20,7 +20,7 @@
 </head>
 <body class="antialiased text-gray-900 flex flex-col min-h-screen">
 
-<jsp:include page="/View/Layout/Header.jsp"/>
+<jsp:include page="/View/Layout/HeaderManager.jsp"/>
 
 <main class="flex-grow max-w-7xl mx-auto px-6 py-12 w-full space-y-12">
     

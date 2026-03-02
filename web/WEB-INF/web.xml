@@ -4,7 +4,7 @@
     <!-- Filters -->
     <filter>
         <filter-name>ManagerFilter</filter-name>
-        <filter-class>Filter.ManagerFilter</filter-class>
+        <filter-class>filter.ManagerFilter</filter-class>
     </filter>
     <filter-mapping>
         <filter-name>ManagerFilter</filter-name>

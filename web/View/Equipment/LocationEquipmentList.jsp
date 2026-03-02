@@ -45,7 +45,7 @@
 
 
     <body class="antialiased text-gray-900">
-        <jsp:include page="/View/Layout/Header.jsp"/>
+        <jsp:include page="/View/Layout/HeaderAdmin.jsp"/>
 
 
 

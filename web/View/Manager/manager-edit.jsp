@@ -12,7 +12,7 @@
 </head>
 <body class="bg-slate-50 min-h-screen" style="font-family: 'Inter', sans-serif;">
 
-<jsp:include page="/View/Layout/Header.jsp" />
+<jsp:include page="/View/Layout/HeaderManager.jsp" />
 
 <!-- MAIN CONTENT -->
 <main class="max-w-2xl mx-auto px-6 py-12">

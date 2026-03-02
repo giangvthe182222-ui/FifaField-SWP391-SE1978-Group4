@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-slate-100 min-h-screen">
-<jsp:include page="/View/Layout/Header.jsp" />
+<jsp:include page="/View/Layout/HeaderAdmin.jsp" />
 
 <div class="max-w-4xl mx-auto p-8">
     <div class="flex items-center justify-between mb-6">
