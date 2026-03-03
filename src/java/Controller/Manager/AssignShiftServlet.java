@@ -68,16 +68,17 @@ public class AssignShiftServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Server-side validation
+        // Server-side validation for date range
         String staffId = request.getParameter("staffId");
         String shiftId = request.getParameter("shiftId");
-        String date = request.getParameter("workingDate");
+        String start = request.getParameter("startDate");
+        String end = request.getParameter("endDate");
         String locationId = request.getParameter("locationId");
         String fieldId = request.getParameter("fieldId");
 
-        if (staffId == null || staffId.isEmpty() || shiftId == null || shiftId.isEmpty() || date == null || date.isEmpty()
-                || locationId == null || locationId.isEmpty() || fieldId == null || fieldId.isEmpty()) {
-            request.setAttribute("error", "Vui lòng điền đầy đủ thông tin: nhân viên, cụm sân, sân, ca và ngày.");
+        if (staffId == null || staffId.isEmpty() || shiftId == null || shiftId.isEmpty() || start == null || start.isEmpty()
+                || end == null || end.isEmpty() || locationId == null || locationId.isEmpty() || fieldId == null || fieldId.isEmpty()) {
+            request.setAttribute("error", "Vui lòng điền đầy đủ thông tin: nhân viên, cụm sân, sân, ca và khoảng ngày.");
             doGet(request, response);
             return;
         }
@@ -106,48 +107,64 @@ public class AssignShiftServlet extends HttpServlet {
                 return;
             }
 
-            java.time.LocalDate workingDate = LocalDate.parse(date);
-            if (workingDate.isBefore(java.time.LocalDate.now())) {
-                request.setAttribute("error", "Ngày phân ca không được là quá khứ.");
+            LocalDate startDate = LocalDate.parse(start);
+            LocalDate endDate = LocalDate.parse(end);
+            if (startDate.isAfter(endDate)) {
+                request.setAttribute("error", "Ngày bắt đầu phải không sau ngày kết thúc.");
+                doGet(request, response);
+                return;
+            }
+            if (endDate.isBefore(LocalDate.now())) {
+                request.setAttribute("error", "Khoảng ngày không được ở quá khứ.");
                 doGet(request, response);
                 return;
             }
 
+            StaffShiftDAO dao = new StaffShiftDAO();
+            if (dao.hasOverlap(staffUuid, startDate, endDate)) {
+                request.setAttribute("error", "Nhân viên đã có lịch trong khoảng thời gian này.");
+                doGet(request, response);
+                return;
+            }
+
+            // assemble template shift (date not set)
             StaffShift ss = new StaffShift();
             ss.setStaffId(staffUuid);
             ss.setShiftId(shiftUuid);
             ss.setFieldId(fieldUuid);
-            ss.setWorkingDate(workingDate);
             ss.setAssignedBy(assignedBy);
             ss.setStatus("assigned");
 
-            // check if update or insert
+            // editing existed assignment?
             String origStaff = request.getParameter("origStaffId");
             if (origStaff != null && !origStaff.isEmpty()) {
-                // perform update
                 String origField = request.getParameter("origFieldId");
                 String origShift = request.getParameter("origShiftId");
                 String origDate = request.getParameter("origWorkingDate");
-                StaffShiftDAO dao = new StaffShiftDAO();
-                boolean updated = dao.updateStaffShift(
+                StaffShiftDAO dao1 = new StaffShiftDAO();
+                boolean updated = dao1.updateStaffShift(
                         UUID.fromString(origStaff),
                         UUID.fromString(origField),
                         UUID.fromString(origShift),
-                        java.time.LocalDate.parse(origDate),
+                        LocalDate.parse(origDate),
                         ss);
                 if (!updated) {
                     request.setAttribute("error", "Không thể cập nhật ca.");
                     doGet(request, response);
                     return;
                 }
+                request.getSession().setAttribute("success", "Cập nhật ca thành công.");
                 response.sendRedirect(request.getContextPath() + "/manager/staff-shifts");
                 return;
             }
 
-
-            StaffShiftDAO dao = new StaffShiftDAO();
-            dao.assignShift(ss);
-            // set success message and redirect to list
+            StaffShiftDAO dao2 = new StaffShiftDAO();
+            boolean ok = dao2.assignShiftRange(ss, startDate, endDate);
+            if (!ok) {
+                request.setAttribute("error", "Phân ca thất bại.");
+                doGet(request, response);
+                return;
+            }
             request.getSession().setAttribute("success", "Phân ca thành công.");
             response.sendRedirect(request.getContextPath() + "/manager/staff-shifts");
         } catch (IllegalArgumentException iae) {

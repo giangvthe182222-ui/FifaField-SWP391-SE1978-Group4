@@ -41,6 +41,16 @@
                 <c:otherwise>Phân ca cho nhân viên</c:otherwise>
             </c:choose>
         </h1>
+        <c:if test="${not empty success}">
+            <div class="mt-3 flex items-start gap-3">
+                <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0"></i>
+                <div>
+                    <h3 class="font-semibold text-green-800">Thành công</h3>
+                    <p class="text-green-700 text-sm">${success}</p>
+                </div>
+            </div>
+            <c:remove var="success" scope="session" />
+        </c:if>
         <c:if test="${not empty error}">
             <div class="mt-3 flex items-start gap-3">
                 <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0"></i>
@@ -49,6 +59,7 @@
                     <p class="text-red-700 text-sm">${error}</p>
                 </div>
             </div>
+            <c:remove var="error" scope="session" />
         </c:if>
         </div>
  
@@ -129,14 +140,25 @@
                     </select>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
-                            Ngày làm việc <span class="text-red-500">*</span>
-                        </div>
-                    </label>
-                    <input type="date" name="workingDate" id="workingDate" required value="${workingDate}" class="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#008751] focus:border-transparent transition-all bg-white" />
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
+                                Ngày bắt đầu <span class="text-red-500">*</span>
+                            </div>
+                        </label>
+                        <input type="date" name="startDate" id="startDate" required value="${startDate}" class="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 font-medium" />
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="calendar" class="w-4 h-4 text-slate-500"></i>
+                                Ngày kết thúc <span class="text-red-500">*</span>
+                            </div>
+                        </label>
+                        <input type="date" name="endDate" id="endDate" required value="${endDate}" class="w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 font-medium" />
+                    </div>
                 </div>
             </div>
 
@@ -201,7 +223,8 @@
         const locationId = document.querySelector('[name="locationId"]').value;
         const fieldId = document.querySelector('[name="fieldId"]').value;
         const shiftId = document.querySelector('[name="shiftId"]').value;
-        const workingDate = document.querySelector('[name="workingDate"]').value;
+        const start = document.querySelector('[name="startDate"]').value;
+        const end = document.querySelector('[name="endDate"]').value;
         const errorEl = document.getElementById('formError');
         const errorMsg = document.getElementById('errorMessage');
 
@@ -228,17 +251,19 @@
             errorEl.classList.remove('hidden');
             return false;
         }
-        if (!workingDate) {
-            errorMsg.textContent = 'Vui lòng chọn ngày làm việc.';
+        if (!start || !end) {
+            errorMsg.textContent = 'Vui lòng chọn khoảng ngày.';
             errorEl.classList.remove('hidden');
             return false;
         }
-
-        const selected = new Date(workingDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (selected < today) {
-            errorMsg.textContent = 'Ngày làm việc không được ở quá khứ.';
+        if (new Date(start) > new Date(end)) {
+            errorMsg.textContent = 'Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.';
+            errorEl.classList.remove('hidden');
+            return false;
+        }
+        const today = new Date(); today.setHours(0,0,0,0);
+        if (new Date(end) < today) {
+            errorMsg.textContent = 'Khoảng ngày không được ở quá khứ.';
             errorEl.classList.remove('hidden');
             return false;
         }

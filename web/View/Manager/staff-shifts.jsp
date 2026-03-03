@@ -40,6 +40,34 @@
         </div>
     </div>
 
+    <!-- FILTER / SEARCH -->
+    <form method="get" action="" class="mb-6">
+        <div class="flex flex-col md:flex-row gap-4 items-end">
+            <div class="flex-1">
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="staffName">Tên nhân viên</label>
+                <input type="text" name="staffName" id="staffName" value="${fn:escapeXml(staffNameFilter)}" placeholder="Nhập tên hoặc một phần"
+                       class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="startDate">Từ ngày</label>
+                <input type="date" name="startDate" id="startDate" value="${startDateFilter}"
+                       class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-1" for="endDate">Đến ngày</label>
+                <input type="date" name="endDate" id="endDate" value="${endDateFilter}"
+                       class="block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" />
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="submit" class="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold hover:bg-indigo-700 transition-all">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                    Tìm kiếm
+                </button>
+                <a href="${pageContext.request.contextPath}/manager/staff-shifts" class="text-sm text-slate-600 hover:underline">Xóa bộ lọc</a>
+            </div>
+        </div>
+    </form>
+
     <!-- FEEDBACK MESSAGE -->
     <c:if test="${not empty success}">
         <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
