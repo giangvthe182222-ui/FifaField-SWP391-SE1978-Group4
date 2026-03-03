@@ -14,12 +14,7 @@
         body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
-<<<<<<< Updated upstream
-<body class="bg-gray-50">
-<jsp:include page="/View/Layout/HeaderManager.jsp" />
-<main class="max-w-6xl mx-auto p-6">
-    <h1 class="text-2xl font-bold mb-4">Ca nhân viên được phân</h1>
-=======
+
 <body class="bg-slate-50 min-h-screen" style="font-family: 'Inter', sans-serif;">
 
 <jsp:include page="/View/Layout/HeaderManager.jsp" />
@@ -45,8 +40,17 @@
         </div>
     </div>
 
-    <!-- ERROR MESSAGE -->
->>>>>>> Stashed changes
+    <!-- FEEDBACK MESSAGE -->
+    <c:if test="${not empty success}">
+        <div class="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
+            <i data-lucide="check-circle" class="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0"></i>
+            <div>
+                <h3 class="font-semibold text-green-800">Thành công</h3>
+                <p class="text-green-700 text-sm">${success}</p>
+            </div>
+        </div>
+        <c:remove var="success" scope="session" />
+    </c:if>
     <c:if test="${not empty error}">
         <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
             <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0"></i>

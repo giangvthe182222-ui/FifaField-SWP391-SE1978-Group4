@@ -147,7 +147,9 @@ public class AssignShiftServlet extends HttpServlet {
 
             StaffShiftDAO dao = new StaffShiftDAO();
             dao.assignShift(ss);
-            response.sendRedirect(request.getContextPath() + "/manager/assign-shift");
+            // set success message and redirect to list
+            request.getSession().setAttribute("success", "Phân ca thành công.");
+            response.sendRedirect(request.getContextPath() + "/manager/staff-shifts");
         } catch (IllegalArgumentException iae) {
             request.setAttribute("error", "Định dạng ID/Ngày không hợp lệ.");
             doGet(request, response);

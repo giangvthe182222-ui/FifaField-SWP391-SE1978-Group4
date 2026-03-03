@@ -5,6 +5,7 @@ import DAO.ShiftDAO;
 import DAO.StaffDAO;
 import DAO.StaffShiftDAO;
 import Models.StaffShift;
+import DAO.LocationDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,12 +25,11 @@ public class EditStaffShiftServlet extends HttpServlet {
             StaffDAO staffDAO = new StaffDAO();
             ShiftDAO shiftDAO = new ShiftDAO();
             FieldDAO fieldDAO = new FieldDAO();
-
+            LocationDAO locationDAO = new LocationDAO();
+            
             request.setAttribute("staffList", staffDAO.getAllStaff());
             request.setAttribute("shifts", shiftDAO.getAllShifts());
-            request.setAttribute("fields", fieldDAO.getAllFields());
-
-            // Pass original identifying params to prefill form
+            request.setAttribute("locations", locationDAO.getAllLocations());
             request.setAttribute("editMode", true);
             request.setAttribute("origStaffId", request.getParameter("staffId"));
             request.setAttribute("origFieldId", request.getParameter("fieldId"));
@@ -38,7 +38,7 @@ public class EditStaffShiftServlet extends HttpServlet {
 
             // Also set the current values to populate selects
             request.setAttribute("staffId", request.getParameter("staffId"));
-            request.setAttribute("fieldId", request.getParameter("fieldId"));
+                request.setAttribute("locationId", request.getParameter("locationId"));
             request.setAttribute("shiftId", request.getParameter("shiftId"));
             request.setAttribute("workingDate", request.getParameter("workingDate"));
 
@@ -52,34 +52,30 @@ public class EditStaffShiftServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        // Similar validation & update logic as AssignShiftServlet
-        String staffId = request.getParameter("staffId");
+        // Only allow changing field and shift; staff and date remain fixed (orig values)
         String shiftId = request.getParameter("shiftId");
-        String date = request.getParameter("workingDate");
         String fieldId = request.getParameter("fieldId");
 
-        if (staffId == null || staffId.isEmpty() || shiftId == null || shiftId.isEmpty() || date == null || date.isEmpty()
-                || fieldId == null || fieldId.isEmpty()) {
-            request.setAttribute("error", "Vui lòng điền đầy đủ thông tin.");
+        if (shiftId == null || shiftId.isEmpty() || fieldId == null || fieldId.isEmpty()) {
+            request.setAttribute("error", "Vui lòng chọn ca và sân.");
             doGet(request, response);
             return;
         }
-
         try {
             StaffShiftDAO dao = new StaffShiftDAO();
 
-            // Build new data
-            StaffShift ss = new StaffShift();
-            ss.setStaffId(UUID.fromString(staffId));
-            ss.setFieldId(UUID.fromString(fieldId));
-            ss.setShiftId(UUID.fromString(shiftId));
-            ss.setWorkingDate(LocalDate.parse(date));
-            ss.setStatus("assigned");
-
+            // Build new data - keep original staff and working date
             String origStaff = request.getParameter("origStaffId");
             String origField = request.getParameter("origFieldId");
             String origShift = request.getParameter("origShiftId");
             String origDate = request.getParameter("origWorkingDate");
+
+            StaffShift ss = new StaffShift();
+            ss.setStaffId(UUID.fromString(origStaff));
+            ss.setFieldId(UUID.fromString(fieldId));
+            ss.setShiftId(UUID.fromString(shiftId));
+            ss.setWorkingDate(LocalDate.parse(origDate));
+            ss.setStatus("assigned");
 
             boolean updated = dao.updateStaffShift(
                     UUID.fromString(origStaff),
@@ -95,6 +91,8 @@ public class EditStaffShiftServlet extends HttpServlet {
                 return;
             }
 
+            // success message and back to list
+            request.getSession().setAttribute("success", "Cập nhật ca thành công.");
             response.sendRedirect(request.getContextPath() + "/manager/staff-shifts");
         } catch (Exception ex) {
             ex.printStackTrace();
