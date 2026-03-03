@@ -109,7 +109,7 @@ public class BookingDAO {
 
     public List<BookingViewModel> getByBooker(UUID bookerId) {
         List<BookingViewModel> list = new ArrayList<>();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name " +
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, u.phone AS customer_phone " +
             "FROM Booking b " +
             "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
             "LEFT JOIN Field f ON b.field_id = f.field_id " +
@@ -135,6 +135,7 @@ public class BookingDAO {
                 if (et != null) vm.setEndTime(et.toLocalTime());
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
+                vm.setCustomerPhone(rs.getString("customer_phone"));
                 vm.setStatus(rs.getString("status"));
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 list.add(vm);
@@ -458,10 +459,10 @@ public class BookingDAO {
         return list;
     }
 
-    public List<BookingViewModel> getByLocationFiltered(UUID locationId, String bookingDateStr, String startTimeStr, String status, String customerName) {
+    public List<BookingViewModel> getByLocationFiltered(UUID locationId, String bookingDateStr, String status, String customerKeyword) {
         List<BookingViewModel> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name ");
+        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, u.phone AS customer_phone ");
         sql.append("FROM Booking b ");
         sql.append("LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id ");
         sql.append("LEFT JOIN Field f ON b.field_id = f.field_id ");
@@ -471,14 +472,11 @@ public class BookingDAO {
         if (bookingDateStr != null && !bookingDateStr.isBlank()) {
             sql.append(" AND s.booking_date = ? ");
         }
-        if (startTimeStr != null && !startTimeStr.isBlank()) {
-            sql.append(" AND s.start_time = ? ");
-        }
         if (status != null && !status.isBlank()) {
             sql.append(" AND LOWER(b.status) = LOWER(?) ");
         }
-        if (customerName != null && !customerName.isBlank()) {
-            sql.append(" AND LOWER(u.full_name) LIKE LOWER(?) ");
+        if (customerKeyword != null && !customerKeyword.isBlank()) {
+            sql.append(" AND (LOWER(u.full_name) LIKE LOWER(?) OR u.phone LIKE ?) ");
         }
 
         sql.append(" ORDER BY s.booking_date DESC, s.start_time");
@@ -489,19 +487,12 @@ public class BookingDAO {
             if (bookingDateStr != null && !bookingDateStr.isBlank()) {
                 ps.setDate(idx++, Date.valueOf(bookingDateStr));
             }
-            if (startTimeStr != null && !startTimeStr.isBlank()) {
-                try {
-                    java.time.LocalTime lt = java.time.LocalTime.parse(startTimeStr);
-                    ps.setTime(idx++, Time.valueOf(lt));
-                } catch (Exception ex) {
-                    ps.setTime(idx++, null);
-                }
-            }
             if (status != null && !status.isBlank()) {
                 ps.setString(idx++, status);
             }
-            if (customerName != null && !customerName.isBlank()) {
-                ps.setString(idx++, "%" + customerName + "%");
+            if (customerKeyword != null && !customerKeyword.isBlank()) {
+                ps.setString(idx++, "%" + customerKeyword + "%");
+                ps.setString(idx++, "%" + customerKeyword + "%");
             }
 
             ResultSet rs = ps.executeQuery();
@@ -519,6 +510,7 @@ public class BookingDAO {
                 if (et != null) vm.setEndTime(et.toLocalTime());
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
+                vm.setCustomerPhone(rs.getString("customer_phone"));
                 vm.setStatus(rs.getString("status"));
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 list.add(vm);
