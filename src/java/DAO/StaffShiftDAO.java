@@ -25,6 +25,62 @@ public class StaffShiftDAO {
         }
     }
 
+    /**
+     * Insert a shift for each date in [start,end] inclusive. Performs overlap check externally.
+     * Returns true if all rows inserted successfully.
+     */
+    public boolean assignShiftRange(StaffShift template, LocalDate start, LocalDate end) throws SQLException {
+        String sql = "INSERT INTO Staff_Shift(staff_id, field_id, shift_id, working_date, assigned_by, status) VALUES(?, ?, ?, ?, ?, ?)";
+        try (Connection con = DBConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try (PreparedStatement ps = con.prepareStatement(sql)) {
+                LocalDate d = start;
+                while (!d.isAfter(end)) {
+                    ps.setString(1, template.getStaffId().toString());
+                    ps.setString(2, template.getFieldId().toString());
+                    ps.setString(3, template.getShiftId().toString());
+                    ps.setDate(4, Date.valueOf(d));
+                    ps.setString(5, template.getAssignedBy().toString());
+                    ps.setString(6, template.getStatus());
+                    ps.addBatch();
+                    d = d.plusDays(1);
+                }
+                int[] results = ps.executeBatch();
+                for (int r : results) {
+                    if (r == Statement.EXECUTE_FAILED) {
+                        con.rollback();
+                        return false;
+                    }
+                }
+                con.commit();
+                return true;
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
+        }
+    }
+
+    /**
+     * Checks if staff has any assignment overlapping the provided date range.
+     */
+    public boolean hasOverlap(UUID staffId, LocalDate start, LocalDate end) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Staff_Shift WHERE staff_id = ? AND working_date BETWEEN ? AND ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, staffId.toString());
+            ps.setDate(2, Date.valueOf(start));
+            ps.setDate(3, Date.valueOf(end));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        }
+        return false;
+    }
+
     public List<StaffShift> getShiftsAssignedBy(UUID managerId) throws SQLException {
         // legacy method still available
         List<StaffShift> list = new ArrayList<>();
@@ -47,6 +103,12 @@ public class StaffShiftDAO {
         return list;
     }
 
+    /**
+     * Return all shifts assigned by a manager, without filtering.
+     *
+     * Kept for backward compatibility; callers should prefer {@link #searchShiftsAssignedBy(UUID,String,LocalDate,LocalDate)}
+     * if any filter criteria are needed.
+     */
     public List<StaffShiftViewModel> getShiftsAssignedByWithNames(UUID managerId) throws SQLException {
         List<StaffShiftViewModel> list = new ArrayList<>();
         String sql = "SELECT ss.staff_id, u.full_name AS staff_name, ss.field_id, f.field_name, "
@@ -147,6 +209,67 @@ public class StaffShiftDAO {
             }
         }
         return 0;
+    }
+
+    /**
+     * Search for shifts assigned by a manager using optional criteria.
+     *
+     * @param managerId ID of manager who assigned the shifts
+     * @param staffName optional substring of staff full name (case-insensitive)
+     * @param startDate optional start working date (inclusive)
+     * @param endDate optional end working date (inclusive)
+     * @return matching records sorted by working_date desc
+     * @throws SQLException
+     */
+    public List<StaffShiftViewModel> searchShiftsAssignedBy(UUID managerId, String staffName, LocalDate startDate, LocalDate endDate) throws SQLException {
+        List<StaffShiftViewModel> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("SELECT ss.staff_id, u.full_name AS staff_name, ss.field_id, f.field_name, "
+                + "ss.shift_id, sh.shift_name, ss.working_date, ss.assigned_by, ss.status "
+                + "FROM Staff_Shift ss "
+                + "JOIN Users u ON ss.staff_id = u.user_id "
+                + "JOIN Field f ON ss.field_id = f.field_id "
+                + "JOIN Shift sh ON ss.shift_id = sh.shift_id "
+                + "WHERE ss.assigned_by = ?");
+        if (staffName != null && !staffName.trim().isEmpty()) {
+            sql.append(" AND LOWER(u.full_name) LIKE ?");
+        }
+        if (startDate != null) {
+            sql.append(" AND ss.working_date >= ?");
+        }
+        if (endDate != null) {
+            sql.append(" AND ss.working_date <= ?");
+        }
+        sql.append(" ORDER BY ss.working_date DESC");
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            int idx = 1;
+            ps.setString(idx++, managerId.toString());
+            if (staffName != null && !staffName.trim().isEmpty()) {
+                ps.setString(idx++, "%" + staffName.toLowerCase() + "%");
+            }
+            if (startDate != null) {
+                ps.setDate(idx++, Date.valueOf(startDate));
+            }
+            if (endDate != null) {
+                ps.setDate(idx++, Date.valueOf(endDate));
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    StaffShiftViewModel vm = new StaffShiftViewModel();
+                    vm.setStaffId(UUID.fromString(rs.getString("staff_id")));
+                    vm.setStaffName(rs.getString("staff_name"));
+                    vm.setFieldId(UUID.fromString(rs.getString("field_id")));
+                    vm.setFieldName(rs.getString("field_name"));
+                    vm.setShiftId(UUID.fromString(rs.getString("shift_id")));
+                    vm.setShiftName(rs.getString("shift_name"));
+                    vm.setWorkingDate(rs.getDate("working_date").toLocalDate());
+                    vm.setAssignedBy(UUID.fromString(rs.getString("assigned_by")));
+                    vm.setStatus(rs.getString("status"));
+                    list.add(vm);
+                }
+            }
+        }
+        return list;
     }
 }
 
