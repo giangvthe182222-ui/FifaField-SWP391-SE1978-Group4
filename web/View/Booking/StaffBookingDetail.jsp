@@ -25,7 +25,7 @@
     <!-- Header Section -->
     <div class="space-y-2">
         <div class="flex items-center gap-3">
-            <a href="${pageContext.request.contextPath}/staff/bookings" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-gray-400 hover:text-[#008751] transition-colors shadow-sm border border-gray-100">
+            <a href="${pageContext.request.contextPath}/staff/locationBookings" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-gray-400 hover:text-[#008751] transition-colors shadow-sm border border-gray-100">
                 <i data-lucide="chevron-left" class="w-5 h-5"></i>
             </a>
             <h1 class="text-3xl font-black text-gray-900 tracking-tight uppercase">
@@ -167,7 +167,7 @@
                     </div>
                 </div>
 
-                <a href="${pageContext.request.contextPath}/staff/bookings" class="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-gray-100 font-black text-[10px] uppercase tracking-widest text-gray-400 hover:border-[#008751] hover:text-[#008751] transition-all bg-white">
+                <a href="${pageContext.request.contextPath}/staff/locationBookings" class="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-gray-100 font-black text-[10px] uppercase tracking-widest text-gray-400 hover:border-[#008751] hover:text-[#008751] transition-all bg-white">
                     <i data-lucide="arrow-left" class="w-4 h-4"></i>
                     Quay lại danh sách
                 </a>

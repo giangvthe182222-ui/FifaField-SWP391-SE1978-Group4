@@ -21,7 +21,14 @@
 </head>
 <body class="antialiased text-gray-900 flex flex-col min-h-screen">
 
-<jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
+<c:choose>
+    <c:when test="${viewMode == 'staff'}">
+        <jsp:include page="/View/Layout/HeaderManager.jsp"/>
+    </c:when>
+    <c:otherwise>
+        <jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
+    </c:otherwise>
+</c:choose>
 
 <main class="flex-grow max-w-7xl mx-auto px-6 py-12 w-full space-y-12">
     
@@ -29,10 +36,41 @@
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div class="space-y-2">
             <h1 class="text-4xl font-black text-gray-900 tracking-tight uppercase leading-none">
-                LỊCH SỬ <span class="text-[#008751]">ĐẶT SÂN</span>
+                <c:choose>
+                    <c:when test="${viewMode == 'staff'}">ĐẶT SÂN <span class="text-[#008751]">${locationName}</span></c:when>
+                    <c:otherwise>LỊCH SỬ <span class="text-[#008751]">ĐẶT SÂN</span></c:otherwise>
+                </c:choose>
             </h1>
-            <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em]">Hành trình thi đấu của bạn tại hệ thống FIFAFIELD</p>
+            <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em]">
+                <c:choose>
+                    <c:when test="${viewMode == 'staff'}">Quản lý điều phối chi tiết tại chi nhánh</c:when>
+                    <c:otherwise>Hành trình thi đấu của bạn tại hệ thống FIFAFIELD</c:otherwise>
+                </c:choose>
+            </p>
         </div>
+
+        <form method="get" action="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}" class="flex flex-wrap items-center gap-4">
+            <div>
+                <input type="date" name="date" value="${param.date}" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+            </div>
+            <div>
+                <select name="status" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="pending" ${param.status == 'pending' ? 'selected' : ''}>pending</option>
+                    <option value="checked in" ${param.status == 'checked in' ? 'selected' : ''}>checked in</option>
+                    <option value="completed" ${param.status == 'completed' ? 'selected' : ''}>completed</option>
+                    <option value="cancelled" ${param.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
+                    <option value="refunded" ${param.status == 'refunded' ? 'selected' : ''}>refunded</option>
+                </select>
+            </div>
+            <c:if test="${viewMode == 'staff'}">
+                <div>
+                    <input type="text" name="customerKeyword" placeholder="Tên hoặc số điện thoại..." value="${param.customerKeyword}" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                </div>
+            </c:if>
+            <button type="submit" class="bg-[#008751] text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-all">Lọc</button>
+            <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}" class="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#008751]">Xóa</a>
+        </form>
     </div>
 
     <!-- Flash Messages -->
@@ -64,10 +102,17 @@
                     <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
                         </div>
                     <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight">Chưa có dữ liệu đặt sân</h3>
-                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">Hãy bắt đầu trận đấu đầu tiên của bạn ngay hôm nay!</p>
-                    <a href="${pageContext.request.contextPath}/booking" class="inline-flex items-center gap-2 mt-8 px-8 py-4 bg-[#008751] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-all hover:-translate-y-1">
-                        ĐẶT SÂN NGAY
-                    </a>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">
+                        <c:choose>
+                            <c:when test="${viewMode == 'staff'}">Không có đơn đặt nào phù hợp bộ lọc tại chi nhánh</c:when>
+                            <c:otherwise>Hãy bắt đầu trận đấu đầu tiên của bạn ngay hôm nay!</c:otherwise>
+                        </c:choose>
+                    </p>
+                    <c:if test="${viewMode != 'staff'}">
+                        <a href="${pageContext.request.contextPath}/booking" class="inline-flex items-center gap-2 mt-8 px-8 py-4 bg-[#008751] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-all hover:-translate-y-1">
+                            ĐẶT SÂN NGAY
+                        </a>
+                    </c:if>
                 </div>
             </c:when>
             <c:otherwise>
@@ -78,8 +123,7 @@
                             
                             <!-- Left: Icon & Status -->
                             <div class="flex items-center gap-6 w-full md:w-auto">
-                                <div class="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-[#008751] group-hover:bg-[#008751] group-hover:text-white transition-colors duration-500 shrink-0">
-                                </div>
+                                
                                 <div class="md:hidden flex-grow">
                                     <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight">${b.fieldName}</h3>
                                     <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
@@ -100,6 +144,10 @@
                                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.bookingDate}</p>
                                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.startTime} - ${b.endTime}</p>
                                     <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">ID: ${b.bookingId}</p>
+                                    <c:if test="${viewMode == 'staff'}">
+                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">KH: ${b.customerName}</p>
+                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">SĐT: ${b.customerPhone}</p>
+                                    </c:if>
                                 </div>
                             </div>
 
@@ -123,7 +171,24 @@
                                         <fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> đ
                                     </p>
                                 </div>
-                                <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">Chi tiết</a>
+                                <c:choose>
+                                    <c:when test="${viewMode == 'staff'}">
+                                        <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-100 w-full sm:w-auto">
+                                            <select name="status_${b.bookingId}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-700 focus:ring-0 cursor-pointer px-3">
+                                                <option value="pending" ${b.status == 'pending' ? 'selected' : ''}>pending</option>
+                                                <option value="checked in" ${b.status == 'checked in' ? 'selected' : ''}>checked in</option>
+                                                <option value="completed" ${b.status == 'completed' ? 'selected' : ''}>completed</option>
+                                                <option value="cancelled" ${b.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
+                                                <option value="refunded" ${b.status == 'refunded' ? 'selected' : ''}>refunded</option>
+                                            </select>
+                                            <button type="button" onclick="updateStatus('${b.bookingId}')" class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors">Update</button>
+                                        </div>
+                                        <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">Chi tiết</a>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">Chi tiết</a>
+                                    </c:otherwise>
+                                </c:choose>
                             </div>
 
                             <!-- Background Decoration -->
@@ -166,6 +231,28 @@
 </main>
 
 <jsp:include page="/View/Layout/Footer.jsp"/>
+
+<script>
+    function updateStatus(bookingId) {
+        var status = document.getElementsByName('status_' + bookingId)[0].value;
+        var f = document.createElement('form');
+        f.method = 'post';
+        f.action = '${pageContext.request.contextPath}/staff/locationBookings';
+
+        var i1 = document.createElement('input');
+        i1.name = 'bookingId';
+        i1.value = bookingId;
+        f.appendChild(i1);
+
+        var i2 = document.createElement('input');
+        i2.name = 'status';
+        i2.value = status;
+        f.appendChild(i2);
+
+        document.body.appendChild(f);
+        f.submit();
+    }
+</script>
 
     
 </body>

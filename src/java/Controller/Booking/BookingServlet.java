@@ -99,10 +99,7 @@ public class BookingServlet extends HttpServlet {
 
                     LocalDateTime now = LocalDateTime.now();
 
-                    schedules = allSchedules.stream()
-                            // chỉ lấy available
-                            .filter(s -> s.getStatus() == null
-                            || "available".equalsIgnoreCase(s.getStatus()))
+                        schedules = allSchedules.stream()
                             // chỉ lấy lịch chưa quá thời gian
                             .filter(s -> {
                                 LocalDateTime scheduleDateTime = LocalDateTime.of(
