@@ -105,4 +105,48 @@ public class StaffShiftDAO {
             return ps.executeUpdate() > 0;
         }
     }
+
+    // dashboard helpers
+    public int countAssignedBy(UUID managerId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Staff_Shift WHERE assigned_by = ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, managerId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
+
+    public int countUpcoming(UUID managerId, LocalDate from, LocalDate to) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Staff_Shift WHERE assigned_by = ? AND working_date >= ? AND working_date < ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, managerId.toString());
+            ps.setDate(2, Date.valueOf(from));
+            ps.setDate(3, Date.valueOf(to));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
+
+    public int countAssignedOnDate(UUID managerId, LocalDate date) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Staff_Shift WHERE assigned_by = ? AND working_date = ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, managerId.toString());
+            ps.setDate(2, Date.valueOf(date));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
 }
+

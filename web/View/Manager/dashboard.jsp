@@ -19,11 +19,24 @@
 <main class="max-w-6xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-4">Bảng điều khiển - Manager</h1>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div class="bg-white p-4 rounded shadow">
             <h3 class="text-sm text-gray-500">Tổng số nhân viên</h3>
             <p class="text-2xl font-bold">${totalStaff != null ? totalStaff : '—'}</p>
         </div>
+        <div class="bg-white p-4 rounded shadow">
+            <h3 class="text-sm text-gray-500">Ca đã phân</h3>
+            <p class="text-2xl font-bold">${assignedCount != null ? assignedCount : '—'}</p>
+        </div>
+        <div class="bg-white p-4 rounded shadow">
+            <h3 class="text-sm text-gray-500">Ca sắp tới 7 ngày</h3>
+            <p class="text-2xl font-bold">${upcoming != null ? upcoming : '—'}</p>
+        </div>
+        <div class="bg-white p-4 rounded shadow">
+            <h3 class="text-sm text-gray-500">Ca hôm nay</h3>
+            <p class="text-2xl font-bold">${todayCount != null ? todayCount : '—'}</p>
+        </div>
+    </div>
 
         <!-- STATS GRID -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -87,11 +100,12 @@
                     </div>
                     <div>
                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Công Việc Hôm Nay</p>
-                        <p class="text-4xl font-black text-gray-900 mt-1 leading-none tracking-tighter">3</p>
+                        <p class="text-4xl font-black text-gray-900 mt-1 leading-none tracking-tighter">${todayCount != null ? todayCount : '—'}</p>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
         <!-- ACTIONS & ACTIVITIES -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -134,17 +148,17 @@
                         </div>
                     </a>
 
-                    <!-- Quản lý nhân viên -->
-                    <a href="${pageContext.request.contextPath}/manager/staff" class="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-purple-500/30 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/40 transition-all duration-300">
+                    <!-- Danh sách ca -->
+                    <a href="${pageContext.request.contextPath}/shifts" class="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-purple-500/30 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/40 transition-all duration-300">
                         <div class="absolute top-0 right-0 opacity-10 group-hover:scale-125 transition-transform duration-500">
-                            <i data-lucide="users-cog" class="w-40 h-40"></i>
+                            <i data-lucide="calendar" class="w-40 h-40"></i>
                         </div>
                         <div class="relative z-10">
                             <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
-                                <i data-lucide="users-cog" class="w-6 h-6"></i>
+                                <i data-lucide="calendar" class="w-6 h-6"></i>
                             </div>
-                            <h3 class="text-xl font-black uppercase tracking-tight leading-none mb-2">Quản Lý Nhân Viên</h3>
-                            <p class="text-purple-100/80 text-sm font-medium">Xem danh sách và quản lý nhân viên</p>
+                            <h3 class="text-xl font-black uppercase tracking-tight leading-none mb-2">Danh Sách Ca</h3>
+                            <p class="text-purple-100/80 text-sm font-medium">Xem các ca làm hiện có</p>
                         </div>
                     </a>
 
