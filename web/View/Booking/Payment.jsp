@@ -186,6 +186,7 @@
         const checkInterval = 10000; // Check every 10 seconds
         const timerInterval = 1000; // Update timer every 1 second
         let paymentChecked = false;
+        let paymentSucceeded = false; // True only when payment is confirmed SUCCESS
         let timeoutHandled = false; // Flag to prevent multiple timeout handling
         
         // Update timer display
@@ -229,6 +230,7 @@
                 
                 if (data.paymentStatus === 'SUCCESS') {
                     paymentChecked = true;
+                    paymentSucceeded = true;
                     showPaymentSuccess();
                 } else if (data.paymentStatus === 'FAILED') {
                     paymentChecked = true;
@@ -333,6 +335,17 @@
                     clearInterval(timerIntervalId);
                 }
             }, checkInterval);
+        });
+
+        // Cancel booking immediately if user exits the page before payment succeeds.
+        // sendBeacon works even during page unload unlike fetch/XHR.
+        window.addEventListener('pagehide', function() {
+            if (paymentSucceeded) return; // Payment done — don't cancel
+            const body = new URLSearchParams({
+                action: 'cancel_on_exit',
+                bookingId: bookingId
+            });
+            navigator.sendBeacon('${pageContext.request.contextPath}/payment', body);
         });
     </script>
     

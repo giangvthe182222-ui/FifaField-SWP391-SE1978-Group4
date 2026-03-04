@@ -119,7 +119,7 @@ public class BookingConfirmServlet extends HttpServlet {
         booking.setScheduleId(scheduleId);
         booking.setVoucherId(voucherId);
         booking.setBookingTime(LocalDateTime.now());
-        booking.setStatus("pending");
+        booking.setStatus("PENDING");
         booking.setTotalPrice(total);
 
         for (BookingEquipment be : equipmentList) {
@@ -129,18 +129,20 @@ public class BookingConfirmServlet extends HttpServlet {
         BookingDAO bookingDAO = new BookingDAO();
         boolean success = bookingDAO.insert(booking, equipmentList);
 
-        StringBuilder redirect = new StringBuilder(request.getContextPath()).append("/booking");
-        if (locationIdParam != null && !locationIdParam.isBlank()) {
-            redirect.append("?locationId=").append(locationIdParam);
-            if (fieldIdParam != null && !fieldIdParam.isBlank()) {
-                redirect.append("&fieldId=").append(fieldIdParam);
-            }
-        }
         if (success) {
-            session.setAttribute("flash_success", "Booking confirmed successfully!");
+            // Redirect to payment page with bookingId
+            response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + booking.getBookingId().toString());
         } else {
+            // Failed to create booking - redirect back to booking form
+            StringBuilder redirect = new StringBuilder(request.getContextPath()).append("/booking");
+            if (locationIdParam != null && !locationIdParam.isBlank()) {
+                redirect.append("?locationId=").append(locationIdParam);
+                if (fieldIdParam != null && !fieldIdParam.isBlank()) {
+                    redirect.append("&fieldId=").append(fieldIdParam);
+                }
+            }
             session.setAttribute("flash_error", "Failed to create booking. Please try again.");
+            response.sendRedirect(redirect.toString());
         }
-        response.sendRedirect(redirect.toString());
     }
 }
