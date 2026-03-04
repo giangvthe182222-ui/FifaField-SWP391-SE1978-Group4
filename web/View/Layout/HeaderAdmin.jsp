@@ -1,10 +1,33 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%
+    String roleName = null;
+    Object sessionUser = (session != null) ? session.getAttribute("user") : null;
+    if (sessionUser instanceof Models.User) {
+        Models.User user = (Models.User) sessionUser;
+        if (user.getRole() != null && user.getRole().getRoleName() != null) {
+            roleName = user.getRole().getRoleName().trim().toLowerCase();
+        }
+    }
+
+    if (roleName != null && !"admin".equals(roleName)) {
+        String targetHeader = "/View/Layout/Header.jsp";
+        if ("manager".equals(roleName)) {
+            targetHeader = "/View/Layout/HeaderManager.jsp";
+        } else if ("staff".equals(roleName)) {
+            targetHeader = "/View/Layout/HeaderStaff.jsp";
+        } else if ("customer".equals(roleName)) {
+            targetHeader = "/View/Layout/HeaderCustomer.jsp";
+        }
+        request.getRequestDispatcher(targetHeader).include(request, response);
+        return;
+    }
+%>
 
 <header class="bg-white border-b border-gray-100 py-4 px-6 sticky top-0 z-50 shadow-sm">
     <div class="max-w-7xl mx-auto flex items-center justify-between">
 
         <!-- LOGO -->
-        <a href="/" class="flex items-center gap-2">
+        <a href="${pageContext.request.contextPath}/admin-dashboard" class="flex items-center gap-2">
             <div class="bg-[#008751] p-1.5 rounded-lg">
                 <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2"
                      viewBox="0 0 24 24">
@@ -115,7 +138,7 @@
                     </svg>
                     Thông tin cá nhân
                 </a>
-                <a href="${pageContext.request.contextPath}/logout"
+                <a href="${pageContext.request.contextPath}/View/Auth/homepage.jsp"
                    class="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors border-t border-gray-100">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>

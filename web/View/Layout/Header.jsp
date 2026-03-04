@@ -1,6 +1,33 @@
 
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%
+    String roleName = null;
+    Object sessionUser = (session != null) ? session.getAttribute("user") : null;
+    if (sessionUser instanceof Models.User) {
+        Models.User user = (Models.User) sessionUser;
+        if (user.getRole() != null && user.getRole().getRoleName() != null) {
+            roleName = user.getRole().getRoleName().trim().toLowerCase();
+        }
+    }
+
+    if ("admin".equals(roleName)) {
+        request.getRequestDispatcher("/View/Layout/HeaderAdmin.jsp").include(request, response);
+        return;
+    }
+    if ("manager".equals(roleName)) {
+        request.getRequestDispatcher("/View/Layout/HeaderManager.jsp").include(request, response);
+        return;
+    }
+    if ("staff".equals(roleName)) {
+        request.getRequestDispatcher("/View/Layout/HeaderStaff.jsp").include(request, response);
+        return;
+    }
+    if ("customer".equals(roleName)) {
+        request.getRequestDispatcher("/View/Layout/HeaderCustomer.jsp").include(request, response);
+        return;
+    }
+%>
 
 <header class="bg-white border-b border-gray-100 py-4 px-6 sticky top-0 z-50 shadow-sm">
     <div class="max-w-7xl mx-auto flex items-center justify-between">

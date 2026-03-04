@@ -42,10 +42,10 @@
                         <a href="homepage.jsp" class="flex items-center gap-2 font-bold text-emerald-600 transition-colors">
                             <i data-lucide="home" class="w-[18px] h-[18px]"></i> Home
                         </a>
-                        <a href="browse.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
+                        <a href="login.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
                             <i data-lucide="search" class="w-[18px] h-[18px]"></i> Browse Fields
                         </a>
-                        <a href="bookings.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
+                        <a href="login.jsp" class="flex items-center gap-2 font-bold text-slate-600 hover:text-emerald-600 transition-colors">
                             <i data-lucide="calendar" class="w-[18px] h-[18px]"></i> My Bookings
                         </a>
                     </div>
@@ -72,10 +72,10 @@
                     <a href="homepage.jsp" class="flex items-center gap-3 p-4 rounded-xl font-bold bg-emerald-50 text-emerald-600">
                         <i data-lucide="home"></i> Home
                     </a>
-                    <a href="browse.jsp" class="flex items-center gap-3 p-4 rounded-xl font-bold text-slate-600">
+                    <a href="login.jsp" class="flex items-center gap-3 p-4 rounded-xl font-bold text-slate-600">
                         <i data-lucide="search"></i> Browse Fields
                     </a>
-                    <a href="bookings.jsp" class="flex items-center gap-3 p-4 rounded-xl font-bold text-slate-600">
+                    <a href="login.jsp" class="flex items-center gap-3 p-4 rounded-xl font-bold text-slate-600">
                         <i data-lucide="calendar"></i> My Bookings
                     </a>
                     <a href="login.jsp" class="flex items-center justify-center gap-2 p-4 mt-4 bg-emerald-600 text-white rounded-xl font-bold">
@@ -105,7 +105,7 @@
                         Join 10,000+ players booking top-rated premium football pitches across the city. Professional quality, instant booking.
                     </p>
                     <div class="flex flex-col sm:flex-row gap-4">
-                        <a href="browse.jsp" class="flex items-center justify-center gap-2 bg-emerald-600 text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 active:scale-[0.98]">
+                        <a href="login.jsp" class="flex items-center justify-center gap-2 bg-emerald-600 text-white px-10 py-5 rounded-2xl font-black text-lg hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 active:scale-[0.98]">
                             BOOK A PITCH
                             <i data-lucide="chevron-right"></i>
                         </a>
@@ -153,7 +153,7 @@
                         <h2 class="text-4xl font-black text-slate-900 tracking-tighter mb-4 uppercase">Featured Arenas</h2>
                         <p class="text-slate-500 font-bold uppercase tracking-widest text-sm">Most booked this week</p>
                     </div>
-                    <a href="browse.jsp" class="hidden sm:flex items-center gap-2 text-emerald-600 font-black hover:translate-x-1 transition-all">
+                    <a href="login.jsp" class="hidden sm:flex items-center gap-2 text-emerald-600 font-black hover:translate-x-1 transition-all">
                         VIEW ALL FIELDS
                         <i data-lucide="chevron-right"></i>
                     </a>
@@ -185,7 +185,7 @@
                                     <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">5-a-side</span>
                                 </div>
                             </div>
-                            <a href="booking.jsp?id=1" class="block w-full text-center bg-slate-900 text-white py-4 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-lg active:scale-95">
+                            <a href="login.jsp?id=1" class="block w-full text-center bg-slate-900 text-white py-4 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-lg active:scale-95">
                                 BOOK NOW
                             </a>
                         </div>
@@ -216,7 +216,7 @@
                                     <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">7-a-side</span>
                                 </div>
                             </div>
-                            <a href="booking.jsp?id=2" class="block w-full text-center bg-slate-900 text-white py-4 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-lg active:scale-95">
+                            <a href="login.jsp?id=2" class="block w-full text-center bg-slate-900 text-white py-4 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-lg active:scale-95">
                                 BOOK NOW
                             </a>
                         </div>
@@ -247,7 +247,7 @@
                                     <span class="text-xs font-bold text-slate-600 uppercase tracking-wider">11-a-side</span>
                                 </div>
                             </div>
-                            <a href="booking.jsp?id=3" class="block w-full text-center bg-slate-900 text-white py-4 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-lg active:scale-95">
+                            <a href="login.jsp?id=3" class="block w-full text-center bg-slate-900 text-white py-4 rounded-2xl font-black hover:bg-emerald-600 transition-all shadow-lg active:scale-95">
                                 BOOK NOW
                             </a>
                         </div>

@@ -1,5 +1,24 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%
+    String roleName = null;
+    String backUrl = "/View/Customer/home.jsp";
+    Object sessionUser = (session != null) ? session.getAttribute("user") : null;
+    if (sessionUser instanceof Models.User) {
+        Models.User user = (Models.User) sessionUser;
+        if (user.getRole() != null && user.getRole().getRoleName() != null) {
+            roleName = user.getRole().getRoleName().trim().toLowerCase();
+            if ("admin".equals(roleName)) {
+                backUrl = "/admin-dashboard";
+            } else if ("manager".equals(roleName)) {
+                backUrl = "/manager/dashboard";
+            } else if ("staff".equals(roleName)) {
+                backUrl = "/staff/dashboard";
+            }
+        }
+    }
+    request.setAttribute("backUrl", backUrl);
+%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -10,7 +29,17 @@
 </head>
 <body class="antialiased text-gray-900">
 
-<jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
+<% 
+    if ("admin".equals(roleName)) {
+        request.getRequestDispatcher("/View/Layout/HeaderAdmin.jsp").include(request, response);
+    } else if ("manager".equals(roleName)) {
+        request.getRequestDispatcher("/View/Layout/HeaderManager.jsp").include(request, response);
+    } else if ("staff".equals(roleName)) {
+        request.getRequestDispatcher("/View/Layout/HeaderStaff.jsp").include(request, response);
+    } else {
+        request.getRequestDispatcher("/View/Layout/HeaderCustomer.jsp").include(request, response);
+    }
+%>
 
 <main class="max-w-3xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black mb-4">Chỉnh sửa hồ sơ</h1>
@@ -45,7 +74,7 @@
             </div>
             <div class="mt-4">
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Lưu</button>
-                <a href="${pageContext.request.contextPath}/auth/profile" class="px-4 py-2 bg-gray-200 rounded">Hủy</a>
+                <a href="${pageContext.request.contextPath}${backUrl}" class="px-4 py-2 bg-gray-200 rounded">Hủy</a>
             </div>
         </form>
     </div>

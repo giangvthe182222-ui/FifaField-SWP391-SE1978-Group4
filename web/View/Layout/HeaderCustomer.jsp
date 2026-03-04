@@ -1,4 +1,27 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<%
+    String roleName = null;
+    Object sessionUser = (session != null) ? session.getAttribute("user") : null;
+    if (sessionUser instanceof Models.User) {
+        Models.User user = (Models.User) sessionUser;
+        if (user.getRole() != null && user.getRole().getRoleName() != null) {
+            roleName = user.getRole().getRoleName().trim().toLowerCase();
+        }
+    }
+
+    if (roleName != null && !"customer".equals(roleName)) {
+        String targetHeader = "/View/Layout/Header.jsp";
+        if ("admin".equals(roleName)) {
+            targetHeader = "/View/Layout/HeaderAdmin.jsp";
+        } else if ("manager".equals(roleName)) {
+            targetHeader = "/View/Layout/HeaderManager.jsp";
+        } else if ("staff".equals(roleName)) {
+            targetHeader = "/View/Layout/HeaderStaff.jsp";
+        }
+        request.getRequestDispatcher(targetHeader).include(request, response);
+        return;
+    }
+%>
 
 <header class="bg-white border-b border-gray-100 py-4 px-6 sticky top-0 z-50 shadow-sm">
     <div class="max-w-7xl mx-auto flex items-center justify-between">

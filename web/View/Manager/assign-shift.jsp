@@ -21,19 +21,9 @@
         }
     </style>
 </head>
-<<<<<<< Updated upstream
-<body class="bg-gray-50">
-<jsp:include page="/View/Layout/HeaderManager.jsp" />
-<main class="max-w-6xl mx-auto p-6">
-    <h1 class="text-2xl font-bold mb-4">Phân ca cho nhân viên</h1>
-    <c:if test="${not empty error}">
-        <div class="text-red-600 mb-3">${error}</div>
-    </c:if>
-=======
 <body class="bg-slate-50 min-h-screen" style="font-family: 'Inter', sans-serif;">
 
 <jsp:include page="/View/Layout/HeaderManager.jsp" />
->>>>>>> Stashed changes
 
 <!-- MAIN CONTENT -->
 <main class="max-w-4xl mx-auto px-6 py-12">
@@ -50,12 +40,18 @@
                 <c:otherwise>Phân ca cho nhân viên</c:otherwise>
             </c:choose>
         </h1>
+    </div>
+    
+    <!-- ERROR MESSAGE -->
+    <c:if test="${not empty error}">
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
             <i data-lucide="alert-circle" class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0"></i>
             <div>
                 <h3 class="font-semibold text-red-800">Lỗi</h3>
                 <p class="text-red-700 text-sm">${error}</p>
             </div>
         </div>
+    </c:if>
  
 
     <!-- FORM SECTION -->

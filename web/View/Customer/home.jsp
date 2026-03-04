@@ -71,7 +71,7 @@
                                    class="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-600 transition-colors">
                                     <i data-lucide="user" class="w-4 h-4"></i> Thông tin cá nhân
                                 </a>
-                                <a href="${pageContext.request.contextPath}/logout"
+                                <a href="${pageContext.request.contextPath}/View/Auth/homepage.jsp"
                                    class="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors border-t border-slate-100">
                                     <i data-lucide="log-out" class="w-4 h-4"></i> Đăng xuất
                                 </a>
