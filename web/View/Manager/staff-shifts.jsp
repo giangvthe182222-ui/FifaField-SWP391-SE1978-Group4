@@ -117,7 +117,8 @@
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Nhân viên</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Sân bóng</th>
                                 <th class="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Ca làm việc</th>
-                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Ngày làm việc</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Ngày bắt đầu</th>
+                                <th class="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Ngày kết thúc</th>
                                 <th class="px-6 py-4 text-center text-xs font-semibold text-slate-700 uppercase tracking-wider">Trạng thái</th>
                                 <th class="px-6 py-4 text-right text-xs font-semibold text-slate-700 uppercase tracking-wider">Hành động</th>
                             </tr>
@@ -142,6 +143,12 @@
                                     <td class="px-6 py-4">
                                         <div class="text-sm font-medium text-slate-900">${ss.shiftName}</div>
                                         <div class="text-xs text-slate-500">Ca làm việc</div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="text-sm font-semibold text-slate-900">${ss.workingDate}</div>
+                                        <div class="text-xs text-slate-500">
+                                            <i data-lucide="calendar" class="w-3 h-3 inline mr-1"></i>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4">
                                         <div class="text-sm font-semibold text-slate-900">${ss.workingDate}</div>
