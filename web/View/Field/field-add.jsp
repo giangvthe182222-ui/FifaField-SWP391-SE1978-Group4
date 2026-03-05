@@ -97,19 +97,19 @@
             
             <!-- Sample week pricing for schedule generation -->
             <div class="mt-6">
-                <h2 class="text-sm font-black uppercase text-slate-400 mb-2">Mẫu giá theo tuần (6 khung/1 ngày — 1h30 mỗi khung)</h2>
+                <h2 class="text-sm font-black uppercase text-slate-400 mb-2">Mẫu giá theo tuần (6 khung/1 ngày - 1h30 mỗi khung)</h2>
                 <input type="hidden" name="sampleWeek" id="sampleWeek" />
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm border-collapse">
                         <thead>
                             <tr class="text-left">
                                 <th class="p-2">Ngày</th>
-                                <th class="p-2">Khung 1</th>
-                                <th class="p-2">Khung 2</th>
-                                <th class="p-2">Khung 3</th>
-                                <th class="p-2">Khung 4</th>
-                                <th class="p-2">Khung 5</th>
-                                <th class="p-2">Khung 6</th>
+                                <th class="p-2">Khung 1<br><span class="text-xs font-normal text-slate-500">06:00 - 07:30</span></th>
+                                <th class="p-2">Khung 2<br><span class="text-xs font-normal text-slate-500">07:30 - 09:00</span></th>
+                                <th class="p-2">Khung 3<br><span class="text-xs font-normal text-slate-500">09:00 - 10:30</span></th>
+                                <th class="p-2">Khung 4<br><span class="text-xs font-normal text-slate-500">10:30 - 12:00</span></th>
+                                <th class="p-2">Khung 5<br><span class="text-xs font-normal text-slate-500">12:00 - 13:30</span></th>
+                                <th class="p-2">Khung 6<br><span class="text-xs font-normal text-slate-500">13:30 - 15:00</span></th>
                             </tr>
                         </thead>
                         <tbody>
