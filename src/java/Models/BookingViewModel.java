@@ -15,6 +15,7 @@ public class BookingViewModel {
     private LocalTime endTime;
     private String fieldName;
     private String customerName;
+    private String customerPhone;
     private String status;
     private BigDecimal totalPrice;
 
@@ -46,6 +47,9 @@ public class BookingViewModel {
 
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public String getCustomerPhone() { return customerPhone; }
+    public void setCustomerPhone(String customerPhone) { this.customerPhone = customerPhone; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }

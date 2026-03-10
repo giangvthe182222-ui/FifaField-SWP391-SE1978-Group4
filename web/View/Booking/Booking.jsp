@@ -18,8 +18,8 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #008751; border-radius: 10px; }
         .mode-card.selected { border-color: #008751; background-color: #ecfdf5; }
         .date-card.selected { background-color: #008751; color: white; border-color: #008751; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 135, 81, 0.2); }
-        .slot-card.selected { border-color: #008751; background-color: #ecfdf5; ring: 2px; ring-color: #008751; }
-        .input-focus:focus { border-color: #008751; outline: none; ring: 4px; ring-color: rgba(0, 135, 81, 0.05); }
+        .slot-card.selected { border-color: #008751; background-color: #ecfdf5; }
+        .input-focus:focus { border-color: #008751; outline: none; box-shadow: 0 0 0 4px rgba(0, 135, 81, 0.05); }
     </style>
 </head>
 <body class="antialiased text-gray-900 flex flex-col min-h-screen">
@@ -177,19 +177,18 @@
                         </div>
                     </c:when>
                     <c:otherwise>
-                        <!-- Date Picker -->
                         <div class="space-y-4">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Chọn ngày thi đấu</label>
-                            <div class="flex gap-4 overflow-x-auto pb-4 custom-scrollbar" id="dateRow">
-                                <!-- JS Injected Date Cards -->
+                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Lịch thi đấu theo ngày <span class="text-rose-500">*</span></label>
+                            <div class="flex items-center gap-3">
+                                <input type="date" id="scheduleDateFilter" value="${param.bookingDate}" class="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none input-focus">
+                                <button type="button" id="clearScheduleDateFilter" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#008751] hover:border-[#008751] transition-all">
+                                    Xóa lọc ngày
+                                </button>
                             </div>
-                        </div>
-
-                        <!-- Slots Grid -->
-                        <div class="space-y-4">
-                            <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Chọn khung giờ khả dụng <span class="text-rose-500">*</span></label>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4" id="slotGrid">
-                                <!-- JS Injected Slot Cards -->
+                            <div class="overflow-x-auto custom-scrollbar pb-4" id="scheduleScroll">
+                                <div class="flex gap-4 min-w-max" id="scheduleBoard">
+                                    <!-- JS Injected Schedule Board -->
+                                </div>
                             </div>
                         </div>
                     </c:otherwise>
@@ -331,24 +330,39 @@
 
 <jsp:include page="/View/Layout/Footer.jsp"/>
 
+<script id="schedulesData" type="application/json">
+[
+<c:forEach var="s" items="${schedules}" varStatus="st">
+{"id":"${s.scheduleId}","date":"${s.bookingDate}","start":"${s.startTime}","end":"${s.endTime}","status":"${s.status}","price":${s.price}}<c:if test="${not st.last}">,</c:if>
+</c:forEach>
+]
+</script>
+
+<script id="fieldsData" type="application/json">
+[
+<c:forEach var="f" items="${fields}" varStatus="st">
+{"id":"${f.fieldId}","name":"${f.fieldName}"}<c:if test="${not st.last}">,</c:if>
+</c:forEach>
+]
+</script>
+
 <script>
 (function() {
     lucide.createIcons();
 
     // Data from JSP to JS
-    var schedules = [
-        <c:forEach var="s" items="${schedules}" varStatus="st">
-        { id: '${s.scheduleId}', date: '${s.bookingDate}', start: '${s.startTime}', end: '${s.endTime}', price: ${s.price} }<c:if test="${!st.last}">,</c:if>
-        </c:forEach>
-    ];
-    var fields = [
-        <c:forEach var="f" items="${fields}" varStatus="st">
-        { id: '${f.fieldId}', name: '${f.fieldName}' }<c:if test="${!st.last}">,</c:if>
-        </c:forEach>
-    ];
+    var schedules = JSON.parse((document.getElementById('schedulesData') || {}).textContent || '[]');
+    var fields = JSON.parse((document.getElementById('fieldsData') || {}).textContent || '[]');
     var selectedFieldId = '${param.fieldId}';
     var selectedScheduleId = '${param.scheduleId}';
     var selectedDate = '${param.bookingDate}';
+    var scheduleDateFilter = document.getElementById('scheduleDateFilter');
+
+    function normalizeStatus(status) {
+        var s = (status || '').toLowerCase().trim();
+        if (!s) return 'available';
+        return s;
+    }
 
     function parseNum(v) { var n = parseFloat(String(v).replace(/[^0-9.-]/g, '')); return isNaN(n) ? 0 : n; }
     function fmt(v) { return Math.round(v).toLocaleString('vi-VN') + ' đ'; }
@@ -383,69 +397,124 @@
     function updateScheduleLabel() {
         var txt = '--';
         schedules.forEach(function(s) {
-            if (s.id === selectedScheduleId) txt = 'Khung giờ ' + s.start + ' - ' + s.end;
+            if (s.id === selectedScheduleId) txt = s.date + ' | ' + s.start + ' - ' + s.end;
         });
         document.getElementById('paySchedule').textContent = txt;
     }
 
-    function buildDateRow() {
-        var dates = {};
-        schedules.forEach(function(s) { dates[s.date] = true; });
-        var arr = Object.keys(dates).sort();
+    function buildScheduleBoard() {
+        var days = {};
+        schedules.forEach(function(s) {
+            if (!days[s.date]) days[s.date] = [];
+            days[s.date].push(s);
+        });
+
+        if (scheduleDateFilter && scheduleDateFilter.value) {
+            selectedDate = scheduleDateFilter.value;
+        }
+
+        var orderedDates = Object.keys(days).sort();
+        if (selectedDate) {
+            orderedDates = orderedDates.filter(function(d) { return d === selectedDate; });
+        }
+
+        if (!selectedDate && orderedDates.length) {
+            selectedDate = orderedDates[0];
+            if (scheduleDateFilter) scheduleDateFilter.value = selectedDate;
+        }
+
+        var selected = schedules.find(function(s) { return s.id === selectedScheduleId; });
+        if (selected && normalizeStatus(selected.status) !== 'available') {
+            selectedScheduleId = '';
+        }
+        if (!selectedScheduleId) {
+            var firstAvailable = schedules.find(function(s) {
+                return normalizeStatus(s.status) === 'available' && (!selectedDate || s.date === selectedDate);
+            });
+            if (firstAvailable) {
+                selectedScheduleId = firstAvailable.id;
+                selectedDate = firstAvailable.date;
+                if (scheduleDateFilter) scheduleDateFilter.value = selectedDate;
+            }
+        }
+
+        if (!orderedDates.length) {
+            var board = document.getElementById('scheduleBoard');
+            if (board) {
+                board.innerHTML = '<div class="min-w-[320px] bg-gray-50 border-2 border-dashed border-gray-100 rounded-[2rem] p-10 text-center"><p class="text-[10px] font-black text-gray-300 uppercase tracking-widest">Không có lịch cho ngày đã chọn</p></div>';
+            }
+            selectedScheduleId = '';
+            document.getElementById('scheduleId').value = '';
+            document.getElementById('bookingDate').value = selectedDate || '';
+            updatePrice();
+            updateScheduleLabel();
+            return;
+        }
+
         var html = '';
-        arr.forEach(function(d) {
+        orderedDates.forEach(function(d) {
             var dObj = new Date(d);
             var dayNum = dObj.getDate();
-            var dayMonth = dObj.getMonth()+1;
+            var dayMonth = dObj.getMonth() + 1;
             var dayNames = ['CN','T2','T3','T4','T5','T6','T7'];
             var dayName = dayNames[dObj.getDay()];
-            
-            var sel = d === selectedDate ? ' selected' : '';
-            html += '<div class="date-card group elite-card shrink-0 min-w-[80px] p-6 border-2 border-gray-100 flex flex-col items-center justify-center cursor-pointer transition-all hover:border-[#008751] bg-white' + sel + '" data-date="' + d + '">' + 
-                    '<span class="text-[10px] font-black uppercase tracking-widest opacity-60">' + dayName + '</span>' + 
-                    '<span class="text-2xl font-black mt-1 leading-none">' + dayNum + '/'+ dayMonth + '</span>' + 
-                    '</div>';
-        });
-        var row = document.getElementById('dateRow');
-        if (row) { 
-            row.innerHTML = html; 
-            row.querySelectorAll('.date-card').forEach(function(c) {
-                c.addEventListener('click', function() {
-                    selectedDate = c.getAttribute('data-date');
-                    document.getElementById('bookingDate').value = selectedDate;
-                    row.querySelectorAll('.date-card').forEach(function(x) { x.classList.remove('selected'); });
-                    c.classList.add('selected');
-                    buildSlotGrid();
-                });
-            }); 
-        }
-    }
+            var list = days[d].slice().sort(function(a, b) { return a.start.localeCompare(b.start); });
 
-    function buildSlotGrid() {
-        var filtered = schedules.filter(function(s) { return s.date === (selectedDate || schedules[0]?.date); });
-        var html = '';
-        filtered.forEach(function(s) {
-            var sel = s.id === selectedScheduleId ? ' selected' : '';
-            html += '<div class="slot-card group elite-card p-6 border-2 border-gray-100 cursor-pointer bg-white transition-all hover:shadow-lg hover:border-[#008751]' + sel + '" data-id="' + s.id + '">' +
-                '<div class="flex items-center justify-between mb-4"><i data-lucide="clock" class="w-4 h-4 text-gray-300 group-hover:text-[#008751] transition-colors"></i><div class="w-2 h-2 rounded-full bg-[#008751]"></div></div>' +
-                '<div class="text-sm font-black text-gray-900 tracking-tight">' + s.start + ' - ' + s.end + '</div>' +
-                '<div class="text-[10px] font-black text-[#008751] uppercase tracking-widest mt-2">' + fmt(parseNum(s.price)) + '</div></div>';
+            var slotsHtml = '';
+            list.forEach(function(s) {
+                var status = normalizeStatus(s.status);
+                var isAvailable = status === 'available';
+                var isSelected = s.id === selectedScheduleId;
+                var cardClass = isAvailable
+                    ? 'slot-card cursor-pointer border-gray-50 hover:border-[#008751] hover:shadow-xl'
+                    : 'opacity-70 border-gray-100 bg-gray-50/60';
+                var statusClass = isAvailable
+                    ? 'bg-emerald-50 text-[#008751]'
+                    : 'bg-amber-50 text-amber-500';
+                var statusText = isAvailable ? 'available' : 'unavailable';
+                var selectedClass = isSelected ? ' border-[#008751] bg-emerald-50/40' : '';
+
+                slotsHtml += '<div class="' + cardClass + selectedClass + ' group border-2 rounded-[1.5rem] p-4 transition-all" data-id="' + s.id + '" data-date="' + d + '" data-available="' + isAvailable + '">' +
+                    '<div class="flex justify-between items-start mb-3">' +
+                        '<div class="text-sm font-black text-gray-900 tracking-tight">' + s.start + ' - ' + s.end + '</div>' +
+                        '<span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ' + statusClass + '">' + statusText + '</span>' +
+                    '</div>' +
+                    '<div class="flex items-center justify-between">' +
+                        '<span class="text-[10px] font-black text-[#008751] uppercase tracking-widest">' + fmt(parseNum(s.price)) + '</span>' +
+                        (isAvailable ? '<i data-lucide="clock" class="w-4 h-4 text-gray-300 group-hover:text-[#008751] transition-colors"></i>' : '<i data-lucide="ban" class="w-4 h-4 text-amber-400"></i>') +
+                    '</div>' +
+                '</div>';
+            });
+
+            html += '<div class="min-w-[270px] space-y-3">' +
+                '<div class="bg-white p-4 rounded-2xl border-2 border-gray-50 text-center">' +
+                    '<div class="text-[10px] font-black text-[#008751] uppercase tracking-[0.2em] opacity-70">' + dayName + '</div>' +
+                    '<div class="text-lg font-black text-gray-900 mt-1">' + dayNum + '/' + dayMonth + '</div>' +
+                '</div>' +
+                '<div class="space-y-3">' + slotsHtml + '</div>' +
+            '</div>';
         });
-        var grid = document.getElementById('slotGrid');
-        if (grid) {
-            grid.innerHTML = html;
+
+        var board = document.getElementById('scheduleBoard');
+        if (board) {
+            board.innerHTML = html;
             lucide.createIcons();
-            grid.querySelectorAll('.slot-card').forEach(function(c) {
-                c.addEventListener('click', function() {
-                    selectedScheduleId = c.getAttribute('data-id');
+            board.querySelectorAll('.slot-card').forEach(function(card) {
+                card.addEventListener('click', function() {
+                    if (card.getAttribute('data-available') !== 'true') return;
+                    selectedScheduleId = card.getAttribute('data-id');
+                    selectedDate = card.getAttribute('data-date');
                     document.getElementById('scheduleId').value = selectedScheduleId;
-                    grid.querySelectorAll('.slot-card').forEach(function(x) { x.classList.remove('selected'); });
-                    c.classList.add('selected');
+                    document.getElementById('bookingDate').value = selectedDate;
+                    buildScheduleBoard();
                     updatePrice();
                     updateScheduleLabel();
                 });
             });
         }
+
+        document.getElementById('scheduleId').value = selectedScheduleId || '';
+        document.getElementById('bookingDate').value = selectedDate || '';
         updatePrice();
         updateScheduleLabel();
     }
@@ -459,9 +528,23 @@
     });
 
     if (schedules.length) {
-        if (!selectedDate && schedules[0]) selectedDate = schedules[0].date;
-        buildDateRow();
-        buildSlotGrid();
+        buildScheduleBoard();
+    }
+    if (scheduleDateFilter) {
+        scheduleDateFilter.addEventListener('change', function() {
+            selectedDate = scheduleDateFilter.value || '';
+            selectedScheduleId = '';
+            buildScheduleBoard();
+        });
+    }
+    var clearDateFilterBtn = document.getElementById('clearScheduleDateFilter');
+    if (clearDateFilterBtn) {
+        clearDateFilterBtn.addEventListener('click', function() {
+            if (scheduleDateFilter) scheduleDateFilter.value = '';
+            selectedDate = '';
+            selectedScheduleId = '';
+            buildScheduleBoard();
+        });
     }
     updateFieldLabel();
     var vSel = document.getElementById('voucherId');

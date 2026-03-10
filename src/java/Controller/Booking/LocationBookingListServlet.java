@@ -1,10 +1,10 @@
 package Controller.Booking;
 
-import DAO.BookingDAO;
 import DAO.StaffDAO;
 import Models.BookingViewModel;
 import Models.StaffViewModel;
 import Models.User;
+import Service.BookingService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -42,17 +42,31 @@ public class LocationBookingListServlet extends HttpServlet {
                 return;
             }
 
-            String date = request.getParameter("date");
-            String time = request.getParameter("time");
-            String status = request.getParameter("status");
-            String customerName = request.getParameter("customerName");
+            String flashSuccess = (String) session.getAttribute("flash_success");
+            if (flashSuccess != null) {
+                request.setAttribute("flashSuccess", flashSuccess);
+                session.removeAttribute("flash_success");
+            }
+            String flashError = (String) session.getAttribute("flash_error");
+            if (flashError != null) {
+                request.setAttribute("flashError", flashError);
+                session.removeAttribute("flash_error");
+            }
 
-            BookingDAO bookingDAO = new BookingDAO();
-            List<BookingViewModel> bookings = bookingDAO.getByLocationFiltered(UUID.fromString(staff.getLocationId()), date, time, status, customerName);
+            String date = request.getParameter("date");
+            String status = request.getParameter("status");
+            String customerKeyword = request.getParameter("customerKeyword");
+            if (customerKeyword == null || customerKeyword.isBlank()) {
+                customerKeyword = request.getParameter("customerName");
+            }
+
+            BookingService bookingService = new BookingService();
+            List<BookingViewModel> bookings = bookingService.getLocationBookingHistory(UUID.fromString(staff.getLocationId()), date, status, customerKeyword);
 
             request.setAttribute("bookings", bookings);
             request.setAttribute("locationName", staff.getLocationName());
-            request.getRequestDispatcher("/View/Booking/LocationBookingList.jsp").forward(request, response);
+            request.setAttribute("viewMode", "staff");
+            request.getRequestDispatcher("/View/Booking/BookingHistory.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();
             session.setAttribute("flash_error", "Error loading bookings: " + e.getMessage());
@@ -77,8 +91,8 @@ public class LocationBookingListServlet extends HttpServlet {
             return;
         }
 
-        BookingDAO bookingDAO = new BookingDAO();
-        boolean ok = bookingDAO.updateStatus(UUID.fromString(bookingIdParam), status);
+        BookingService bookingService = new BookingService();
+        boolean ok = bookingService.updateBookingStatus(UUID.fromString(bookingIdParam), status);
         if (ok) session.setAttribute("flash_success", "Updated booking status.");
         else session.setAttribute("flash_error", "Failed to update status.");
 

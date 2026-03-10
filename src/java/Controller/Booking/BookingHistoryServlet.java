@@ -1,8 +1,8 @@
 package Controller.Booking;
 
-import DAO.BookingDAO;
 import Models.BookingViewModel;
 import Models.User;
+import Service.BookingService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -28,17 +28,29 @@ public class BookingHistoryServlet extends HttpServlet {
             return;
         }
 
-        Models.User user = (Models.User) session.getAttribute("user");
+        String flashSuccess = (String) session.getAttribute("flash_success");
+        if (flashSuccess != null) {
+            request.setAttribute("flashSuccess", flashSuccess);
+            session.removeAttribute("flash_success");
+        }
+        String flashError = (String) session.getAttribute("flash_error");
+        if (flashError != null) {
+            request.setAttribute("flashError", flashError);
+            session.removeAttribute("flash_error");
+        }
+
+        User user = (User) session.getAttribute("user");
         UUID userId = user.getUserId();
 
         String date = request.getParameter("date");
         String time = request.getParameter("time");
         String status = request.getParameter("status");
 
-        BookingDAO bookingDAO = new BookingDAO();
-        List<BookingViewModel> bookings = bookingDAO.getByBookerFiltered(userId, date, time, status);
+        BookingService bookingService = new BookingService();
+        List<BookingViewModel> bookings = bookingService.getCustomerBookingHistory(userId, date, time, status);
 
         request.setAttribute("bookings", bookings);
+        request.setAttribute("viewMode", "customer");
         request.getRequestDispatcher("/View/Booking/BookingHistory.jsp").forward(request, response);
     }
 }
