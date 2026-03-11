@@ -112,13 +112,14 @@ public class StaffShiftDAO {
     public List<StaffShiftViewModel> getShiftsAssignedByWithNames(UUID managerId) throws SQLException {
         List<StaffShiftViewModel> list = new ArrayList<>();
         String sql = "SELECT ss.staff_id, u.full_name AS staff_name, ss.field_id, f.field_name, "
-                   + "ss.shift_id, sh.shift_name, ss.working_date, ss.assigned_by, ss.status "
+                   + "ss.shift_id, sh.shift_name, MIN(ss.working_date) AS start_date, MAX(ss.working_date) AS end_date, ss.assigned_by, ss.status "
                    + "FROM Staff_Shift ss "
                    + "JOIN Users u ON ss.staff_id = u.user_id "
                    + "JOIN Field f ON ss.field_id = f.field_id "
                    + "JOIN Shift sh ON ss.shift_id = sh.shift_id "
                    + "WHERE ss.assigned_by = ? "
-                   + "ORDER BY ss.working_date DESC";
+                   + "GROUP BY ss.staff_id, u.full_name, ss.field_id, f.field_name, ss.shift_id, sh.shift_name, ss.assigned_by, ss.status "
+                   + "ORDER BY start_date DESC";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, managerId.toString());
             try (ResultSet rs = ps.executeQuery()) {
@@ -130,7 +131,10 @@ public class StaffShiftDAO {
                     vm.setFieldName(rs.getString("field_name"));
                     vm.setShiftId(UUID.fromString(rs.getString("shift_id")));
                     vm.setShiftName(rs.getString("shift_name"));
-                    vm.setWorkingDate(rs.getDate("working_date").toLocalDate());
+                    java.sql.Date sd = rs.getDate("start_date");
+                    if (sd != null) vm.setStartDate(sd.toLocalDate());
+                    java.sql.Date ed = rs.getDate("end_date");
+                    if (ed != null) vm.setEndDate(ed.toLocalDate());
                     vm.setAssignedBy(UUID.fromString(rs.getString("assigned_by")));
                     vm.setStatus(rs.getString("status"));
                     list.add(vm);
@@ -165,6 +169,68 @@ public class StaffShiftDAO {
             ps.setString(3, shiftId.toString());
             ps.setDate(4, Date.valueOf(workingDate));
             return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Delete all shifts for a given staff-field-shift combination (all working dates).
+     * Used when deleting a grouped assignment.
+     */
+    public boolean deleteStaffShiftGroup(UUID staffId, UUID fieldId, UUID shiftId) throws SQLException {
+        String sql = "DELETE FROM Staff_Shift WHERE staff_id=? AND field_id=? AND shift_id=?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, staffId.toString());
+            ps.setString(2, fieldId.toString());
+            ps.setString(3, shiftId.toString());
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    /**
+     * Update a staff shift group by deleting old assignments and creating new ones with new field/shift/dates.
+     * Used when editing an assignment.
+     */
+    public boolean updateStaffShiftGroup(UUID origStaffId, UUID origFieldId, UUID origShiftId,
+                                          UUID newFieldId, UUID newShiftId, 
+                                          LocalDate newStartDate, LocalDate newEndDate,
+                                          UUID assignedBy) throws SQLException {
+        try (Connection con = DBConnection.getConnection()) {
+            con.setAutoCommit(false);
+            try {
+                // 1. Delete old group
+                String deleteSql = "DELETE FROM Staff_Shift WHERE staff_id=? AND field_id=? AND shift_id=?";
+                try (PreparedStatement ps = con.prepareStatement(deleteSql)) {
+                    ps.setString(1, origStaffId.toString());
+                    ps.setString(2, origFieldId.toString());
+                    ps.setString(3, origShiftId.toString());
+                    ps.executeUpdate();
+                }
+                
+                // 2. Insert new range
+                String insertSql = "INSERT INTO Staff_Shift(staff_id, field_id, shift_id, working_date, assigned_by, status) VALUES(?, ?, ?, ?, ?, ?)";
+                try (PreparedStatement ps = con.prepareStatement(insertSql)) {
+                    LocalDate d = newStartDate;
+                    while (!d.isAfter(newEndDate)) {
+                        ps.setString(1, origStaffId.toString());
+                        ps.setString(2, newFieldId.toString());
+                        ps.setString(3, newShiftId.toString());
+                        ps.setDate(4, Date.valueOf(d));
+                        ps.setString(5, assignedBy.toString());
+                        ps.setString(6, "assigned");
+                        ps.addBatch();
+                        d = d.plusDays(1);
+                    }
+                    ps.executeBatch();
+                }
+                
+                con.commit();
+                return true;
+            } catch (SQLException ex) {
+                con.rollback();
+                throw ex;
+            } finally {
+                con.setAutoCommit(true);
+            }
         }
     }
 
@@ -224,7 +290,7 @@ public class StaffShiftDAO {
     public List<StaffShiftViewModel> searchShiftsAssignedBy(UUID managerId, String staffName, LocalDate startDate, LocalDate endDate) throws SQLException {
         List<StaffShiftViewModel> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder("SELECT ss.staff_id, u.full_name AS staff_name, ss.field_id, f.field_name, "
-                + "ss.shift_id, sh.shift_name, ss.working_date, ss.assigned_by, ss.status "
+                + "ss.shift_id, sh.shift_name, MIN(ss.working_date) AS start_date, MAX(ss.working_date) AS end_date, ss.assigned_by, ss.status "
                 + "FROM Staff_Shift ss "
                 + "JOIN Users u ON ss.staff_id = u.user_id "
                 + "JOIN Field f ON ss.field_id = f.field_id "
@@ -239,7 +305,8 @@ public class StaffShiftDAO {
         if (endDate != null) {
             sql.append(" AND ss.working_date <= ?");
         }
-        sql.append(" ORDER BY ss.working_date DESC");
+        sql.append(" GROUP BY ss.staff_id, u.full_name, ss.field_id, f.field_name, ss.shift_id, sh.shift_name, ss.assigned_by, ss.status");
+        sql.append(" ORDER BY start_date DESC");
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
             int idx = 1;
@@ -262,7 +329,10 @@ public class StaffShiftDAO {
                     vm.setFieldName(rs.getString("field_name"));
                     vm.setShiftId(UUID.fromString(rs.getString("shift_id")));
                     vm.setShiftName(rs.getString("shift_name"));
-                    vm.setWorkingDate(rs.getDate("working_date").toLocalDate());
+                    java.sql.Date sd = rs.getDate("start_date");
+                    if (sd != null) vm.setStartDate(sd.toLocalDate());
+                    java.sql.Date ed = rs.getDate("end_date");
+                    if (ed != null) vm.setEndDate(ed.toLocalDate());
                     vm.setAssignedBy(UUID.fromString(rs.getString("assigned_by")));
                     vm.setStatus(rs.getString("status"));
                     list.add(vm);

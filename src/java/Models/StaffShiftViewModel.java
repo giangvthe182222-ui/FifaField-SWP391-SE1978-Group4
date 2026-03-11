@@ -13,6 +13,8 @@ public class StaffShiftViewModel {
     private LocalDate workingDate;
     private UUID assignedBy;
     private String status;
+    private java.time.LocalDate startDate;
+    private java.time.LocalDate endDate;
 
     public UUID getStaffId() {
         return staffId;
@@ -84,5 +86,21 @@ public class StaffShiftViewModel {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public java.time.LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(java.time.LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public java.time.LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(java.time.LocalDate endDate) {
+        this.endDate = endDate;
     }
 }

@@ -8,6 +8,7 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class StaffDAO {
 
@@ -16,6 +17,35 @@ public class StaffDAO {
         String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.phone, l.location_name "
                    + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Location l ON s.location_id = l.location_id";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    StaffViewModel vm = new StaffViewModel();
+                    vm.setUserId(rs.getString("user_id"));
+                    vm.setEmployeeCode(rs.getString("employee_code"));
+                    Date d = rs.getDate("hire_date");
+                    if (d != null) vm.setHireDate(d.toLocalDate());
+                    vm.setStatus(rs.getString("status"));
+                    vm.setLocationId(rs.getString("location_id"));
+                    vm.setFullName(rs.getString("full_name"));
+                    vm.setPhone(rs.getString("phone"));
+                    vm.setLocationName(rs.getString("location_name"));
+                    list.add(vm);
+                }
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Get all staff members in a specific location.
+     */
+    public List<StaffViewModel> getAllStaffByLocation(UUID locationId) throws SQLException {
+        List<StaffViewModel> list = new ArrayList<>();
+        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.phone, l.location_name "
+                   + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Location l ON s.location_id = l.location_id "
+                   + "WHERE s.location_id = ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, locationId.toString());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     StaffViewModel vm = new StaffViewModel();
@@ -91,6 +121,18 @@ public class StaffDAO {
             } finally {
                 con.setAutoCommit(true);
             }
+        }
+    }
+
+    // Update only staff status (for Manager quick edit)
+    public boolean updateStaffStatus(String userId, String status) throws SQLException {
+        String sql = "UPDATE Staff SET status = ? WHERE user_id = ?";
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, status);
+            ps.setString(2, userId);
+            int rows = ps.executeUpdate();
+            return rows > 0;
         }
     }
 }
