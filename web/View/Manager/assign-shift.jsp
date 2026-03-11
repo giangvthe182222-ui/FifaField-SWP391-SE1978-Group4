@@ -85,7 +85,7 @@
                 <select name="staffId" id="staffSelect" class="select-custom w-full px-4 py-3 border border-slate-300 rounded-lg text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#008751] focus:border-transparent transition-all bg-white cursor-pointer">
                     <option value="">-- Chọn nhân viên --</option>
                     <c:forEach items="${staffList}" var="s">
-                        <option value="${s.userId}" ${staffId == s.userId.toString() ? 'selected' : ''}>${s.fullName} — ${s.locationName}</option>
+                        <option value="${s.userId}" data-location="${s.locationId}" ${staffId == s.userId.toString() ? 'selected' : ''}>${s.fullName} — ${s.locationName}</option>
                     </c:forEach>
                 </select>
             </div>
@@ -105,6 +105,7 @@
                             <option value="${loc.locationId}" ${locationId == loc.locationId.toString() ? 'selected' : ''}>${loc.locationName}</option>
                         </c:forEach>
                     </select>
+                    <input type="hidden" name="locationId" id="locationHidden" value="${locationId}" />
                 </div>
 
                 <div>
@@ -199,8 +200,23 @@
     const fieldSelect = document.getElementById('fieldSelect');
     const fieldOptions = Array.from(fieldSelect.options).slice(1); // Exclude default option
 
+    staffSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const staffLoc = selectedOption ? selectedOption.getAttribute('data-location') : '';
+        if (staffLoc) {
+            locationSelect.value = staffLoc;
+            locationHidden.value = staffLoc;
+            locationSelect.dispatchEvent(new Event('change'));
+            locationSelect.disabled = true;
+        } else {
+            locationSelect.disabled = false;
+            locationSelect.dispatchEvent(new Event('change'));
+        }
+    });
+
     locationSelect.addEventListener('change', function() {
         const selectedLocationId = this.value;
+        locationHidden.value = selectedLocationId;
         
         // Reset field select
         fieldSelect.innerHTML = '<option value="">-- Chọn sân bóng --</option>';
@@ -269,6 +285,11 @@
         }
 
         return true;
+    }
+
+    // if staff already selected on page load, lock location
+    if (staffSelect.value) {
+        staffSelect.dispatchEvent(new Event('change'));
     }
 </script>
 

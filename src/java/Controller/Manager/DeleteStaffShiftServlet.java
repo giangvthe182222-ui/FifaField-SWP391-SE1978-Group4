@@ -18,21 +18,26 @@ public class DeleteStaffShiftServlet extends HttpServlet {
         String fieldId = request.getParameter("fieldId");
         String shiftId = request.getParameter("shiftId");
         String workingDate = request.getParameter("workingDate");
+        if (workingDate == null) {
+            workingDate = request.getParameter("startDate");
+        }
 
-        if (staffId == null || fieldId == null || shiftId == null || workingDate == null) {
+        if (staffId == null || fieldId == null || shiftId == null) {
             response.sendRedirect(request.getContextPath() + "/manager/staff-shifts");
             return;
         }
         try {
             StaffShiftDAO dao = new StaffShiftDAO();
-            boolean deleted = dao.deleteStaffShift(
+            // Delete entire group (all working dates for this staff-field-shift combination)
+            boolean deleted = dao.deleteStaffShiftGroup(
                     UUID.fromString(staffId),
                     UUID.fromString(fieldId),
-                    UUID.fromString(shiftId),
-                    LocalDate.parse(workingDate)
+                    UUID.fromString(shiftId)
             );
             if (!deleted) {
-                request.setAttribute("error", "Xóa ca thất bại.");
+                request.getSession().setAttribute("error", "Xóa ca thất bại.");
+            } else {
+                request.getSession().setAttribute("success", "Xóa ca thành công.");
             }
         } catch (SQLException ex) {
             ex.printStackTrace();

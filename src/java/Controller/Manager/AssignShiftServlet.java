@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,15 +27,44 @@ public class AssignShiftServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
+            // Get manager from session and their location
+            Models.User user = (Models.User) request.getSession().getAttribute("user");
+            UUID managerLocationId = null;
+            if (user != null) {
+                DAO.ManagerDAO managerDAO = new DAO.ManagerDAO();
+                Models.Manager manager = managerDAO.getManagerById(user.getUserId());
+                if (manager != null && manager.getLocationId() != null) {
+                    managerLocationId = manager.getLocationId();
+                }
+            }
+
             StaffDAO staffDAO = new StaffDAO();
             ShiftDAO shiftDAO = new ShiftDAO();
             LocationDAO locationDAO = new LocationDAO();
             FieldDAO fieldDAO = new FieldDAO();
             
-            List<StaffViewModel> staff = staffDAO.getAllStaff();
+            // Filter staff and fields by manager location
+            List<StaffViewModel> staff;
+            List<Field> fields;
+            List<Location> locations;
+            
+            if (managerLocationId != null) {
+                staff = staffDAO.getAllStaffByLocation(managerLocationId);
+                fields = fieldDAO.getByLocation(managerLocationId);
+                // Only show manager's location
+                Location managerLocation = locationDAO.getLocationById(managerLocationId);
+                locations = new ArrayList<>();
+                if (managerLocation != null) {
+                    locations.add(managerLocation);
+                }
+            } else {
+                // Fallback for admin or testing
+                staff = staffDAO.getAllStaff();
+                fields = fieldDAO.getAllFields();
+                locations = locationDAO.getAllLocations();
+            }
+            
             List<Shift> shifts = shiftDAO.getAllShifts();
-            List<Location> locations = locationDAO.getAllLocations();
-            List<Field> fields = fieldDAO.getAllFields();
             
             request.setAttribute("staffList", staff);
             request.setAttribute("shifts", shifts);
@@ -75,6 +105,28 @@ public class AssignShiftServlet extends HttpServlet {
         String end = request.getParameter("endDate");
         String locationId = request.getParameter("locationId");
         String fieldId = request.getParameter("fieldId");
+
+        // ensure staff and location are consistent
+        if (staffId != null && !staffId.isEmpty()) {
+            try {
+                DAO.StaffDAO staffDAO = new DAO.StaffDAO();
+                Models.StaffViewModel staffVm = staffDAO.getStaffById(staffId);
+                if (staffVm == null) {
+                    request.setAttribute("error", "Nhân viên không tồn tại.");
+                    doGet(request, response);
+                    return;
+                }
+                if (staffVm.getLocationId() == null || staffVm.getLocationId().isEmpty()) {
+                    request.setAttribute("error", "Nhân viên chưa được gán cụm sân.");
+                    doGet(request, response);
+                    return;
+                }
+                // override locationId with the one assigned to staff
+                locationId = staffVm.getLocationId();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
 
         if (staffId == null || staffId.isEmpty() || shiftId == null || shiftId.isEmpty() || start == null || start.isEmpty()
                 || end == null || end.isEmpty() || locationId == null || locationId.isEmpty() || fieldId == null || fieldId.isEmpty()) {
