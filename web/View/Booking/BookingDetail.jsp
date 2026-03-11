@@ -118,13 +118,13 @@
                     <div class="pt-8 border-t border-gray-50 space-y-6">
                         <div class="flex items-center gap-4">
                             <div class="w-8 h-1 bg-gray-200 rounded-full"></div>
-                            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Vật tư đi kèm</h2>
+                            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Dụng cụ đi kèm</h2>
                         </div>
 
                         <c:choose>
                             <c:when test="${empty equipments}">
                                 <div class="py-6 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-100">
-                                    <p class="text-[9px] font-black text-gray-300 uppercase tracking-widest">Không có vật tư thuê kèm</p>
+                                    <p class="text-[9px] font-black text-gray-300 uppercase tracking-widest">Không có dụng cụ thuê kèm</p>
                                 </div>
                             </c:when>
                             <c:otherwise>
@@ -141,7 +141,7 @@
                                                 </div>
                                             </div>
                                             <p class="text-xs font-black text-[#008751]">
-                                                <fmt:formatNumber value="${e.rentalPrice}" pattern="#,##0"/> đ
+                                                <fmt:formatNumber value="${e.rentalPrice}" pattern="#,##0"/> VND
                                             </p>
                                         </div>
                                     </c:forEach>
@@ -173,7 +173,7 @@
                             <div class="pt-4 border-t border-white/10">
                                 <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1">TỔNG CỘNG</p>
                                 <p class="text-3xl font-black tracking-tighter leading-none">
-                                    <fmt:formatNumber value="${booking.totalPrice}" pattern="#,##0"/> đ
+                                    <fmt:formatNumber value="${booking.totalPrice}" pattern="#,##0"/> VND
                                 </p>
                             </div>
                         </div>

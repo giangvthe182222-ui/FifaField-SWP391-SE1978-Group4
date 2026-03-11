@@ -40,7 +40,11 @@ public class BookingServlet extends HttpServlet {
 
         try {
             LocationDAO locationDAO = new LocationDAO();
-            List<Location> locations = locationDAO.getAllLocations();
+            List<Location> allLocations = locationDAO.getAllLocations();
+            // Filter out inactive locations for customer
+            List<Location> locations = allLocations.stream()
+                    .filter(loc -> loc.getStatus() != null && "ACTIVE".equalsIgnoreCase(loc.getStatus()))
+                    .collect(Collectors.toList());
             request.setAttribute("locations", locations);
 
             String locationIdParam = request.getParameter("locationId");
@@ -59,14 +63,20 @@ public class BookingServlet extends HttpServlet {
                 // Fields of the location, optionally filtered by field type (5, 7, 11)
                 FieldDAO fieldDAO = new FieldDAO();
                 List<Field> allFields = fieldDAO.getByLocation(locationId);
+                // Filter out inactive/unavailable fields
+                List<Field> availableFields = allFields.stream()
+                        .filter(f -> f.getStatus() != null && 
+                               ("ACTIVE".equalsIgnoreCase(f.getStatus()) || "AVAILABLE".equalsIgnoreCase(f.getStatus())))
+                        .collect(Collectors.toList());
+                
                 if (fieldTypeParam != null && !fieldTypeParam.isBlank()) {
                     final String ft = fieldTypeParam.trim();
-                    fields = allFields.stream()
+                    fields = availableFields.stream()
                             .filter(f -> ft.equalsIgnoreCase(f.getFieldType()) || (f.getFieldType() != null && f.getFieldType().contains(ft)))
                             .collect(Collectors.toList());
                     request.setAttribute("selectedFieldType", fieldTypeParam);
                 } else {
-                    fields = allFields;
+                    fields = availableFields;
                 }
                 request.setAttribute("fields", fields);
 

@@ -14,11 +14,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 @WebServlet(name = "LocationBookingListServlet", urlPatterns = {"/staff/locationBookings"})
 public class LocationBookingListServlet extends HttpServlet {
+    private static final int PAGE_SIZE = 10;
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -61,9 +63,32 @@ public class LocationBookingListServlet extends HttpServlet {
             }
 
             BookingService bookingService = new BookingService();
-            List<BookingViewModel> bookings = bookingService.getLocationBookingHistory(UUID.fromString(staff.getLocationId()), date, status, customerKeyword);
+            List<BookingViewModel> allBookings = bookingService.getLocationBookingHistory(UUID.fromString(staff.getLocationId()), date, status, customerKeyword);
 
-            request.setAttribute("bookings", bookings);
+            // Pagination
+            int pageNum = 1;
+            String pageParam = request.getParameter("page");
+            if (pageParam != null && !pageParam.isBlank()) {
+                try {
+                    pageNum = Integer.parseInt(pageParam);
+                    if (pageNum < 1) pageNum = 1;
+                } catch (NumberFormatException e) {
+                    pageNum = 1;
+                }
+            }
+            
+            int totalItems = allBookings.size();
+            int totalPages = (totalItems + PAGE_SIZE - 1) / PAGE_SIZE;
+            if (pageNum > totalPages && totalPages > 0) pageNum = totalPages;
+            
+            int startIdx = (pageNum - 1) * PAGE_SIZE;
+            int endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
+            List<BookingViewModel> pageBookings = new ArrayList<>(allBookings.subList(startIdx, endIdx));
+
+            request.setAttribute("bookings", pageBookings);
+            request.setAttribute("currentPage", pageNum);
+            request.setAttribute("totalPages", totalPages);
+            request.setAttribute("totalItems", totalItems);
             request.setAttribute("locationName", staff.getLocationName());
             request.setAttribute("viewMode", "staff");
             request.getRequestDispatcher("/View/Booking/BookingHistory.jsp").forward(request, response);

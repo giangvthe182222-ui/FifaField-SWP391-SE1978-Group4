@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -54,10 +55,15 @@
                 <input type="date" name="date" value="${param.date}" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
             </div>
             <div>
+                <input type="time" name="time" value="${param.time}" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+            </div>
+            <div>
                 <select name="status" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
                     <option value="">Tất cả trạng thái</option>
                     <option value="pending" ${param.status == 'pending' ? 'selected' : ''}>pending</option>
+                    <option value="paid" ${param.status == 'paid' ? 'selected' : ''}>paid</option>
                     <option value="checked in" ${param.status == 'checked in' ? 'selected' : ''}>checked in</option>
+                    <option value="checked in refunded" ${param.status == 'checked in refunded' ? 'selected' : ''}>checked in refunded</option>
                     <option value="completed" ${param.status == 'completed' ? 'selected' : ''}>completed</option>
                     <option value="cancelled" ${param.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
                     <option value="refunded" ${param.status == 'refunded' ? 'selected' : ''}>refunded</option>
@@ -116,67 +122,68 @@
                 </div>
             </c:when>
             <c:otherwise>
-                <!-- The Vertical List of Horizontal Bars -->
-                <div class="space-y-4 pb-8">
-                    <c:forEach var="b" items="${bookings}">
-                        <div class="bg-white rounded-[2rem] border border-gray-100 shadow-lg shadow-gray-200/30 hover:shadow-xl hover:shadow-[#008751]/10 transition-all group relative overflow-hidden p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-10">
+                <c:choose>
+                    <c:when test="${viewMode == 'staff'}">
+                        <!-- Staff view: horizontal rows -->
+                        <div class="space-y-4 pb-8">
+                            <c:forEach var="b" items="${bookings}">
+                                <div class="bg-white rounded-[2rem] border border-gray-100 shadow-lg shadow-gray-200/30 hover:shadow-xl hover:shadow-[#008751]/10 transition-all group relative overflow-hidden p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-10">
                             
-                            <!-- Left: Icon & Status -->
-                            <div class="flex items-center gap-6 w-full md:w-auto">
+                                    <!-- Left: Icon & Status -->
+                                    <div class="flex items-center gap-6 w-full md:w-auto">
                                 
-                                <div class="md:hidden flex-grow">
-                                    <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight">${b.fieldName}</h3>
-                                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
-                                        ${b.status}
-                                    </span>
-                                </div>
-                            </div>
+                                        <div class="md:hidden flex-grow">
+                                            <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight">${b.fieldName}</h3>
+                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                                                ${b.status}
+                                            </span>
+                                        </div>
+                                    </div>
 
-                            <!-- Middle: Info -->
-                                <div class="hidden md:block flex-grow space-y-2">
-                                <div class="flex items-center gap-4">
-                                    <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight group-hover:text-[#008751] transition-colors">${b.fieldName}</h3>
-                                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
-                                        ${b.status}
-                                    </span>
+                                    <!-- Middle: Info -->
+                                    <div class="hidden md:block flex-grow space-y-2">
+                                        <div class="flex items-center gap-4">
+                                            <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight group-hover:text-[#008751] transition-colors">${b.fieldName}</h3>
+                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                                                ${b.status}
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center gap-6">
+                                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.bookingDate}</p>
+                                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.startTime} - ${b.endTime}</p>
+                                            <c:if test="${viewMode == 'staff'}">
+                                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">KH: ${b.customerName}</p>
+                                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">SĐT: ${b.customerPhone}</p>
+                                            </c:if>
+                                        </div>
                                 </div>
-                                <div class="flex items-center gap-6">
-                                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.bookingDate}</p>
-                                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.startTime} - ${b.endTime}</p>
-                                    <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">ID: ${b.bookingId}</p>
-                                    <c:if test="${viewMode == 'staff'}">
-                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">KH: ${b.customerName}</p>
-                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">SĐT: ${b.customerPhone}</p>
-                                    </c:if>
-                                </div>
-                            </div>
 
-                            <!-- Mobile Info (Visible only on small screens) -->
-                            <div class="md:hidden w-full grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
-                                <div class="space-y-1">
-                                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Ngày & Giờ</p>
-                                    <p class="text-xs font-bold text-gray-700">${b.bookingDate} | ${b.startTime}</p>
-                                </div>
-                                <div class="space-y-1 text-right">
-                                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Tổng cộng</p>
-                                    <p class="text-xs font-black text-[#008751]"><fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> đ</p>
-                                </div>
-                            </div>
+                                    <!-- Mobile Info (Visible only on small screens) -->
+                                    <div class="md:hidden w-full grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
+                                        <div class="space-y-1">
+                                            <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Ngày & Giờ</p>
+                                            <p class="text-xs font-bold text-gray-700">${b.bookingDate} | ${b.startTime}</p>
+                                        </div>
+                                        <div class="space-y-1 text-right">
+                                            <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Tổng cộng</p>
+                                            <p class="text-xs font-black text-[#008751]"><fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> VND</p>
+                                        </div>
+                                    </div>
 
-                            <!-- Right: Price & Action -->
-                            <div class="flex items-center justify-between md:justify-end gap-8 w-full md:w-auto shrink-0">
-                                <div class="hidden md:block text-right">
-                                    <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Tổng cộng</p>
-                                    <p class="text-2xl font-black text-[#008751] tracking-tighter">
-                                        <fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> đ
-                                    </p>
-                                </div>
-                                <c:choose>
-                                    <c:when test="${viewMode == 'staff'}">
+                                    <!-- Right: Price & Action -->
+                                    <div class="flex items-center justify-between md:justify-end gap-8 w-full md:w-auto shrink-0">
+                                        <div class="hidden md:block text-right">
+                                            <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Tổng cộng</p>
+                                            <p class="text-2xl font-black text-[#008751] tracking-tighter">
+                                                <fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> VND
+                                            </p>
+                                        </div>
                                         <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-100 w-full sm:w-auto">
                                             <select name="status_${b.bookingId}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-700 focus:ring-0 cursor-pointer px-3">
                                                 <option value="pending" ${b.status == 'pending' ? 'selected' : ''}>pending</option>
+                                                <option value="paid" ${b.status == 'paid' ? 'selected' : ''}>paid</option>
                                                 <option value="checked in" ${b.status == 'checked in' ? 'selected' : ''}>checked in</option>
+                                                <option value="checked in refunded" ${b.status == 'checked in refunded' ? 'selected' : ''}>checked in refunded</option>
                                                 <option value="completed" ${b.status == 'completed' ? 'selected' : ''}>completed</option>
                                                 <option value="cancelled" ${b.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
                                                 <option value="refunded" ${b.status == 'refunded' ? 'selected' : ''}>refunded</option>
@@ -184,49 +191,130 @@
                                             <button type="button" onclick="updateStatus('${b.bookingId}')" class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors">Update</button>
                                         </div>
                                         <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">Chi tiết</a>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">Chi tiết</a>
-                                    </c:otherwise>
-                                </c:choose>
-                            </div>
+                                    </div>
 
-                            <!-- Background Decoration -->
-                            
+                                </div>
+                            </c:forEach>
                         </div>
-                    </c:forEach>
-                </div>
+                    </c:when>
+
+                    <c:otherwise>
+                        <!-- Customer view: square cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 pb-8">
+                            <c:forEach var="b" items="${bookings}">
+                                <article class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-gray-200/30 hover:shadow-xl hover:shadow-[#008751]/10 transition-all p-6 flex flex-col gap-4 min-h-[320px]">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight leading-tight">${b.fieldName}</h3>
+                                        <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shrink-0 ${b.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                                            ${b.status}
+                                        </span>
+                                    </div>
+
+                                    <div class="space-y-2 bg-gray-50 border border-gray-100 rounded-2xl p-4">
+                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Ngày đặt</p>
+                                        <p class="text-sm font-bold text-gray-800">${b.bookingDate}</p>
+                                        <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest pt-1">Khung giờ</p>
+                                        <p class="text-sm font-bold text-gray-800">${b.startTime} - ${b.endTime}</p>
+                                    </div>
+
+                                    <div class="mt-auto space-y-4">
+                                        <div>
+                                            <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Tổng cộng</p>
+                                            <p class="text-2xl font-black text-[#008751] tracking-tighter"><fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> VND</p>
+                                        </div>
+
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="bg-gray-900 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-colors">Chi tiết</a>
+                                            <c:if test="${fn:toLowerCase(b.status) == 'completed'}">
+                                                <c:choose>
+                                                    <c:when test="${feedbackBookingMap[b.bookingId]}">
+                                                        <span class="px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-black text-[10px] uppercase tracking-widest">Đã gửi đánh giá</span>
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        <a href="${pageContext.request.contextPath}/customer/feedback?bookingId=${b.bookingId}" class="bg-amber-500 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 transition-colors">Gửi đánh giá</a>
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </c:if>
+                                        </div>
+                                    </div>
+                                </article>
+                            </c:forEach>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
             </c:otherwise>
         </c:choose>
     </div>
 
-    <!-- Stats Section (Optional but adds to Elite feel) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="bg-white elite-card p-8 border border-gray-100 shadow-sm flex items-center gap-6">
-                <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-[#008751]">
+    <!-- Pagination -->
+    <c:if test="${totalPages > 1}">
+        <div class="flex items-center justify-center gap-2 py-6">
+            <c:if test="${currentPage > 1}">
+                <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}?page=1<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                   class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
+                    ⟨⟨ First
+                </a>
+                <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}?page=${currentPage - 1}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                   class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
+                    ⟨ Prev
+                </a>
+            </c:if>
+            
+            <c:forEach begin="1" end="${totalPages}" var="i">
+                <c:choose>
+                    <c:when test="${i == currentPage}">
+                        <span class="px-3 py-2 rounded-lg bg-[#008751] text-white font-bold text-sm">${i}</span>
+                    </c:when>
+                    <c:otherwise>
+                        <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}?page=${i}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                           class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
+                            ${i}
+                        </a>
+                    </c:otherwise>
+                </c:choose>
+            </c:forEach>
+
+            <c:if test="${currentPage < totalPages}">
+                <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}?page=${currentPage + 1}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                   class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
+                    Next ⟩
+                </a>
+                <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}?page=${totalPages}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                   class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
+                    Last ⟩⟩
+                </a>
+            </c:if>
+        </div>
+        <p class="text-center text-sm font-semibold text-slate-500">Trang <span class="text-[#008751] font-bold">${currentPage}</span> / ${totalPages} (Tổng: ${totalItems} đơn đặt)</p>
+    </c:if>
+    <c:if test="${not empty bookings and totalItems > 0}">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="bg-white elite-card p-8 border border-gray-100 shadow-sm flex items-center gap-6">
+                    <div class="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center text-[#008751]">
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Tổng đơn đặt</p>
+                        <p class="text-3xl font-black text-gray-900 tracking-tighter">${totalItems}</p>
+                    </div>
+                </div>
+            <div class="bg-white elite-card p-8 border border-gray-100 shadow-sm flex items-center gap-6">
+                <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
                 </div>
                 <div>
-                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Trận đấu đã chơi</p>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Trang hiện tại</p>
+                    <p class="text-3xl font-black text-gray-900 tracking-tighter">${currentPage} / ${totalPages}</p>
+                </div>
+            </div>
+            <div class="bg-white elite-card p-8 border border-gray-100 shadow-sm flex items-center gap-6">
+                <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
+                </div>
+                <div>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Hiển thị</p>
                     <p class="text-3xl font-black text-gray-900 tracking-tighter">${bookings.size()}</p>
                 </div>
             </div>
-        <div class="bg-white elite-card p-8 border border-gray-100 shadow-sm flex items-center gap-6">
-            <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600">
-            </div>
-            <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Giờ thi đấu</p>
-                <p class="text-3xl font-black text-gray-900 tracking-tighter">--</p>
-            </div>
         </div>
-        <div class="bg-white elite-card p-8 border border-gray-100 shadow-sm flex items-center gap-6">
-            <div class="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
-            </div>
-            <div>
-                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Điểm uy tín</p>
-                <p class="text-3xl font-black text-gray-900 tracking-tighter">100</p>
-            </div>
-        </div>
-    </div>
+    </c:if>
 
 </main>
 
