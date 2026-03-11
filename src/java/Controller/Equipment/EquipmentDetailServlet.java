@@ -1,3 +1,5 @@
+package Controller.Equipment;
+
 
 import DAO.EquipmentDAO;
 import Models.Equipment;
