@@ -59,7 +59,7 @@ public class BookingDAO {
         }
 
         // 3️⃣ Insert booking
-        String insertBooking = "INSERT INTO Booking (booking_id, booker_id, field_id, schedule_id, voucher_id, status, total_price) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String insertBooking = "INSERT INTO Booking (booking_id, booker_id, field_id, schedule_id, voucher_id, status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement ps = conn.prepareStatement(insertBooking)) {
 
@@ -76,6 +76,12 @@ public class BookingDAO {
 
             ps.setString(6, booking.getStatus());
             ps.setBigDecimal(7, booking.getTotalPrice());
+            
+            if (booking.getPaymentDeadline() != null) {
+                ps.setTimestamp(8, Timestamp.valueOf(booking.getPaymentDeadline()));
+            } else {
+                ps.setNull(8, Types.TIMESTAMP);
+            }
 
             ps.executeUpdate();
         }
@@ -280,10 +286,11 @@ public class BookingDAO {
             conn.setAutoCommit(false);
 
             // get schedule info
-            String q = "SELECT b.schedule_id, s.booking_date, s.start_time FROM Booking b LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id WHERE b.booking_id = ?";
+            String q = "SELECT b.schedule_id, b.status, s.booking_date, s.start_time FROM Booking b LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id WHERE b.booking_id = ?";
             UUID scheduleId = null;
             java.time.LocalDate bookingDate = null;
             java.time.LocalTime startTime = null;
+            String bookingStatus = null;
 
             try (PreparedStatement ps = conn.prepareStatement(q)) {
                 ps.setString(1, bookingId.toString());
@@ -291,6 +298,7 @@ public class BookingDAO {
                 if (rs.next()) {
                     String sid = rs.getString("schedule_id");
                     if (sid != null) scheduleId = UUID.fromString(sid);
+                    bookingStatus = rs.getString("status");
                     Date bd = rs.getDate("booking_date");
                     if (bd != null) bookingDate = bd.toLocalDate();
                     Time st = rs.getTime("start_time");
@@ -299,6 +307,11 @@ public class BookingDAO {
                     conn.rollback();
                     return false;
                 }
+            }
+
+            if ("pending".equalsIgnoreCase(bookingStatus)) {
+                conn.rollback();
+                return cancelBookingForPayment(bookingId);
             }
 
             if (bookingDate == null || startTime == null) {
@@ -345,6 +358,77 @@ public class BookingDAO {
                         String eid = rs.getString("equipment_id");
                         ps2.setInt(1, qty);
                         ps2.setString(2, eid);
+                        ps2.addBatch();
+                    }
+                    ps2.executeBatch();
+                }
+            }
+
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Force-cancel booking for unpaid payment flow and immediately release slot/equipment.
+     */
+    public boolean cancelBookingForPayment(UUID bookingId) {
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            String q = "SELECT schedule_id, status FROM Booking WHERE booking_id = ?";
+            UUID scheduleId = null;
+            String status = null;
+            try (PreparedStatement ps = conn.prepareStatement(q)) {
+                ps.setString(1, bookingId.toString());
+                ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    String sid = rs.getString("schedule_id");
+                    if (sid != null) scheduleId = UUID.fromString(sid);
+                    status = rs.getString("status");
+                } else {
+                    conn.rollback();
+                    return false;
+                }
+            }
+
+            if ("cancelled".equalsIgnoreCase(status)) {
+                conn.rollback();
+                return true;
+            }
+
+            String updBooking = "UPDATE Booking SET status = 'cancelled' WHERE booking_id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(updBooking)) {
+                ps.setString(1, bookingId.toString());
+                ps.executeUpdate();
+            }
+
+            String updPayment = "UPDATE Payment SET payment_status = 'FAILED', payment_time = SYSDATETIME() WHERE booking_id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(updPayment)) {
+                ps.setString(1, bookingId.toString());
+                ps.executeUpdate();
+            }
+
+            if (scheduleId != null) {
+                String updSchedule = "UPDATE Schedule SET status = 'available' WHERE schedule_id = ?";
+                try (PreparedStatement ps = conn.prepareStatement(updSchedule)) {
+                    ps.setString(1, scheduleId.toString());
+                    ps.executeUpdate();
+                }
+            }
+
+            String qEquip = "SELECT equipment_id, quantity FROM Booking_Equipment WHERE booking_id = ?";
+            String updEquip = "UPDATE Location_Equipment SET quantity = quantity + ? WHERE equipment_id = ?";
+            try (PreparedStatement ps = conn.prepareStatement(qEquip)) {
+                ps.setString(1, bookingId.toString());
+                ResultSet rs = ps.executeQuery();
+                try (PreparedStatement ps2 = conn.prepareStatement(updEquip)) {
+                    while (rs.next()) {
+                        ps2.setInt(1, rs.getInt("quantity"));
+                        ps2.setString(2, rs.getString("equipment_id"));
                         ps2.addBatch();
                     }
                     ps2.executeBatch();
@@ -519,6 +603,52 @@ public class BookingDAO {
             e.printStackTrace();
         }
         return list;
+    }
+
+    /**
+     * Get raw Booking object by ID (including payment_deadline)
+     */
+    public Booking getBookingById(UUID bookingId) {
+        String sql = "SELECT * FROM Booking WHERE booking_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, bookingId.toString());
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                Booking booking = new Booking();
+                booking.setBookingId(UUID.fromString(rs.getString("booking_id")));
+                booking.setBookerId(UUID.fromString(rs.getString("booker_id")));
+                booking.setFieldId(UUID.fromString(rs.getString("field_id")));
+                booking.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
+                
+                String voucherId = rs.getString("voucher_id");
+                if (voucherId != null) {
+                    booking.setVoucherId(UUID.fromString(voucherId));
+                }
+                
+                Timestamp bookingTime = rs.getTimestamp("booking_time");
+                if (bookingTime != null) {
+                    booking.setBookingTime(bookingTime.toLocalDateTime());
+                }
+                
+                booking.setStatus(rs.getString("status"));
+                booking.setTotalPrice(rs.getBigDecimal("total_price"));
+                
+                Timestamp paymentDeadline = rs.getTimestamp("payment_deadline");
+                if (paymentDeadline != null) {
+                    booking.setPaymentDeadline(paymentDeadline.toLocalDateTime());
+                }
+                
+                return booking;
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 }

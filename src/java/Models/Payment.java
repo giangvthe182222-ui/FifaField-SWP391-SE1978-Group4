@@ -18,6 +18,12 @@ public class Payment {
     private String paymentMethod;
     private String paymentStatus;
     private LocalDateTime paymentTime;
+    
+    // VietQR fields
+    private String transactionCode;
+    private String qrContent;
+    private String bankCode;
+    private String accountNumber;
 
     public Payment() {}
 
@@ -49,5 +55,17 @@ public class Payment {
 
     public LocalDateTime getPaymentTime() { return paymentTime; }
     public void setPaymentTime(LocalDateTime paymentTime) { this.paymentTime = paymentTime; }
+
+    public String getTransactionCode() { return transactionCode; }
+    public void setTransactionCode(String transactionCode) { this.transactionCode = transactionCode; }
+
+    public String getQrContent() { return qrContent; }
+    public void setQrContent(String qrContent) { this.qrContent = qrContent; }
+
+    public String getBankCode() { return bankCode; }
+    public void setBankCode(String bankCode) { this.bankCode = bankCode; }
+
+    public String getAccountNumber() { return accountNumber; }
+    public void setAccountNumber(String accountNumber) { this.accountNumber = accountNumber; }
 }
 
