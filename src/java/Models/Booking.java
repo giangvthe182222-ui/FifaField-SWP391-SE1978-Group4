@@ -21,6 +21,7 @@ public class Booking {
     private LocalDateTime bookingTime;
     private String status;
     private BigDecimal totalPrice;
+    private LocalDateTime paymentDeadline;
 
     public Booking() {}
 
@@ -61,5 +62,8 @@ public class Booking {
 
     public BigDecimal getTotalPrice() { return totalPrice; }
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
+
+    public LocalDateTime getPaymentDeadline() { return paymentDeadline; }
+    public void setPaymentDeadline(LocalDateTime paymentDeadline) { this.paymentDeadline = paymentDeadline; }
 }
 
