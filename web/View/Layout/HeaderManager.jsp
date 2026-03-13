@@ -107,6 +107,18 @@
                 Lịch cá nhân
             </a>
 
+            <!-- Blog -->
+            <a href="${pageContext.request.contextPath}/manager/blogs"
+               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
+               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
+                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+                Blog
+            </a>
+
         </nav>
 
         <!-- RIGHT - PROFILE DROPDOWN -->
