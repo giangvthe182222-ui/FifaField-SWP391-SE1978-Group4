@@ -409,32 +409,33 @@
             days[s.date].push(s);
         });
 
-        if (scheduleDateFilter && scheduleDateFilter.value) {
-            selectedDate = scheduleDateFilter.value;
+        var activeDateFilter = (scheduleDateFilter && scheduleDateFilter.value) ? scheduleDateFilter.value : '';
+        if (activeDateFilter) {
+            selectedDate = activeDateFilter;
         }
 
         var orderedDates = Object.keys(days).sort();
-        if (selectedDate) {
-            orderedDates = orderedDates.filter(function(d) { return d === selectedDate; });
-        }
-
-        if (!selectedDate && orderedDates.length) {
-            selectedDate = orderedDates[0];
-            if (scheduleDateFilter) scheduleDateFilter.value = selectedDate;
+        if (activeDateFilter) {
+            orderedDates = orderedDates.filter(function(d) { return d === activeDateFilter; });
         }
 
         var selected = schedules.find(function(s) { return s.id === selectedScheduleId; });
-        if (selected && normalizeStatus(selected.status) !== 'available') {
+        if (selected && (normalizeStatus(selected.status) !== 'available' || (activeDateFilter && selected.date !== activeDateFilter))) {
             selectedScheduleId = '';
         }
+
+        var candidateSchedules = schedules;
+        if (activeDateFilter) {
+            candidateSchedules = schedules.filter(function(s) { return s.date === activeDateFilter; });
+        }
+
         if (!selectedScheduleId) {
-            var firstAvailable = schedules.find(function(s) {
-                return normalizeStatus(s.status) === 'available' && (!selectedDate || s.date === selectedDate);
+            var firstAvailable = candidateSchedules.find(function(s) {
+                return normalizeStatus(s.status) === 'available';
             });
             if (firstAvailable) {
                 selectedScheduleId = firstAvailable.id;
                 selectedDate = firstAvailable.date;
-                if (scheduleDateFilter) scheduleDateFilter.value = selectedDate;
             }
         }
 
