@@ -1,13 +1,15 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="Models.Booking, Models.Payment" %>
+<%@ page import="Models.Booking, Models.Payment, Models.BookingViewModel" %>
 <%
     Booking booking = (Booking) request.getAttribute("booking");
+    BookingViewModel bookingVM = (BookingViewModel) request.getAttribute("bookingVM");
     Payment payment = (Payment) request.getAttribute("payment");
     String qrCodeURL = (String) request.getAttribute("qrCodeURL");
     Long timeRemainingAttr = (Long) request.getAttribute("timeRemaining");
     String bankCode = (String) request.getAttribute("bankCode");
     String accountNumber = (String) request.getAttribute("accountNumber");
     String accountName = (String) request.getAttribute("accountName");
+    String checkoutUrl = (String) request.getAttribute("checkoutUrl");
 
     if (booking == null || payment == null) {
         response.sendRedirect(request.getContextPath() + "/View/Booking/Booking.jsp?error=payment_not_found");
@@ -163,6 +165,18 @@
                             <p class="text-sm text-slate-500">So tien</p>
                             <p class="font-black text-4xl text-[var(--brand-green)] mt-1"><%= String.format("%,d", booking.getTotalPrice().longValue()) %>d</p>
                         </div>
+
+                        <div class="pt-3 border-t border-slate-200">
+                            <p class="text-sm text-slate-500">Thong tin dat san</p>
+                            <p class="font-semibold text-base mt-1"><%= bookingVM != null ? bookingVM.getFieldName() : "--" %></p>
+                            <p class="text-sm text-slate-600 mt-1">
+                                <%= (bookingVM != null && bookingVM.getBookingDate() != null) ? bookingVM.getBookingDate().toString() : "--" %>
+                                |
+                                <%= (bookingVM != null && bookingVM.getStartTime() != null && bookingVM.getEndTime() != null)
+                                        ? bookingVM.getStartTime().toString() + " - " + bookingVM.getEndTime().toString()
+                                        : "--" %>
+                            </p>
+                        </div>
                     </div>
 
                     <div class="timer-box p-4 text-center">
@@ -194,7 +208,7 @@
                         <div class="text-center">
                             <p class="text-xs uppercase tracking-[0.35em] text-emerald-100 font-semibold">Bank Transfer QR</p>
                             <h1 class="text-3xl md:text-4xl font-black mt-2">Thanh toan qua ngan hang</h1>
-                            <p class="text-sm md:text-base text-emerald-100 mt-2">Mo app ngan hang va quet ma QR de hoan tat thanh toan.</p>
+                            <p class="text-sm md:text-base text-emerald-100 mt-2">Quet QR hoac mo trang payOS Checkout de hoan tat thanh toan.</p>
                         </div>
 
                         <div class="qr-frame">
@@ -216,9 +230,18 @@
                             </div>
                             <div class="bg-white/20 rounded-xl p-3 md:col-span-2">
                                 <p class="text-emerald-100">Noi dung chuyen khoan</p>
-                                <p class="font-black text-white text-xl mt-1 tracking-wide">FFF_BOOKING_<%= booking.getBookingId().toString().replace("-", "").toUpperCase().substring(0, 8) %></p>
+                                <p class="font-black text-white text-xl mt-1 tracking-wide"><%= payment.getTransactionCode() %></p>
                             </div>
                         </div>
+
+                        <% if (checkoutUrl != null && !checkoutUrl.trim().isEmpty()) { %>
+                            <div class="pt-1 text-center">
+                                <a href="<%= checkoutUrl %>" target="_blank" rel="noopener"
+                                   class="inline-flex items-center justify-center rounded-xl bg-white text-[var(--brand-green)] font-bold px-5 py-3 hover:bg-emerald-50 transition">
+                                    Mo payOS Checkout
+                                </a>
+                            </div>
+                        <% } %>
                     </div>
 
                     <div id="paymentStatusDiv" class="hidden status-card mt-5 p-4 text-center">
@@ -341,12 +364,12 @@
                         <p class="text-lg font-bold text-green-700">Thanh toan thanh cong!</p>
                     </div>
                     <p class="text-sm text-green-600 mb-3">Don dat san da duoc xac nhan.</p>
-                    <a href="${pageContext.request.contextPath}/customer/bookings" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">Xem danh sach booking</a>
+                    <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${bookingId}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">Xem chi tiet booking</a>
                 `;
                 statusDiv.classList.remove('hidden');
 
                 setTimeout(() => {
-                    window.location.href = '${pageContext.request.contextPath}/customer/bookings';
+                    window.location.href = '${pageContext.request.contextPath}/customer/bookingDetail?id=' + bookingId;
                 }, 1800);
             }
 

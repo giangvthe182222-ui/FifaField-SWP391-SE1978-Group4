@@ -1,5 +1,8 @@
 package Utils;
 
+import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -16,29 +19,26 @@ public class QRCodeGenerator {
     public static final String ACCOUNT_NAME = "FIFA FIELD";
 
     /**
-     * Generate VietQR format string for a booking payment Format:
-     * "bank=VCB&acc=123456789&amount=500000&content=FFF_BOOKING_<booking_id>"
+     * Generate a short transfer content that can be matched back to a booking.
      */
-    public static String generateVietQRString(UUID bookingId, long amountInVND) {
-        String content = "FFF_BOOKING_" + bookingId.toString().replace("-", "").toUpperCase();
-
-        StringBuilder qrData = new StringBuilder();
-        qrData.append("bank=").append(BANK_CODE);
-        qrData.append("&acc=").append(ACCOUNT_NUMBER);
-        qrData.append("&amount=").append(amountInVND);
-        qrData.append("&content=").append(content);
-
-        return qrData.toString();
+    public static String generateTransferContent(UUID bookingId) {
+        String compactId = bookingId.toString().replace("-", "").toUpperCase();
+        return "FFFBOOK" + compactId.substring(0, 12);
     }
 
     /**
-     * Generate QR Code URL using QRServer API This uses free CDN service:
-     * https://qrserver.com/
+     * Generate a bank-scannable VietQR image URL with exact amount and transfer content.
      */
-    public static String generateQRCodeURL(String vietQRString) {
+    public static String generateQRCodeURL(BigDecimal amount, String transferContent) {
         try {
-            String encodedQR = java.net.URLEncoder.encode(vietQRString, "UTF-8");
-            return "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=" + encodedQR;
+            String encodedContent = URLEncoder.encode(transferContent, StandardCharsets.UTF_8.name());
+            String encodedAccountName = URLEncoder.encode(ACCOUNT_NAME, StandardCharsets.UTF_8.name());
+            long roundedAmount = amount == null ? 0L : amount.longValue();
+            return "https://img.vietqr.io/image/"
+                    + BANK_CODE + "-" + ACCOUNT_NUMBER + "-compact2.png"
+                    + "?amount=" + roundedAmount
+                    + "&addInfo=" + encodedContent
+                    + "&accountName=" + encodedAccountName;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
@@ -50,7 +50,7 @@ public class QRCodeGenerator {
      * standard VietQR payload format used by Vietnamese banks
      */
     public static String generateDetailedVietQRString(UUID bookingId, long amountInVND, String bankAccount) {
-        String content = "FFF_BOOKING_" + bookingId.toString().replace("-", "").toUpperCase();
+        String content = generateTransferContent(bookingId);
 
         // Standard VietQR format: "bank|account|amount|content"
         return BANK_CODE + "|" + bankAccount + "|" + amountInVND + "|" + content;
@@ -63,10 +63,10 @@ public class QRCodeGenerator {
         UUID testBookingId = UUID.randomUUID();
         long testAmount = 500000; // 500,000 VND
 
-        String vietQRString = generateVietQRString(testBookingId, testAmount);
-        System.out.println("VietQR String: " + vietQRString);
+        String transferContent = generateTransferContent(testBookingId);
+        System.out.println("Transfer content: " + transferContent);
 
-        String qrUrl = generateQRCodeURL(vietQRString);
+        String qrUrl = generateQRCodeURL(BigDecimal.valueOf(testAmount), transferContent);
         System.out.println("QR Code URL: " + qrUrl);
 
         String detailedQR = generateDetailedVietQRString(testBookingId, testAmount, ACCOUNT_NUMBER);

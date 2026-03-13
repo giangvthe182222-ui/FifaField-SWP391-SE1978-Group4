@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .map-frame { filter: saturate(1.05) contrast(1.02); }
     </style>
 </head>
 <body class="min-h-screen text-slate-900">
@@ -69,11 +70,30 @@
                     <a href="${pageContext.request.contextPath}/booking?locationId=${location.locationId}" class="px-8 py-4 rounded-2xl bg-[#008751] text-white font-black text-xs uppercase tracking-widest text-center hover:bg-emerald-500 transition-colors">
                         Đặt sân tại cơ sở này
                     </a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=${location.address}" target="_blank" rel="noopener noreferrer" class="px-8 py-4 rounded-2xl border border-blue-100 bg-blue-50 text-blue-700 font-black text-xs uppercase tracking-widest text-center hover:border-blue-500 hover:text-blue-600 transition-colors">
+                        Mở Google Maps
+                    </a>
                     <a href="${pageContext.request.contextPath}/customer/vouchers?locationId=${location.locationId}" class="px-8 py-4 rounded-2xl border border-slate-200 text-slate-700 font-black text-xs uppercase tracking-widest text-center hover:border-[#008751] hover:text-[#008751] transition-colors">
                         Xem voucher cơ sở
                     </a>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-8 md:p-10 space-y-6">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
+            <h2 class="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Bản đồ cơ sở</h2>
+        </div>
+
+        <div class="rounded-[2rem] overflow-hidden border border-slate-100 bg-slate-50">
+            <iframe
+                title="Bản đồ ${location.locationName}"
+                src="https://maps.google.com/maps?hl=vi&q=${location.address}&t=&z=16&ie=UTF8&iwloc=B&output=embed"
+                class="map-frame w-full h-[420px] border-0"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
     </section>
 

@@ -64,7 +64,7 @@
                             <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
                             <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Thông tin trận đấu</h2>
                         </div>
-                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' || booking.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : booking.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : booking.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : booking.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : booking.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
                             ${booking.status}
                         </span>
                     </div>
@@ -145,8 +145,10 @@
                                 <label for="status" class="text-[9px] font-black uppercase tracking-widest opacity-60">Chọn trạng thái mới</label>
                                 <select name="status" id="status" class="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:ring-2 focus:ring-emerald-400/50 appearance-none cursor-pointer">
                                     <option value="pending" ${booking.status=='pending' ? 'selected' : ''} class="text-gray-900">pending</option>
+                                    <option value="paid" ${booking.status=='paid' ? 'selected' : ''} class="text-gray-900">paid</option>
                                     <option value="checked in" ${booking.status=='checked in' ? 'selected' : ''} class="text-gray-900">checked in</option>
                                     <option value="completed" ${booking.status=='completed' ? 'selected' : ''} class="text-gray-900">completed</option>
+                                    <option value="pending refund" ${booking.status=='pending refund' ? 'selected' : ''} class="text-gray-900">pending refund</option>
                                     <option value="cancelled" ${booking.status=='cancelled' ? 'selected' : ''} class="text-gray-900">cancelled</option>
                                     <option value="refunded" ${booking.status=='refunded' ? 'selected' : ''} class="text-gray-900">refunded</option>
                                 </select>

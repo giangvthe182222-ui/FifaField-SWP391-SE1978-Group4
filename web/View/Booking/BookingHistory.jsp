@@ -63,8 +63,8 @@
                     <option value="pending" ${param.status == 'pending' ? 'selected' : ''}>pending</option>
                     <option value="paid" ${param.status == 'paid' ? 'selected' : ''}>paid</option>
                     <option value="checked in" ${param.status == 'checked in' ? 'selected' : ''}>checked in</option>
-                    <option value="checked in refunded" ${param.status == 'checked in refunded' ? 'selected' : ''}>checked in refunded</option>
                     <option value="completed" ${param.status == 'completed' ? 'selected' : ''}>completed</option>
+                    <option value="pending refund" ${param.status == 'pending refund' ? 'selected' : ''}>pending refund</option>
                     <option value="cancelled" ${param.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
                     <option value="refunded" ${param.status == 'refunded' ? 'selected' : ''}>refunded</option>
                 </select>
@@ -134,7 +134,7 @@
                                 
                                         <div class="md:hidden flex-grow">
                                             <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight">${b.fieldName}</h3>
-                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' || b.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : b.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
                                                 ${b.status}
                                             </span>
                                         </div>
@@ -144,7 +144,7 @@
                                     <div class="hidden md:block flex-grow space-y-2">
                                         <div class="flex items-center gap-4">
                                             <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight group-hover:text-[#008751] transition-colors">${b.fieldName}</h3>
-                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' || b.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : b.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
                                                 ${b.status}
                                             </span>
                                         </div>
@@ -183,8 +183,8 @@
                                                 <option value="pending" ${b.status == 'pending' ? 'selected' : ''}>pending</option>
                                                 <option value="paid" ${b.status == 'paid' ? 'selected' : ''}>paid</option>
                                                 <option value="checked in" ${b.status == 'checked in' ? 'selected' : ''}>checked in</option>
-                                                <option value="checked in refunded" ${b.status == 'checked in refunded' ? 'selected' : ''}>checked in refunded</option>
                                                 <option value="completed" ${b.status == 'completed' ? 'selected' : ''}>completed</option>
+                                                <option value="pending refund" ${b.status == 'pending refund' ? 'selected' : ''}>pending refund</option>
                                                 <option value="cancelled" ${b.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
                                                 <option value="refunded" ${b.status == 'refunded' ? 'selected' : ''}>refunded</option>
                                             </select>
@@ -205,7 +205,7 @@
                                 <article class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-gray-200/30 hover:shadow-xl hover:shadow-[#008751]/10 transition-all p-6 flex flex-col gap-4 min-h-[320px]">
                                     <div class="flex items-start justify-between gap-3">
                                         <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight leading-tight">${b.fieldName}</h3>
-                                        <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shrink-0 ${b.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                                        <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shrink-0 ${b.status == 'cancelled' || b.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : b.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
                                             ${b.status}
                                         </span>
                                     </div>
@@ -225,7 +225,7 @@
 
                                         <div class="flex flex-wrap items-center gap-2">
                                             <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="bg-gray-900 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-colors">Chi tiết</a>
-                                            <c:if test="${fn:toLowerCase(b.status) == 'completed'}">
+                                            <c:if test="${reviewableBookingMap[b.bookingId]}">
                                                 <c:choose>
                                                     <c:when test="${feedbackBookingMap[b.bookingId]}">
                                                         <span class="px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-black text-[10px] uppercase tracking-widest">Đã gửi đánh giá</span>

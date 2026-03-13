@@ -14,10 +14,21 @@ import java.math.BigDecimal;
  */
 public class PaymentDAO {
 
+    private String lastError;
+
+    public String getLastError() {
+        return lastError;
+    }
+
+    private void setLastError(String message) {
+        this.lastError = message;
+    }
+
     /**
      * Create a new payment record for a booking
      */
     public boolean createPayment(Payment payment) {
+        setLastError(null);
         String sql = "INSERT INTO Payment (payment_id, booking_id, amount, payment_method, payment_status, "
                 + "transaction_code, qr_content, bank_code, account_number) "
                 + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -36,9 +47,26 @@ public class PaymentDAO {
             ps.setString(9, payment.getAccountNumber());
 
             int affected = ps.executeUpdate();
+            if (affected <= 0) {
+                setLastError("Cannot create payment row in database.");
+            }
             return affected > 0;
 
+        } catch (SQLException e) {
+            String message = e.getMessage() == null ? "" : e.getMessage();
+            if (message.toLowerCase().contains("invalid column name")
+                    && (message.toLowerCase().contains("transaction_code")
+                    || message.toLowerCase().contains("qr_content")
+                    || message.toLowerCase().contains("bank_code")
+                    || message.toLowerCase().contains("account_number"))) {
+                setLastError("Payment schema is outdated. Please run database/payment_system_update.sql to add required payment columns.");
+            } else {
+                setLastError("SQL error while creating payment: " + message);
+            }
+            e.printStackTrace();
+            return false;
         } catch (Exception e) {
+            setLastError("Error while creating payment: " + (e.getMessage() == null ? "unknown" : e.getMessage()));
             e.printStackTrace();
             return false;
         }
@@ -91,15 +119,14 @@ public class PaymentDAO {
     /**
      * Update payment status to SUCCESS
      */
-    public boolean updatePaymentSuccess(UUID paymentId, String transactionCode) {
-        String sql = "UPDATE Payment SET payment_status = 'SUCCESS', payment_time = SYSDATETIME(), "
-                + "transaction_code = ? WHERE payment_id = ?";
+    public boolean updatePaymentSuccess(UUID paymentId) {
+        String sql = "UPDATE Payment SET payment_status = 'SUCCESS', payment_time = SYSDATETIME() "
+                + "WHERE payment_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, transactionCode);
-            ps.setString(2, paymentId.toString());
+            ps.setString(1, paymentId.toString());
 
             int affected = ps.executeUpdate();
             return affected > 0;
@@ -129,6 +156,32 @@ public class PaymentDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public boolean updatePaymentRefundPending(UUID bookingId) {
+        return updatePaymentStatusByBooking(bookingId, "REFUND_PENDING", false);
+    }
+
+    public boolean updatePaymentRefunded(UUID bookingId) {
+        return updatePaymentStatusByBooking(bookingId, "REFUNDED", true);
+    }
+
+    public Payment getPaymentByTransactionCode(String transactionCode) {
+        String sql = "SELECT * FROM Payment WHERE transaction_code = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, transactionCode);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return extractPaymentFromResultSet(rs);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -223,5 +276,23 @@ public class PaymentDAO {
             e.printStackTrace();
         }
         return false;
+    }
+
+    private boolean updatePaymentStatusByBooking(UUID bookingId, String paymentStatus, boolean touchPaymentTime) {
+        String sql = touchPaymentTime
+                ? "UPDATE Payment SET payment_status = ?, payment_time = SYSDATETIME() WHERE booking_id = ?"
+                : "UPDATE Payment SET payment_status = ? WHERE booking_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, paymentStatus);
+            ps.setString(2, bookingId.toString());
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }
