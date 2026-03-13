@@ -255,6 +255,45 @@ public class BookingDAO {
         return null;
     }
 
+    public BookingViewModel getByScheduleId(UUID scheduleId) {
+        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, u.phone AS customer_phone " +
+            "FROM Booking b " +
+            "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
+            "LEFT JOIN Field f ON b.field_id = f.field_id " +
+            "LEFT JOIN Users u ON b.booker_id = u.user_id " +
+            "WHERE b.schedule_id = ? " +
+            "ORDER BY s.booking_date DESC, s.start_time DESC";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, scheduleId.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                BookingViewModel vm = new BookingViewModel();
+                vm.setBookingId(UUID.fromString(rs.getString("booking_id")));
+                vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
+                vm.setFieldId(UUID.fromString(rs.getString("field_id")));
+                vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
+                Date bd = rs.getDate("booking_date");
+                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                Time st = rs.getTime("start_time");
+                if (st != null) vm.setStartTime(st.toLocalTime());
+                Time et = rs.getTime("end_time");
+                if (et != null) vm.setEndTime(et.toLocalTime());
+                vm.setFieldName(rs.getString("field_name"));
+                vm.setCustomerName(rs.getString("customer_name"));
+                vm.setCustomerPhone(rs.getString("customer_phone"));
+                vm.setStatus(rs.getString("status"));
+                vm.setTotalPrice(rs.getBigDecimal("total_price"));
+                return vm;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public List<BookingEquipmentViewModel> getBookingEquipments(UUID bookingId) {
         List<BookingEquipmentViewModel> list = new ArrayList<>();
         String sql = "SELECT be.equipment_id, be.quantity, e.name, e.rental_price " +
