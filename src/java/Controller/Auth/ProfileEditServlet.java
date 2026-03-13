@@ -2,7 +2,6 @@ package Controller.Auth;
 
 import DAO.AuthDAO;
 import Models.User;
-import Utils.DBConnection;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -15,6 +14,13 @@ import java.sql.SQLException;
 public class ProfileEditServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login");
+            return;
+        }
+        User user = (User) session.getAttribute("user");
+        request.setAttribute("dashboardPath", resolveDashboardPath(request, user));
         request.getRequestDispatcher("/View/Auth/ProfileEdit.jsp").forward(request, response);
     }
 
@@ -52,5 +58,24 @@ public class ProfileEditServlet extends HttpServlet {
         } catch (SQLException ex) {
             throw new ServletException(ex);
         }
+    }
+
+    private String resolveDashboardPath(HttpServletRequest request, User user) {
+        String contextPath = request.getContextPath();
+        if (user == null || user.getRole() == null || user.getRole().getRoleName() == null) {
+            return contextPath + "/";
+        }
+
+        String role = user.getRole().getRoleName().trim().toLowerCase();
+        if ("admin".equals(role)) {
+            return contextPath + "/admin-dashboard";
+        }
+        if ("manager".equals(role)) {
+            return contextPath + "/manager/dashboard";
+        }
+        if ("staff".equals(role)) {
+            return contextPath + "/staff/dashboard";
+        }
+        return contextPath + "/customer/dashboard";
     }
 }
