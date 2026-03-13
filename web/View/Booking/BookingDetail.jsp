@@ -91,7 +91,7 @@
                             <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
                             <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Thông tin trận đấu</h2>
                         </div>
-                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' || booking.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : booking.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : booking.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : booking.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : booking.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
                             ${booking.status}
                         </span>
                     </div>
@@ -178,18 +178,25 @@
                             </div>
                         </div>
 
+                        <c:if test="${booking.status == 'pending'}">
+                            <a href="${pageContext.request.contextPath}/payment?bookingId=${booking.bookingId}" class="w-full bg-[#008751] hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                                TIẾP TỤC THANH TOÁN
+                            </a>
+                        </c:if>
+
                         <c:if test="<%= canCancel %>">
-                            <c:if test="${booking.status != 'cancelled'}">
+                            <c:if test="${booking.status == 'paid'}">
                                 <form method="post" action="${pageContext.request.contextPath}/customer/bookingDetail">
                                     <input type="hidden" name="id" value="${booking.bookingId}" />
                                     <input type="hidden" name="action" value="cancel" />
                                     <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
                                         <i data-lucide="x-circle" class="w-4 h-4"></i>
-                                        HỦY ĐẶT SÂN
+                                        YÊU CẦU HOÀN TIỀN
                                     </button>
                                 </form>
                                 <p class="text-[8px] text-center font-bold text-emerald-200/50 uppercase tracking-widest leading-relaxed">
-                                    * Hủy trước 48h để được hoàn tiền 100% theo chính sách FIFAFIELD
+                                    * Hủy trước 48h để chuyển đơn sang pending refund theo chính sách FIFAFIELD
                                 </p>
                             </c:if>
                         </c:if>

@@ -2,6 +2,7 @@ package Controller.Booking;
 
 import DAO.*;
 import Models.*;
+import Utils.PayOSClient;
 import Utils.QRCodeGenerator;
 
 import jakarta.servlet.ServletException;
@@ -12,9 +13,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.time.LocalDateTime;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -94,9 +97,34 @@ public class PaymentServlet extends HttpServlet {
 
         // Check payment status
         String paymentStatus = payment.getPaymentStatus();
+
+        String qrContent = payment.getQrContent();
+        String checkoutUrl = null;
+        if ("payOS".equalsIgnoreCase(payment.getPaymentMethod())) {
+            PayOSClient payOSClient = new PayOSClient();
+            if (payOSClient.isConfigured()) {
+                Long orderCode = parseOrderCode(payment.getTransactionCode());
+                if (orderCode != null) {
+                    PayOSClient.PaymentStatusResponse statusResponse = payOSClient.getPaymentStatus(orderCode);
+                    if (statusResponse.isSuccess()) {
+                        if (notBlank(statusResponse.getQrCode())) {
+                            qrContent = statusResponse.getQrCode();
+                        }
+                        checkoutUrl = statusResponse.getCheckoutUrl();
+                        String providerStatus = normalizeProviderStatus(statusResponse.getStatus());
+                        if ("SUCCESS".equalsIgnoreCase(providerStatus) && !"SUCCESS".equalsIgnoreCase(paymentStatus)) {
+                            paymentDAO.updatePaymentSuccess(payment.getPaymentId());
+                            bookingDAO.markBookingPaid(bookingId);
+                            paymentStatus = "SUCCESS";
+                        }
+                    }
+                }
+            }
+        }
+
         if ("SUCCESS".equalsIgnoreCase(paymentStatus)) {
             session.setAttribute("flash_success", "Payment already completed!");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + "/customer/bookingDetail?id=" + bookingId.toString());
             return;
         }
 
@@ -127,8 +155,7 @@ public class PaymentServlet extends HttpServlet {
         }
 
         // Get or generate QR code URL
-        String qrContent = payment.getQrContent();
-        String qrCodeURL = QRCodeGenerator.generateQRCodeURL(qrContent);
+        String qrCodeURL = buildQrCodeUrl(payment, qrContent);
 
         // Get booking details for display
         BookingViewModel bookingVM = bookingDAO.getById(bookingId);
@@ -157,6 +184,7 @@ public class PaymentServlet extends HttpServlet {
         request.setAttribute("bankCode", payment.getBankCode());
         request.setAttribute("accountNumber", payment.getAccountNumber());
         request.setAttribute("accountName", QRCodeGenerator.ACCOUNT_NAME);
+        request.setAttribute("checkoutUrl", checkoutUrl);
 
         request.getRequestDispatcher("/View/Booking/Payment.jsp").forward(request, response);
     }
@@ -223,11 +251,77 @@ public class PaymentServlet extends HttpServlet {
         }
 
         String paymentStatus = payment.getPaymentStatus() == null ? "PENDING" : payment.getPaymentStatus();
+
+        if ("payOS".equalsIgnoreCase(payment.getPaymentMethod()) && "PENDING".equalsIgnoreCase(paymentStatus)) {
+            PayOSClient payOSClient = new PayOSClient();
+            Long orderCode = parseOrderCode(payment.getTransactionCode());
+            if (payOSClient.isConfigured() && orderCode != null) {
+                PayOSClient.PaymentStatusResponse statusResponse = payOSClient.getPaymentStatus(orderCode);
+                if (statusResponse.isSuccess()) {
+                    String providerStatus = normalizeProviderStatus(statusResponse.getStatus());
+                    if ("SUCCESS".equalsIgnoreCase(providerStatus)) {
+                        paymentDAO.updatePaymentSuccess(payment.getPaymentId());
+                        bookingDAO.markBookingPaid(bookingId);
+                        paymentStatus = "SUCCESS";
+                    } else if ("FAILED".equalsIgnoreCase(providerStatus)) {
+                        paymentDAO.updatePaymentFailed(payment.getPaymentId());
+                        paymentStatus = "FAILED";
+                    }
+                }
+            }
+        }
+
         if (expired && "PENDING".equalsIgnoreCase(paymentStatus)) {
             bookingDAO.cancelBookingForPayment(bookingId);
             paymentStatus = "FAILED";
         }
 
         writeStatus(response, paymentStatus, expired, timeRemaining, "OK");
+    }
+
+    private String buildQrCodeUrl(Payment payment, String qrContent) throws IOException {
+        if (qrContent == null || qrContent.trim().isEmpty()) {
+            return "";
+        }
+
+        if ("payOS".equalsIgnoreCase(payment.getPaymentMethod())) {
+            if (qrContent.startsWith("http://") || qrContent.startsWith("https://")) {
+                return qrContent;
+            }
+            return "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data="
+                    + URLEncoder.encode(qrContent, StandardCharsets.UTF_8.name());
+        }
+
+        return QRCodeGenerator.generateQRCodeURL(payment.getAmount(), qrContent);
+    }
+
+    private String normalizeProviderStatus(String providerStatus) {
+        if (providerStatus == null) {
+            return "PENDING";
+        }
+
+        String status = providerStatus.trim().toUpperCase();
+        if ("PAID".equals(status) || "SUCCESS".equals(status) || "SUCCEEDED".equals(status)) {
+            return "SUCCESS";
+        }
+        if ("CANCELLED".equals(status) || "FAILED".equals(status) || "EXPIRED".equals(status)) {
+            return "FAILED";
+        }
+        return "PENDING";
+    }
+
+    private Long parseOrderCode(String raw) {
+        if (raw == null || raw.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(raw.trim());
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private boolean notBlank(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

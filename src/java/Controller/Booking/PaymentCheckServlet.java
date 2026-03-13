@@ -165,15 +165,14 @@ public class PaymentCheckServlet extends HttpServlet {
         }
 
         // Update payment to SUCCESS
-        boolean paymentUpdated = paymentDAO.updatePaymentSuccess(payment.getPaymentId(), transactionCode);
+        boolean paymentUpdated = paymentDAO.updatePaymentSuccess(payment.getPaymentId());
         
-        // Update booking to CONFIRMED
-        boolean bookingUpdated = bookingDAO.updateStatus(bookingId, "confirmed");
+        boolean bookingUpdated = bookingDAO.markBookingPaid(bookingId);
 
         if (paymentUpdated && bookingUpdated) {
             writeStatus(response, "SUCCESS", "Payment confirmed successfully!");
 
-            PaymentLog log = new PaymentLog(payment.getPaymentId(), "SUCCESS", "Payment verified and confirmed");
+            PaymentLog log = new PaymentLog(payment.getPaymentId(), "SUCCESS", "Payment verified and marked as paid");
             paymentDAO.logPaymentCheck(log);
         } else {
             writeStatus(response, "ERROR", "Failed to update payment/booking status");

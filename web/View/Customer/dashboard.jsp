@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="Models.User" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -111,7 +112,18 @@
                 <p class="text-sm font-bold text-rose-700 uppercase tracking-tight">${error}</p>
             </div>
         </c:if>
+<div class="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-xl shadow-gray-200/30 mb-8">
+    
+    <div class="flex items-center gap-4 mb-6">
+        <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
+        <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
+            Bản đồ cơ sở
+        </h2>
+    </div>
 
+    <div id="map" class="w-full h-[500px] rounded-2xl"></div>
+
+</div>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <c:forEach var="loc" items="${locations}">
                 <article class="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 flex flex-col gap-6 group hover:shadow-2xl hover:shadow-[#008751]/10 transition-all">
@@ -143,12 +155,26 @@
                             <p class="text-[10px] font-black uppercase tracking-widest">Hotline: ${loc.phoneNumber}</p>
                         </div>
                     </div>
+                    <div class="rounded-[1.8rem] overflow-hidden border border-gray-100 bg-slate-50">
+                        <iframe
+                            title="Bản đồ ${loc.locationName}"
+                            src="https://maps.google.com/maps?hl=vi&q=${loc.address}&t=&z=15&ie=UTF8&iwloc=B&output=embed"
+                            class="w-full h-56 border-0"
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade"></iframe>
+                    </div>
                     <div class="mt-auto pt-6 border-t border-gray-50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                         <div class="flex -space-x-2">
                             <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-black">7v7</div>
                             <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-black">11v11</div>
                         </div>
                         <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <a href="https://www.google.com/maps/search/?api=1&query=${loc.address}"
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               class="px-6 py-4 rounded-2xl border border-blue-100 text-blue-700 font-black text-[10px] uppercase tracking-widest hover:border-blue-500 hover:text-blue-600 transition-all text-center bg-blue-50">
+                                Google Maps
+                            </a>
                             <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${loc.locationId}"
                                class="px-6 py-4 rounded-2xl border border-gray-200 text-gray-700 font-black text-[10px] uppercase tracking-widest hover:border-[#008751] hover:text-[#008751] transition-all text-center">
                                 Xem cơ sở
@@ -219,5 +245,56 @@
 <script>
     lucide.createIcons();
 </script>
-</body>
+<script>
+
+const locations = [
+<c:forEach var="loc" items="${locations}" varStatus="loop">
+{
+    name: "${loc.locationName}",
+    address: "${loc.address}",
+    bookingUrl: "${pageContext.request.contextPath}/booking?locationId=${loc.locationId}"
+}<c:if test="${!loop.last}">,</c:if>
+</c:forEach>
+];
+
+</script>
+<script>
+
+function initMap() {
+
+    const map = new google.maps.Map(document.getElementById("map"), {
+        zoom: 12,
+        center: { lat: 10.8231, lng: 106.6297 } // trung tâm HCM
+    });
+
+    const geocoder = new google.maps.Geocoder();
+
+    locations.forEach((loc, index) => {
+
+    setTimeout(() => {
+
+        geocoder.geocode({ address: loc.address }, function(results, status) {
+
+            if (status === "OK") {
+
+                const marker = new google.maps.Marker({
+                    map: map,
+                    position: results[0].geometry.location,
+                    title: loc.name
+                });
+
+            }
+
+        });
+
+    }, index * 200);
+
+});
+
+    });
+
+}
+
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyXXXXXXX&callback=initMap" async defer></script></body>
 </html>

@@ -81,9 +81,9 @@ public class BookingDetailServlet extends HttpServlet {
             BookingDAO bookingDAO = new BookingDAO();
             boolean ok = bookingDAO.cancelBooking(bookingId);
             if (ok) {
-                session.setAttribute("flash_success", "Booking cancelled successfully.");
+                session.setAttribute("flash_success", "Booking moved to pending refund.");
             } else {
-                session.setAttribute("flash_error", "Could not cancel booking (maybe within 2 days or already cancelled).");
+                session.setAttribute("flash_error", "Could not request refund for this booking.");
             }
         }
 

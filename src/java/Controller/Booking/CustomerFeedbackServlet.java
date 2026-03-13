@@ -35,7 +35,7 @@ public class CustomerFeedbackServlet extends HttpServlet {
             UUID bookingId = UUID.fromString(bookingIdRaw);
             FeedbackDAO feedbackDAO = new FeedbackDAO();
             if (!feedbackDAO.canCustomerFeedback(bookingId, user.getUserId())) {
-                session.setAttribute("flash_error", "Chỉ có thể gửi đánh giá cho đơn đã hoàn tất và chưa đánh giá.");
+                session.setAttribute("flash_error", "Chỉ có thể gửi đánh giá cho đơn đã completed và chưa đánh giá.");
                 response.sendRedirect(request.getContextPath() + "/customer/bookings");
                 return;
             }

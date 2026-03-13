@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.time.LocalDateTime;
 
 @WebServlet(name = "BookingHistoryServlet", urlPatterns = {"/customer/bookings"})
 public class BookingHistoryServlet extends HttpServlet {
@@ -81,12 +82,20 @@ public class BookingHistoryServlet extends HttpServlet {
         FeedbackDAO feedbackDAO = new FeedbackDAO();
         Set<UUID> feedbackBookingIds = feedbackDAO.getFeedbackBookingIdsByCustomer(userId);
         Map<UUID, Boolean> feedbackBookingMap = new HashMap<>();
+        Map<UUID, Boolean> reviewableBookingMap = new HashMap<>();
+        LocalDateTime now = LocalDateTime.now();
         for (BookingViewModel booking : pageBookings) {
             feedbackBookingMap.put(booking.getBookingId(), feedbackBookingIds.contains(booking.getBookingId()));
+                boolean reviewable = "completed".equalsIgnoreCase(booking.getStatus())
+                    && booking.getBookingDate() != null
+                    && booking.getEndTime() != null
+                    && !LocalDateTime.of(booking.getBookingDate(), booking.getEndTime()).isAfter(now);
+            reviewableBookingMap.put(booking.getBookingId(), reviewable);
         }
 
         request.setAttribute("bookings", pageBookings);
         request.setAttribute("feedbackBookingMap", feedbackBookingMap);
+        request.setAttribute("reviewableBookingMap", reviewableBookingMap);
         request.setAttribute("currentPage", pageNum);
         request.setAttribute("totalPages", totalPages);
         request.setAttribute("totalItems", totalItems);
