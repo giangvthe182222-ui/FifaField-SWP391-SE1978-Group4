@@ -156,6 +156,26 @@
         <servlet-class>Controller.Manager.ManagerEditStaffStatusServlet</servlet-class>
     </servlet>
     <servlet>
+        <servlet-name>ManagerLocationServlet</servlet-name>
+        <servlet-class>Controller.Manager.ManagerLocationServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ManagerLocationFieldsServlet</servlet-name>
+        <servlet-class>Controller.Manager.ManagerLocationFieldsServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ManagerFieldDetailServlet</servlet-name>
+        <servlet-class>Controller.Manager.ManagerFieldDetailServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ManagerLocationEquipmentServlet</servlet-name>
+        <servlet-class>Controller.Manager.ManagerLocationEquipmentServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ManagerShiftsServlet</servlet-name>
+        <servlet-class>Controller.Manager.ManagerShiftsServlet</servlet-class>
+    </servlet>
+    <servlet>
         <servlet-name>ShiftsListServlet</servlet-name>
         <servlet-class>Controller.Shift.ShiftsListServlet</servlet-class>
     </servlet>
@@ -230,6 +250,26 @@
     <servlet-mapping>
         <servlet-name>ManagerEditStaffStatusServlet</servlet-name>
         <url-pattern>/manager/staff/update-status</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ManagerLocationServlet</servlet-name>
+        <url-pattern>/manager/location</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ManagerLocationFieldsServlet</servlet-name>
+        <url-pattern>/manager/location/fields</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ManagerFieldDetailServlet</servlet-name>
+        <url-pattern>/manager/fields/view</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ManagerLocationEquipmentServlet</servlet-name>
+        <url-pattern>/manager/location/equipment</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ManagerShiftsServlet</servlet-name>
+        <url-pattern>/manager/shifts</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ShiftsListServlet</servlet-name>
