@@ -23,6 +23,15 @@ import java.util.concurrent.ThreadLocalRandom;
 @WebServlet(name = "BookingConfirmServlet", urlPatterns = {"/booking-confirm"})
 public class BookingConfirmServlet extends HttpServlet {
 
+    private String resolveBookingHistoryPath(User user) {
+        if (user != null
+                && user.getRole() != null
+                && "STAFF".equalsIgnoreCase(user.getRole().getRoleName())) {
+            return "/staff/locationBookings";
+        }
+        return "/customer/bookings";
+    }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -35,6 +44,7 @@ public class BookingConfirmServlet extends HttpServlet {
 
         User user = (User) session.getAttribute("user");
         UUID bookerId = user.getUserId();
+        String bookingHistoryPath = resolveBookingHistoryPath(user);
         if (bookerId == null) {
             session.setAttribute("flash_error", "Invalid user session.");
             response.sendRedirect(request.getContextPath() + "/booking");
@@ -158,7 +168,7 @@ public class BookingConfirmServlet extends HttpServlet {
         PayOSClient payOSClient = new PayOSClient();
         if (!payOSClient.isConfigured()) {
             session.setAttribute("flash_error", "Booking created but payOS config is incomplete. Missing: " + payOSClient.getMissingConfigSummary());
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
@@ -176,7 +186,7 @@ public class BookingConfirmServlet extends HttpServlet {
 
         if (!payOSLink.isSuccess()) {
             session.setAttribute("flash_error", "Booking created but payOS payment initialization failed: " + payOSLink.getMessage());
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
@@ -200,13 +210,13 @@ public class BookingConfirmServlet extends HttpServlet {
                 paymentError = "Unknown database error.";
             }
             session.setAttribute("flash_error", "Booking created but payment initialization failed. " + paymentError);
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
-        // Redirect to payment page
-        session.setAttribute("flash_success", "Booking created! Please complete payment within 15 minutes.");
-        response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + booking.getBookingId().toString());
+        // Redirect to booking success page before returning to booking list.
+        session.setAttribute("flash_success", "Booking created successfully.");
+        response.sendRedirect(request.getContextPath() + "/booking-success?bookingId=" + booking.getBookingId().toString());
     }
 
     private String buildCurrentAppPaymentUrl(HttpServletRequest request) {

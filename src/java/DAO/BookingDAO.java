@@ -12,10 +12,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.LocalDateTime;
 import Models.BookingViewModel;
 import Models.BookingEquipmentViewModel;
+import Models.Field;
+import Models.Location;
 
 public class BookingDAO {
 
@@ -293,6 +294,134 @@ public class BookingDAO {
         return list;
     }
 
+    public List<BookingViewModel> getCustomerCalendarBookings(UUID bookerId, LocalDate fromDate, LocalDate toDate, LocalDate selectedDate, UUID locationId, UUID fieldId) {
+        synchronizeBookingStates();
+        List<BookingViewModel> list = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name ");
+        sql.append("FROM Booking b ");
+        sql.append("LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id ");
+        sql.append("LEFT JOIN Field f ON b.field_id = f.field_id ");
+        sql.append("LEFT JOIN Users u ON b.booker_id = u.user_id ");
+        sql.append("WHERE b.booker_id = ? ");
+        sql.append("AND LOWER(ISNULL(b.status, '')) IN ('pending', 'paid', 'completed') ");
+        sql.append("AND s.booking_date >= ? AND s.booking_date <= ? ");
+
+        if (selectedDate != null) {
+            sql.append("AND s.booking_date = ? ");
+        }
+        if (locationId != null) {
+            sql.append("AND f.location_id = ? ");
+        }
+        if (fieldId != null) {
+            sql.append("AND b.field_id = ? ");
+        }
+
+        sql.append("ORDER BY s.booking_date, s.start_time");
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            int idx = 1;
+            ps.setString(idx++, bookerId.toString());
+            ps.setDate(idx++, Date.valueOf(fromDate));
+            ps.setDate(idx++, Date.valueOf(toDate));
+
+            if (selectedDate != null) {
+                ps.setDate(idx++, Date.valueOf(selectedDate));
+            }
+            if (locationId != null) {
+                ps.setString(idx++, locationId.toString());
+            }
+            if (fieldId != null) {
+                ps.setString(idx++, fieldId.toString());
+            }
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                BookingViewModel vm = new BookingViewModel();
+                vm.setBookingId(UUID.fromString(rs.getString("booking_id")));
+                vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
+                vm.setFieldId(UUID.fromString(rs.getString("field_id")));
+                vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
+
+                Date bd = rs.getDate("booking_date");
+                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                Time st = rs.getTime("start_time");
+                if (st != null) vm.setStartTime(st.toLocalTime());
+                Time et = rs.getTime("end_time");
+                if (et != null) vm.setEndTime(et.toLocalTime());
+
+                vm.setFieldName(rs.getString("field_name"));
+                vm.setCustomerName(rs.getString("customer_name"));
+                vm.setStatus(rs.getString("status"));
+                vm.setTotalPrice(rs.getBigDecimal("total_price"));
+                list.add(vm);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+
+    public List<Field> getCustomerCalendarFields(UUID bookerId) {
+        synchronizeBookingStates();
+        List<Field> fields = new ArrayList<>();
+        String sql = "SELECT DISTINCT f.field_id, f.field_name, f.field_type, f.image_url, f.status, f.[condition], f.location_id " +
+                "FROM Booking b " +
+                "JOIN Field f ON b.field_id = f.field_id " +
+                "WHERE b.booker_id = ? " +
+                "AND LOWER(ISNULL(b.status, '')) IN ('pending', 'paid', 'completed') " +
+                "ORDER BY f.field_name";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, bookerId.toString());
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Field f = new Field();
+                f.setFieldId(UUID.fromString(rs.getString("field_id")));
+                f.setFieldName(rs.getString("field_name"));
+                f.setFieldType(rs.getString("field_type"));
+                f.setImageUrl(rs.getString("image_url"));
+                f.setStatus(rs.getString("status"));
+                f.setFieldCondition(rs.getString("condition"));
+                f.setLocationId(UUID.fromString(rs.getString("location_id")));
+                fields.add(f);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return fields;
+    }
+
+    public List<Location> getCustomerCalendarLocations(UUID bookerId) {
+        synchronizeBookingStates();
+        List<Location> locations = new ArrayList<>();
+        String sql = "SELECT DISTINCT l.location_id, l.location_name " +
+                "FROM Booking b " +
+                "JOIN Field f ON b.field_id = f.field_id " +
+                "JOIN Location l ON f.location_id = l.location_id " +
+                "WHERE b.booker_id = ? " +
+                "AND LOWER(ISNULL(b.status, '')) IN ('pending', 'paid', 'completed') " +
+                "ORDER BY l.location_name";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, bookerId.toString());
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                Location l = new Location();
+                l.setLocationId(UUID.fromString(rs.getString("location_id")));
+                l.setLocationName(rs.getString("location_name"));
+                locations.add(l);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return locations;
+    }
+
     public BookingViewModel getById(UUID bookingId) {
         synchronizeBookingStates();
         String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name " +
@@ -339,6 +468,47 @@ public class BookingDAO {
             "LEFT JOIN Field f ON b.field_id = f.field_id " +
             "LEFT JOIN Users u ON b.booker_id = u.user_id " +
             "WHERE b.schedule_id = ? AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') " +
+            "ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, scheduleId.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                BookingViewModel vm = new BookingViewModel();
+                vm.setBookingId(UUID.fromString(rs.getString("booking_id")));
+                vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
+                vm.setFieldId(UUID.fromString(rs.getString("field_id")));
+                vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
+                Date bd = rs.getDate("booking_date");
+                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                Time st = rs.getTime("start_time");
+                if (st != null) vm.setStartTime(st.toLocalTime());
+                Time et = rs.getTime("end_time");
+                if (et != null) vm.setEndTime(et.toLocalTime());
+                vm.setFieldName(rs.getString("field_name"));
+                vm.setCustomerName(rs.getString("customer_name"));
+                vm.setCustomerPhone(rs.getString("customer_phone"));
+                vm.setStatus(rs.getString("status"));
+                vm.setTotalPrice(rs.getBigDecimal("total_price"));
+                return vm;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public BookingViewModel getByScheduleIdForCalendar(UUID scheduleId) {
+        synchronizeBookingStates();
+        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, u.phone AS customer_phone " +
+            "FROM Booking b " +
+            "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
+            "LEFT JOIN Field f ON b.field_id = f.field_id " +
+            "LEFT JOIN Users u ON b.booker_id = u.user_id " +
+            "WHERE b.schedule_id = ? " +
+            "AND LOWER(ISNULL(b.status, '')) IN ('pending', 'paid', 'checked in', 'completed') " +
             "ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
 
         try (Connection con = DBConnection.getConnection();

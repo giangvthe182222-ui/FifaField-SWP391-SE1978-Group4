@@ -26,6 +26,24 @@ import java.util.UUID;
 @WebServlet(name = "PaymentServlet", urlPatterns = {"/payment"})
 public class PaymentServlet extends HttpServlet {
 
+    private String resolveBookingHistoryPath(User user) {
+        if (user != null
+                && user.getRole() != null
+                && "STAFF".equalsIgnoreCase(user.getRole().getRoleName())) {
+            return "/staff/locationBookings";
+        }
+        return "/customer/bookings";
+    }
+
+    private String resolveBookingDetailPath(User user) {
+        if (user != null
+                && user.getRole() != null
+                && "STAFF".equalsIgnoreCase(user.getRole().getRoleName())) {
+            return "/staff/bookingDetail";
+        }
+        return "/customer/bookingDetail";
+    }
+
     private void writeStatus(HttpServletResponse response, String paymentStatus,
                              boolean expired, long timeRemaining, String message) throws IOException {
         response.getWriter().print("paymentStatus=" + safeValue(paymentStatus)
@@ -52,11 +70,13 @@ public class PaymentServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
+        String bookingHistoryPath = resolveBookingHistoryPath(user);
+        String bookingDetailPath = resolveBookingDetailPath(user);
 
         String bookingIdParam = request.getParameter("bookingId");
         if (bookingIdParam == null || bookingIdParam.isBlank()) {
             session.setAttribute("flash_error", "Invalid booking ID.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
@@ -65,7 +85,7 @@ public class PaymentServlet extends HttpServlet {
             bookingId = UUID.fromString(bookingIdParam);
         } catch (IllegalArgumentException e) {
             session.setAttribute("flash_error", "Invalid booking ID format.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
@@ -74,14 +94,14 @@ public class PaymentServlet extends HttpServlet {
 
         if (booking == null) {
             session.setAttribute("flash_error", "Booking not found.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
         // Verify booking belongs to current user
         if (!booking.getBookerId().equals(user.getUserId())) {
             session.setAttribute("flash_error", "Unauthorized access to booking.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
@@ -91,7 +111,7 @@ public class PaymentServlet extends HttpServlet {
 
         if (payment == null) {
             session.setAttribute("flash_error", "Payment information not found.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
@@ -124,13 +144,13 @@ public class PaymentServlet extends HttpServlet {
 
         if ("SUCCESS".equalsIgnoreCase(paymentStatus)) {
             session.setAttribute("flash_success", "Payment already completed!");
-            response.sendRedirect(request.getContextPath() + "/customer/bookingDetail?id=" + bookingId.toString());
+            response.sendRedirect(request.getContextPath() + bookingDetailPath + "?id=" + bookingId.toString());
             return;
         }
 
         if ("FAILED".equalsIgnoreCase(paymentStatus) || "CANCELLED".equalsIgnoreCase(paymentStatus)) {
             session.setAttribute("flash_error", "Payment has been " + paymentStatus.toLowerCase() + ".");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
@@ -142,7 +162,7 @@ public class PaymentServlet extends HttpServlet {
             // Payment expired -> release slot/equipment immediately
             bookingDAO.cancelBookingForPayment(bookingId);
             session.setAttribute("flash_error", "Payment deadline has expired.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
@@ -185,6 +205,8 @@ public class PaymentServlet extends HttpServlet {
         request.setAttribute("accountNumber", payment.getAccountNumber());
         request.setAttribute("accountName", QRCodeGenerator.ACCOUNT_NAME);
         request.setAttribute("checkoutUrl", checkoutUrl);
+        request.setAttribute("bookingHistoryPath", bookingHistoryPath);
+        request.setAttribute("bookingDetailPath", bookingDetailPath);
 
         request.getRequestDispatcher("/View/Booking/Payment.jsp").forward(request, response);
     }

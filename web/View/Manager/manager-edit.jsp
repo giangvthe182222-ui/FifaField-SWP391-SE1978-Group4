@@ -19,7 +19,9 @@
 
     <div class="mb-8 flex items-center justify-between">
         <div class="flex items-center gap-3">
-            <button type="button" onclick="history.back()" class="px-3 py-2 rounded-lg border bg-white text-sm font-semibold hover:bg-slate-50">← Trở về</button>
+            <button type="button" onclick="history.back()" class="w-10 h-10 rounded-lg border bg-white text-slate-600 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </button>
         </div>
         <div>
             <h2 class="text-3xl font-bold text-slate-900">Chỉnh sửa thông tin quản lý</h2>
@@ -44,7 +46,7 @@
                 <i data-lucide="user-x" class="w-16 h-16 text-slate-300 mx-auto mb-4"></i>
                 <p class="text-slate-600">Không tìm thấy quản lý</p>
                 <a href="${pageContext.request.contextPath}/manager-list" class="mt-4 inline-block text-emerald-600 hover:text-emerald-700">
-                    Quay lại danh sách
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
             </div>
         </c:when>

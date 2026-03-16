@@ -23,8 +23,11 @@
 <body class="antialiased text-gray-900 flex flex-col min-h-screen">
 
 <c:choose>
-    <c:when test="${viewMode == 'staff'}">
+    <c:when test="${viewMode == 'manager'}">
         <jsp:include page="/View/Layout/HeaderManager.jsp"/>
+    </c:when>
+    <c:when test="${viewMode == 'staff'}">
+        <jsp:include page="/View/Layout/HeaderStaff.jsp"/>
     </c:when>
     <c:otherwise>
         <jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
@@ -50,7 +53,7 @@
             </p>
         </div>
 
-        <form method="get" action="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}" class="flex flex-wrap items-center gap-4">
+        <form method="get" action="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}" class="flex flex-wrap items-center gap-4">
             <div>
                 <input type="date" name="date" value="${param.date}" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
             </div>
@@ -69,13 +72,13 @@
                     <option value="refunded" ${param.status == 'refunded' ? 'selected' : ''}>refunded</option>
                 </select>
             </div>
-            <c:if test="${viewMode == 'staff'}">
+            <c:if test="${viewMode == 'staff' || viewMode == 'manager'}">
                 <div>
                     <input type="text" name="customerKeyword" placeholder="Tên hoặc số điện thoại..." value="${param.customerKeyword}" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
                 </div>
             </c:if>
             <button type="submit" class="bg-[#008751] text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-all">Lọc</button>
-            <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}" class="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#008751]">Xóa</a>
+            <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}" class="text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#008751]">Xóa</a>
         </form>
     </div>
 
@@ -111,10 +114,11 @@
                     <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">
                         <c:choose>
                             <c:when test="${viewMode == 'staff'}">Không có đơn đặt nào phù hợp bộ lọc tại chi nhánh</c:when>
+                            <c:when test="${viewMode == 'manager'}">Không có đơn đặt nào phù hợp bộ lọc tại location được gán</c:when>
                             <c:otherwise>Hãy bắt đầu trận đấu đầu tiên của bạn ngay hôm nay!</c:otherwise>
                         </c:choose>
                     </p>
-                    <c:if test="${viewMode != 'staff'}">
+                    <c:if test="${viewMode == null || viewMode == 'customer'}">
                         <a href="${pageContext.request.contextPath}/booking" class="inline-flex items-center gap-2 mt-8 px-8 py-4 bg-[#008751] text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-all hover:-translate-y-1">
                             ĐẶT SÂN NGAY
                         </a>
@@ -123,7 +127,7 @@
             </c:when>
             <c:otherwise>
                 <c:choose>
-                    <c:when test="${viewMode == 'staff'}">
+                    <c:when test="${viewMode == 'staff' || viewMode == 'manager'}">
                         <!-- Staff view: horizontal rows -->
                         <div class="space-y-4 pb-8">
                             <c:forEach var="b" items="${bookings}">
@@ -151,7 +155,7 @@
                                         <div class="flex items-center gap-6">
                                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.bookingDate}</p>
                                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.startTime} - ${b.endTime}</p>
-                                            <c:if test="${viewMode == 'staff'}">
+                                            <c:if test="${viewMode == 'staff' || viewMode == 'manager'}">
                                                 <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">KH: ${b.customerName}</p>
                                                 <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">SĐT: ${b.customerPhone}</p>
                                             </c:if>
@@ -190,7 +194,14 @@
                                             </select>
                                             <button type="button" onclick="updateStatus('${b.bookingId}')" class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors">Update</button>
                                         </div>
-                                        <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">Chi tiết</a>
+                                        <c:choose>
+                                            <c:when test="${viewMode == 'staff'}">
+                                                <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">Chi tiết</a>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="w-full md:w-auto bg-gray-100 text-gray-500 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">Theo dõi tại lịch sân</span>
+                                            </c:otherwise>
+                                        </c:choose>
                                     </div>
 
                                 </div>
@@ -250,11 +261,11 @@
     <c:if test="${totalPages > 1}">
         <div class="flex items-center justify-center gap-2 py-6">
             <c:if test="${currentPage > 1}">
-                <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}?page=1<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                     <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=1<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
                    class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
                     ⟨⟨ First
                 </a>
-                <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}?page=${currentPage - 1}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                     <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${currentPage - 1}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
                    class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
                     ⟨ Prev
                 </a>
@@ -266,7 +277,7 @@
                         <span class="px-3 py-2 rounded-lg bg-[#008751] text-white font-bold text-sm">${i}</span>
                     </c:when>
                     <c:otherwise>
-                        <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}?page=${i}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                        <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${i}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
                            class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
                             ${i}
                         </a>
@@ -275,11 +286,11 @@
             </c:forEach>
 
             <c:if test="${currentPage < totalPages}">
-                <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}?page=${currentPage + 1}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${currentPage + 1}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
                    class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
                     Next ⟩
                 </a>
-                <a href="${pageContext.request.contextPath}${viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings'}?page=${totalPages}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${totalPages}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
                    class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
                     Last ⟩⟩
                 </a>
@@ -325,7 +336,7 @@
         var status = document.getElementsByName('status_' + bookingId)[0].value;
         var f = document.createElement('form');
         f.method = 'post';
-        f.action = '${pageContext.request.contextPath}/staff/locationBookings';
+        f.action = '${pageContext.request.contextPath}${viewMode == "manager" ? "/manager/locationBookings" : "/staff/locationBookings"}';
 
         var i1 = document.createElement('input');
         i1.name = 'bookingId';

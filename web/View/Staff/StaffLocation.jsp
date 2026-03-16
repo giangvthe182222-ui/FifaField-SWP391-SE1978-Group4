@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -15,11 +16,28 @@
 
 <main class="max-w-6xl mx-auto px-6 py-10 space-y-8">
     <section class="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
-        <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Location Của Staff</p>
-        <h1 class="text-3xl font-black uppercase tracking-tight mt-2">${location.locationName}</h1>
-        <p class="text-sm font-semibold text-gray-500 mt-2">${location.address}</p>
-        <p class="text-sm font-semibold text-gray-500">Số điện thoại: ${location.phoneNumber}</p>
-        <p class="text-sm font-semibold text-gray-500">Trạng thái: ${location.status}</p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div class="space-y-3">
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Location Của Staff</p>
+                <h1 class="text-3xl font-black uppercase tracking-tight mt-2">${location.locationName}</h1>
+                <p class="text-sm font-semibold text-gray-500 mt-2">${location.address}</p>
+                <p class="text-sm font-semibold text-gray-500">Số điện thoại: ${location.phoneNumber}</p>
+                <p class="text-sm font-semibold text-gray-500">Trạng thái: ${location.status}</p>
+            </div>
+            <div class="space-y-4">
+                <div class="w-full h-72 rounded-2xl overflow-hidden bg-slate-100 border border-slate-100">
+                    <c:choose>
+                        <c:when test="${not empty location.imageUrl}">
+                            <img src="${pageContext.request.contextPath}/${location.imageUrl}" alt="Ảnh cơ sở" class="w-full h-full object-cover"/>
+                        </c:when>
+                        <c:otherwise>
+                            <img src="${pageContext.request.contextPath}/assets/img/default_cluster.jpg" alt="Ảnh cơ sở" class="w-full h-full object-cover"/>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+                <iframe class="w-full h-72 rounded-2xl border border-slate-100" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${fn:replace(location.address, ' ', '+')}&z=15&output=embed"></iframe>
+            </div>
+        </div>
     </section>
 
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6">

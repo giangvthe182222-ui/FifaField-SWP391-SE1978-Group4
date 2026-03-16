@@ -46,7 +46,7 @@
                 Ca của tôi
             </a>
 
-            <!-- Lịch cá nhân -->
+            <!-- Booking của sân -->
             <a href="${pageContext.request.contextPath}/staff/locationBookings"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
@@ -55,7 +55,7 @@
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                     <path d="M7 9h10m-10 8h10M9 4V2m6 2V2"/>
                 </svg>
-                Lịch cá nhân
+                Đơn tại cơ sở
             </a>
 
             <!-- Đặt sân -->
@@ -94,17 +94,7 @@
                 Cụm sân
             </a>
 
-            <!-- Blog -->
-            <a href="${pageContext.request.contextPath}/staff/blogs"
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                </svg>
-                Blog
-            </a>
+           
 
         </nav>
 

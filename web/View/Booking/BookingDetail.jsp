@@ -203,9 +203,8 @@
                     </div>
                 </div>
 
-                <a href="${pageContext.request.contextPath}/customer/bookings" class="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-gray-100 font-black text-[10px] uppercase tracking-widest text-gray-400 hover:border-[#008751] hover:text-[#008751] transition-all bg-white">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                    Quay lại danh sách
+                <a href="${pageContext.request.contextPath}/customer/bookings" class="w-10 h-10 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
             </div>
         </div>

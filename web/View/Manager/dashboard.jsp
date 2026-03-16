@@ -120,6 +120,32 @@
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <a href="${pageContext.request.contextPath}/manager/location" class="group relative bg-gradient-to-br from-slate-800 to-slate-700 rounded-[2.5rem] p-8 text-white shadow-xl shadow-slate-500/30 overflow-hidden hover:shadow-2xl hover:shadow-slate-500/40 transition-all duration-300">
+                        <div class="absolute top-0 right-0 opacity-10 group-hover:scale-125 transition-transform duration-500">
+                            <i data-lucide="map-pin" class="w-40 h-40"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
+                                <i data-lucide="map-pin" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-xl font-black uppercase tracking-tight leading-none mb-2">Cơ Sở Của Tôi</h3>
+                            <p class="text-slate-100/80 text-sm font-medium">Xem detail cơ sở được gán và cập nhật trạng thái cơ sở</p>
+                        </div>
+                    </a>
+
+                    <a href="${pageContext.request.contextPath}/manager/fields" class="group relative bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-500/30 overflow-hidden hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300">
+                        <div class="absolute top-0 right-0 opacity-10 group-hover:scale-125 transition-transform duration-500">
+                            <i data-lucide="layout-grid" class="w-40 h-40"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
+                                <i data-lucide="layout-grid" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-xl font-black uppercase tracking-tight leading-none mb-2">Sân Của Tôi</h3>
+                            <p class="text-emerald-100/80 text-sm font-medium">Xem các sân thuộc location được gán, sửa trạng thái và xem lịch sân</p>
+                        </div>
+                    </a>
+
                     <!-- Phân ca -->
                     <a href="${pageContext.request.contextPath}/manager/assign-shift" class="group relative bg-gradient-to-br from-[#008751] to-[#006d41] rounded-[2.5rem] p-8 text-white shadow-xl shadow-[#008751]/30 overflow-hidden hover:shadow-2xl hover:shadow-[#008751]/40 transition-all duration-300">
                         <div class="absolute top-0 right-0 opacity-10 group-hover:scale-125 transition-transform duration-500">
@@ -148,17 +174,17 @@
                         </div>
                     </a>
 
-                    <!-- Danh sách ca -->
-                    <a href="${pageContext.request.contextPath}/shifts" class="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-purple-500/30 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/40 transition-all duration-300">
+                    <!-- Dụng cụ cơ sở -->
+                    <a href="${pageContext.request.contextPath}/manager/location-equipment" class="group relative bg-gradient-to-br from-purple-500 to-purple-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-purple-500/30 overflow-hidden hover:shadow-2xl hover:shadow-purple-500/40 transition-all duration-300">
                         <div class="absolute top-0 right-0 opacity-10 group-hover:scale-125 transition-transform duration-500">
-                            <i data-lucide="calendar" class="w-40 h-40"></i>
+                            <i data-lucide="hammer" class="w-40 h-40"></i>
                         </div>
                         <div class="relative z-10">
                             <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
-                                <i data-lucide="calendar" class="w-6 h-6"></i>
+                                <i data-lucide="hammer" class="w-6 h-6"></i>
                             </div>
-                            <h3 class="text-xl font-black uppercase tracking-tight leading-none mb-2">Danh Sách Ca</h3>
-                            <p class="text-purple-100/80 text-sm font-medium">Xem các ca làm hiện có</p>
+                            <h3 class="text-xl font-black uppercase tracking-tight leading-none mb-2">Dụng Cụ Cơ Sở</h3>
+                            <p class="text-purple-100/80 text-sm font-medium">Xem và cập nhật số lượng, trạng thái dụng cụ tại cơ sở được gán</p>
                         </div>
                     </a>
 
