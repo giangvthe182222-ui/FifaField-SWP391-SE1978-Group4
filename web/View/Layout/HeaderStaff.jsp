@@ -46,8 +46,8 @@
                 Ca của tôi
             </a>
 
-            <!-- Lịch cá nhân -->
-            <a href="${pageContext.request.contextPath}/staff/schedule"
+            <!-- Booking của sân -->
+            <a href="${pageContext.request.contextPath}/staff/locationBookings"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -55,11 +55,11 @@
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                     <path d="M7 9h10m-10 8h10M9 4V2m6 2V2"/>
                 </svg>
-                Lịch cá nhân
+                Đơn tại cơ sở
             </a>
 
             <!-- Đặt sân -->
-            <a href="${pageContext.request.contextPath}/bookings"
+            <a href="${pageContext.request.contextPath}/booking"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -70,8 +70,20 @@
                 Đặt sân
             </a>
 
+            <!-- Sân phụ trách -->
+            <a href="${pageContext.request.contextPath}/staff/fields"
+               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
+               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
+                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
+                     viewBox="0 0 24 24">
+                    <rect x="3" y="5" width="18" height="14" rx="2"/>
+                    <path d="M3 12h18M12 5v14"/>
+                </svg>
+                Sân phụ trách
+            </a>
+
             <!-- Cụm sân -->
-            <a href="${pageContext.request.contextPath}/locations"
+            <a href="${pageContext.request.contextPath}/staff/location"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -81,6 +93,8 @@
                 </svg>
                 Cụm sân
             </a>
+
+           
 
         </nav>
 

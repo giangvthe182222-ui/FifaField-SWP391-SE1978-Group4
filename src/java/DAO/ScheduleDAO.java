@@ -147,4 +147,26 @@ public class ScheduleDAO {
         }
         return list;
     }
+
+    // Load schedule in a bounded date range to avoid rendering huge full-year data.
+    public List<Schedule> getScheduleByFieldInRange(UUID fieldId, LocalDate fromDate, LocalDate toDate) {
+        List<Schedule> list = new ArrayList<>();
+        String sql = "SELECT * FROM [Schedule] WHERE field_id = ? AND booking_date >= ? AND booking_date <= ? ORDER BY booking_date, start_time";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setObject(1, fieldId);
+            ps.setDate(2, Date.valueOf(fromDate));
+            ps.setDate(3, Date.valueOf(toDate));
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(map(rs));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
 }

@@ -91,7 +91,7 @@
                             <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
                             <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Thông tin trận đấu</h2>
                         </div>
-                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' || booking.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : booking.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : booking.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : booking.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : booking.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
                             ${booking.status}
                         </span>
                     </div>
@@ -118,13 +118,13 @@
                     <div class="pt-8 border-t border-gray-50 space-y-6">
                         <div class="flex items-center gap-4">
                             <div class="w-8 h-1 bg-gray-200 rounded-full"></div>
-                            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Vật tư đi kèm</h2>
+                            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Dụng cụ đi kèm</h2>
                         </div>
 
                         <c:choose>
                             <c:when test="${empty equipments}">
                                 <div class="py-6 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-100">
-                                    <p class="text-[9px] font-black text-gray-300 uppercase tracking-widest">Không có vật tư thuê kèm</p>
+                                    <p class="text-[9px] font-black text-gray-300 uppercase tracking-widest">Không có dụng cụ thuê kèm</p>
                                 </div>
                             </c:when>
                             <c:otherwise>
@@ -141,7 +141,7 @@
                                                 </div>
                                             </div>
                                             <p class="text-xs font-black text-[#008751]">
-                                                <fmt:formatNumber value="${e.rentalPrice}" pattern="#,##0"/> đ
+                                                <fmt:formatNumber value="${e.rentalPrice}" pattern="#,##0"/> VND
                                             </p>
                                         </div>
                                     </c:forEach>
@@ -173,32 +173,38 @@
                             <div class="pt-4 border-t border-white/10">
                                 <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1">TỔNG CỘNG</p>
                                 <p class="text-3xl font-black tracking-tighter leading-none">
-                                    <fmt:formatNumber value="${booking.totalPrice}" pattern="#,##0"/> đ
+                                    <fmt:formatNumber value="${booking.totalPrice}" pattern="#,##0"/> VND
                                 </p>
                             </div>
                         </div>
 
+                        <c:if test="${booking.status == 'pending'}">
+                            <a href="${pageContext.request.contextPath}/payment?bookingId=${booking.bookingId}" class="w-full bg-[#008751] hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                                TIẾP TỤC THANH TOÁN
+                            </a>
+                        </c:if>
+
                         <c:if test="<%= canCancel %>">
-                            <c:if test="${booking.status != 'cancelled'}">
+                            <c:if test="${booking.status == 'paid'}">
                                 <form method="post" action="${pageContext.request.contextPath}/customer/bookingDetail">
                                     <input type="hidden" name="id" value="${booking.bookingId}" />
                                     <input type="hidden" name="action" value="cancel" />
                                     <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
                                         <i data-lucide="x-circle" class="w-4 h-4"></i>
-                                        HỦY ĐẶT SÂN
+                                        YÊU CẦU HOÀN TIỀN
                                     </button>
                                 </form>
                                 <p class="text-[8px] text-center font-bold text-emerald-200/50 uppercase tracking-widest leading-relaxed">
-                                    * Hủy trước 48h để được hoàn tiền 100% theo chính sách FIFAFIELD
+                                    * Hủy trước 48h để chuyển đơn sang pending refund theo chính sách FIFAFIELD
                                 </p>
                             </c:if>
                         </c:if>
                     </div>
                 </div>
 
-                <a href="${pageContext.request.contextPath}/customer/bookings" class="flex items-center justify-center gap-2 w-full py-4 rounded-2xl border-2 border-gray-100 font-black text-[10px] uppercase tracking-widest text-gray-400 hover:border-[#008751] hover:text-[#008751] transition-all bg-white">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
-                    Quay lại danh sách
+                <a href="${pageContext.request.contextPath}/customer/bookings" class="w-10 h-10 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
             </div>
         </div>

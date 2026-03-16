@@ -127,14 +127,6 @@
                                 DANH SÁCH SÂN
                             </a>
 
-                            <a href="${pageContext.request.contextPath}/location-equipment-list?locationId=${loc.locationId}"
-                               class="flex-[2] bg-white border-2 border-slate-200 hover:border-blue-600 hover:text-blue-600
-                                      py-5 rounded-[1.8rem] font-black text-center text-xs uppercase tracking-[0.15em]
-                                      transition-all shadow-sm flex items-center justify-center gap-2">
-                                <i data-lucide="tool" class="w-4 h-4"></i>
-                                THIẾT BỊ
-                            </a>
-
                             <a href="${pageContext.request.contextPath}/locations/view?location_id=${loc.locationId}"
                                class="flex-1 bg-slate-900 text-white rounded-[1.8rem] hover:bg-black transition-all
                                       flex items-center justify-center shadow-lg">

@@ -1,10 +1,16 @@
-package filter;
+package Filter;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 import Models.User;
+import jakarta.servlet.annotation.WebFilter;
 
+@WebFilter(urlPatterns = {
+    "/manager/*",
+    "/shifts",
+    "/shifts/*"
+})
 public class ManagerFilter implements Filter {
 
     @Override
@@ -22,7 +28,9 @@ public class ManagerFilter implements Filter {
         HttpSession session = req.getSession(false);
 
         if (session == null || session.getAttribute("user") == null) {
-            res.sendRedirect(req.getContextPath() + "/login");
+            String path = req.getRequestURI().substring(req.getContextPath().length());
+            String redirectPath = path.startsWith("/") ? path.substring(1) : path;
+            res.sendRedirect(req.getContextPath() + "/login?redirect=" + redirectPath);
             return;
         }
 

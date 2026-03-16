@@ -3,6 +3,7 @@ package Controller.Booking;
 import DAO.*;
 import Models.*;
 import Utils.DBConnection;
+import Utils.PayOSClient;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -17,9 +18,19 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @WebServlet(name = "BookingConfirmServlet", urlPatterns = {"/booking-confirm"})
 public class BookingConfirmServlet extends HttpServlet {
+
+    private String resolveBookingHistoryPath(User user) {
+        if (user != null
+                && user.getRole() != null
+                && "STAFF".equalsIgnoreCase(user.getRole().getRoleName())) {
+            return "/staff/locationBookings";
+        }
+        return "/customer/bookings";
+    }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -33,6 +44,7 @@ public class BookingConfirmServlet extends HttpServlet {
 
         User user = (User) session.getAttribute("user");
         UUID bookerId = user.getUserId();
+        String bookingHistoryPath = resolveBookingHistoryPath(user);
         if (bookerId == null) {
             session.setAttribute("flash_error", "Invalid user session.");
             response.sendRedirect(request.getContextPath() + "/booking");
@@ -112,6 +124,8 @@ public class BookingConfirmServlet extends HttpServlet {
 
         BigDecimal total = subtotal.multiply(BigDecimal.ONE.subtract(discountPercent.divide(BigDecimal.valueOf(100))));
 
+        LocalDateTime paymentDeadline = LocalDateTime.now().plusMinutes(15);
+
         Booking booking = new Booking();
         booking.setBookingId(UUID.randomUUID());
         booking.setBookerId(bookerId);
@@ -121,6 +135,7 @@ public class BookingConfirmServlet extends HttpServlet {
         booking.setBookingTime(LocalDateTime.now());
         booking.setStatus("pending");
         booking.setTotalPrice(total);
+        booking.setPaymentDeadline(paymentDeadline);
 
         for (BookingEquipment be : equipmentList) {
             be.setBookingId(booking.getBookingId());
@@ -129,18 +144,107 @@ public class BookingConfirmServlet extends HttpServlet {
         BookingDAO bookingDAO = new BookingDAO();
         boolean success = bookingDAO.insert(booking, equipmentList);
 
-        StringBuilder redirect = new StringBuilder(request.getContextPath()).append("/booking");
-        if (locationIdParam != null && !locationIdParam.isBlank()) {
-            redirect.append("?locationId=").append(locationIdParam);
-            if (fieldIdParam != null && !fieldIdParam.isBlank()) {
-                redirect.append("&fieldId=").append(fieldIdParam);
+        if (!success) {
+            String insertError = bookingDAO.getLastInsertError();
+            if (insertError == null || insertError.isBlank()) {
+                insertError = "Failed to create booking. Please try again.";
             }
+            session.setAttribute("flash_error", insertError);
+            StringBuilder redirect = new StringBuilder(request.getContextPath()).append("/booking");
+            if (locationIdParam != null && !locationIdParam.isBlank()) {
+                redirect.append("?locationId=").append(locationIdParam);
+                if (fieldIdParam != null && !fieldIdParam.isBlank()) {
+                    redirect.append("&fieldId=").append(fieldIdParam);
+                }
+            }
+            response.sendRedirect(redirect.toString());
+            return;
         }
-        if (success) {
-            session.setAttribute("flash_success", "Booking confirmed successfully!");
-        } else {
-            session.setAttribute("flash_error", "Failed to create booking. Please try again.");
+
+        // Create Payment record using payOS
+        long orderCode = generateOrderCode();
+        String description = buildPayOSDescription(booking.getBookingId());
+
+        PayOSClient payOSClient = new PayOSClient();
+        if (!payOSClient.isConfigured()) {
+            session.setAttribute("flash_error", "Booking created but payOS config is incomplete. Missing: " + payOSClient.getMissingConfigSummary());
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+            return;
         }
-        response.sendRedirect(redirect.toString());
+
+        String paymentPageUrl = buildCurrentAppPaymentUrl(request);
+
+        PayOSClient.PaymentLinkResponse payOSLink = payOSClient.createPaymentLink(
+                orderCode,
+                total,
+                description,
+                booking.getBookingId(),
+            paymentDeadline,
+            paymentPageUrl,
+            paymentPageUrl
+        );
+
+        if (!payOSLink.isSuccess()) {
+            session.setAttribute("flash_error", "Booking created but payOS payment initialization failed: " + payOSLink.getMessage());
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+            return;
+        }
+
+        Payment payment = new Payment();
+        payment.setPaymentId(UUID.randomUUID());
+        payment.setBookingId(booking.getBookingId());
+        payment.setAmount(total);
+        payment.setPaymentMethod("payOS");
+        payment.setPaymentStatus("PENDING");
+        payment.setBankCode(payOSLink.getBankCode());
+        payment.setAccountNumber(payOSLink.getAccountNumber());
+        payment.setQrContent(payOSLink.getQrCode());
+        payment.setTransactionCode(String.valueOf(orderCode));
+
+        PaymentDAO paymentDAO = new PaymentDAO();
+        boolean paymentCreated = paymentDAO.createPayment(payment);
+
+        if (!paymentCreated) {
+            String paymentError = paymentDAO.getLastError();
+            if (paymentError == null || paymentError.isBlank()) {
+                paymentError = "Unknown database error.";
+            }
+            session.setAttribute("flash_error", "Booking created but payment initialization failed. " + paymentError);
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+            return;
+        }
+
+        // Redirect to booking success page before returning to booking list.
+        session.setAttribute("flash_success", "Booking created successfully.");
+        response.sendRedirect(request.getContextPath() + "/booking-success?bookingId=" + booking.getBookingId().toString());
+    }
+
+    private String buildCurrentAppPaymentUrl(HttpServletRequest request) {
+        String scheme = request.getScheme();
+        String host = request.getServerName();
+        int port = request.getServerPort();
+        String contextPath = request.getContextPath();
+
+        boolean defaultPort = ("http".equalsIgnoreCase(scheme) && port == 80)
+                || ("https".equalsIgnoreCase(scheme) && port == 443);
+
+        StringBuilder url = new StringBuilder();
+        url.append(scheme).append("://").append(host);
+        if (!defaultPort) {
+            url.append(":").append(port);
+        }
+        url.append(contextPath).append("/payment");
+        return url.toString();
+    }
+
+    private long generateOrderCode() {
+        long millis = System.currentTimeMillis();
+        int randomSuffix = ThreadLocalRandom.current().nextInt(100, 1000);
+        return Long.parseLong(String.valueOf(millis) + randomSuffix);
+    }
+
+    private String buildPayOSDescription(UUID bookingId) {
+        String compact = bookingId.toString().replace("-", "").toUpperCase();
+        return "FFF" + compact.substring(0, 10);
     }
 }

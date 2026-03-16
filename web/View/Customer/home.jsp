@@ -110,6 +110,10 @@
             </div>
         </nav>
 
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <jsp:include page="/View/Layout/CustomerQuickPanel.jsp"/>
+        </section>
+
         <!-- Hero Section -->
         <section class="relative h-[85vh] flex items-center overflow-hidden">
             <div class="absolute inset-0">

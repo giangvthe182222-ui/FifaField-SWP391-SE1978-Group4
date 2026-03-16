@@ -24,13 +24,14 @@
 </head>
 <body class="antialiased text-gray-900 flex flex-col min-h-screen">
 
-<jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
-
 <main class="flex-grow max-w-7xl mx-auto px-6 py-12 space-y-10 w-full">
 
     <!-- TOP TITLE & MODES -->
     <div class="flex flex-col space-y-8">
         <div class="space-y-2">
+            <button type="button" onclick="history.back()" class="w-10 h-10 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+                <i data-lucide="arrow-left" class="w-5 h-5"></i>
+            </button>
             <h1 class="text-4xl font-black text-gray-900 tracking-tight uppercase leading-none">
                 ĐẶT SÂN <span class="text-[#008751]">TRỰC TUYẾN</span>
             </h1>
@@ -38,40 +39,29 @@
         </div>
 
         <!-- Booking Modes Selection -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="mode-card selected elite-card p-6 border-2 border-gray-100 transition-all cursor-pointer group">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <button type="button" data-mode="normal" class="booking-mode-btn mode-card elite-card p-6 border-2 transition-all cursor-pointer group ${empty param.bookingMode || param.bookingMode == 'normal' ? 'selected border-[#008751] bg-emerald-50' : 'border-gray-100 bg-white hover:border-[#008751]/30'}">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-[#008751] shadow-sm">
                         <i data-lucide="zap" class="w-6 h-6"></i>
                     </div>
-                    <div>
-                        <h3 class="font-black text-gray-900 uppercase tracking-tighter">ĐẶT LẺ</h3>
+                    <div class="text-left">
+                        <h3 class="font-black text-gray-900 uppercase tracking-tighter">ĐẶT SÂN THƯỜNG</h3>
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Khách vãng lai linh hoạt</p>
                     </div>
                 </div>
-            </div>
-            <div class="mode-card elite-card p-6 border-2 border-gray-100 bg-white hover:border-[#008751]/30 transition-all cursor-pointer opacity-60">
+            </button>
+            <button type="button" data-mode="weekly" class="booking-mode-btn mode-card elite-card p-6 border-2 transition-all cursor-pointer group ${param.bookingMode == 'weekly' ? 'selected border-[#008751] bg-emerald-50' : 'border-gray-100 bg-white hover:border-[#008751]/30'}">
                 <div class="flex items-center gap-4">
                     <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400">
                         <i data-lucide="calendar-range" class="w-6 h-6"></i>
                     </div>
-                    <div>
-                        <h3 class="font-black text-gray-900 uppercase tracking-tighter">ĐẶT TUẦN</h3>
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cố định từ 4 tuần</p>
+                    <div class="text-left">
+                        <h3 class="font-black text-gray-900 uppercase tracking-tighter">ĐẶT SÂN THEO TUẦN</h3>
+                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cố định theo chu kỳ hằng tuần</p>
                     </div>
                 </div>
-            </div>
-            <div class="mode-card elite-card p-6 border-2 border-gray-100 bg-white hover:border-[#008751]/30 transition-all cursor-pointer opacity-60">
-                <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400">
-                        <i data-lucide="trophy" class="w-6 h-6"></i>
-                    </div>
-                    <div>
-                        <h3 class="font-black text-gray-900 uppercase tracking-tighter">GIẢI ĐẤU</h3>
-                        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Chuyên nghiệp toàn diện</p>
-                    </div>
-                </div>
-            </div>
+            </button>
         </div>
     </div>
 
@@ -98,6 +88,7 @@
         <!-- INPUTS HIDDEN FOR STATE -->
         <input type="hidden" name="scheduleId" id="scheduleId" value="${param.scheduleId}" />
         <input type="hidden" name="bookingDate" id="bookingDate" value="${param.bookingDate}" />
+        <input type="hidden" name="bookingMode" id="bookingMode" value="${empty param.bookingMode ? 'normal' : param.bookingMode}" />
 
         <!-- LEFT PANEL: CONFIGURATION -->
         <div class="lg:col-span-8 space-y-10">
@@ -328,8 +319,6 @@
     </form>
 </main>
 
-<jsp:include page="/View/Layout/Footer.jsp"/>
-
 <script id="schedulesData" type="application/json">
 [
 <c:forEach var="s" items="${schedules}" varStatus="st">
@@ -409,32 +398,33 @@
             days[s.date].push(s);
         });
 
-        if (scheduleDateFilter && scheduleDateFilter.value) {
-            selectedDate = scheduleDateFilter.value;
+        var activeDateFilter = (scheduleDateFilter && scheduleDateFilter.value) ? scheduleDateFilter.value : '';
+        if (activeDateFilter) {
+            selectedDate = activeDateFilter;
         }
 
         var orderedDates = Object.keys(days).sort();
-        if (selectedDate) {
-            orderedDates = orderedDates.filter(function(d) { return d === selectedDate; });
-        }
-
-        if (!selectedDate && orderedDates.length) {
-            selectedDate = orderedDates[0];
-            if (scheduleDateFilter) scheduleDateFilter.value = selectedDate;
+        if (activeDateFilter) {
+            orderedDates = orderedDates.filter(function(d) { return d === activeDateFilter; });
         }
 
         var selected = schedules.find(function(s) { return s.id === selectedScheduleId; });
-        if (selected && normalizeStatus(selected.status) !== 'available') {
+        if (selected && (normalizeStatus(selected.status) !== 'available' || (activeDateFilter && selected.date !== activeDateFilter))) {
             selectedScheduleId = '';
         }
+
+        var candidateSchedules = schedules;
+        if (activeDateFilter) {
+            candidateSchedules = schedules.filter(function(s) { return s.date === activeDateFilter; });
+        }
+
         if (!selectedScheduleId) {
-            var firstAvailable = schedules.find(function(s) {
-                return normalizeStatus(s.status) === 'available' && (!selectedDate || s.date === selectedDate);
+            var firstAvailable = candidateSchedules.find(function(s) {
+                return normalizeStatus(s.status) === 'available';
             });
             if (firstAvailable) {
                 selectedScheduleId = firstAvailable.id;
                 selectedDate = firstAvailable.date;
-                if (scheduleDateFilter) scheduleDateFilter.value = selectedDate;
             }
         }
 
@@ -523,6 +513,14 @@
         btn.addEventListener('click', function() {
             var t = this.getAttribute('data-type');
             document.getElementById('fieldType').value = t;
+            document.getElementById('bookingForm').submit();
+        });
+    });
+
+    document.querySelectorAll('.booking-mode-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var mode = btn.getAttribute('data-mode');
+            document.getElementById('bookingMode').value = mode;
             document.getElementById('bookingForm').submit();
         });
     });

@@ -1,125 +1,89 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
-<%@taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dụng cụ tại cụm - FIFAFIELD</title>
+    <title>Dụng cụ cơ sở - Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }</style>
 </head>
-<body class="antialiased text-gray-900 flex flex-col min-h-screen">
+<body class="bg-slate-100 min-h-screen antialiased text-gray-900">
+<jsp:include page="/View/Layout/HeaderManager.jsp"/>
 
-<jsp:include page="/View/Layout/HeaderManager.jsp" />
-
-<main class="max-w-7xl mx-auto px-6 py-12 w-full flex-grow space-y-8">
-
-    <!-- HEADER -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div class="space-y-2">
-            <button type="button" onclick="history.back()"
-                    class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 hover:text-[#008751] transition-all uppercase tracking-widest">
-                <i data-lucide="arrow-left" class="w-3 h-3"></i> Quay lại
-            </button>
-            <h1 class="text-4xl font-black text-gray-900 uppercase tracking-tight leading-none">
-                DỤNG CỤ <span class="text-[#008751]">TẠI CỤM</span>
-            </h1>
-            <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.2em]">
-                Cụm sân: ${locationName}
-            </p>
-        </div>
+<main class="max-w-6xl mx-auto px-6 py-10 space-y-8">
+    <div class="space-y-2">
+        <h1 class="text-4xl font-black uppercase tracking-tight">Dụng cụ tại <span class="text-[#008751]">cơ sở</span></h1>
+        <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.25em]">Xem và chỉnh sửa số lượng, trạng thái dụng cụ</p>
     </div>
 
-    <c:if test="${not empty error}">
-        <div class="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3">
-            <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
-            <p class="text-red-700 text-sm font-semibold">${error}</p>
-        </div>
+    <c:if test="${not empty flashSuccess}">
+        <div class="bg-emerald-50 border border-emerald-100 p-5 rounded-3xl text-emerald-700 font-bold">${flashSuccess}</div>
     </c:if>
 
-    <!-- EQUIPMENT TABLE -->
-    <c:choose>
-        <c:when test="${empty equipments}">
-            <div class="bg-white rounded-2xl p-16 text-center shadow border border-gray-100">
-                <i data-lucide="package" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
-                <p class="text-gray-500 font-semibold text-lg">Chưa có dụng cụ nào tại cụm sân này</p>
-            </div>
-        </c:when>
-        <c:otherwise>
-            <div class="overflow-x-auto bg-white shadow rounded-2xl border border-gray-100">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gradient-to-r from-slate-50 to-green-50">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Dụng cụ</th>
-                            <th class="px-6 py-4 text-left text-xs font-black text-gray-500 uppercase tracking-wider">Loại</th>
-                            <th class="px-6 py-4 text-center text-xs font-black text-gray-500 uppercase tracking-wider">Số lượng</th>
-                            <th class="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase tracking-wider">Giá thuê</th>
-                            <th class="px-6 py-4 text-right text-xs font-black text-gray-500 uppercase tracking-wider">Phí hỏng</th>
-                            <th class="px-6 py-4 text-center text-xs font-black text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        <c:forEach items="${equipments}" var="equip">
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="flex items-center gap-3">
-                                        <div class="w-10 h-10 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0">
-                                            <c:choose>
-                                                <c:when test="${not empty equip.imageUrl}">
-                                                    <img src="${pageContext.request.contextPath}/${equip.imageUrl}"
-                                                         alt="${equip.name}" class="w-full h-full object-cover" />
-                                                </c:when>
-                                                <c:otherwise>
-                                                    <div class="w-full h-full flex items-center justify-center">
-                                                        <i data-lucide="package" class="w-5 h-5 text-gray-300"></i>
-                                                    </div>
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </div>
-                                        <span class="font-bold text-gray-900 text-sm">${equip.name}</span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-600 font-medium">${equip.equipmentType}</td>
-                                <td class="px-6 py-4 text-center">
-                                    <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-700 font-black text-sm">${equip.quantity}</span>
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm font-bold text-gray-800">
-                                    <fmt:formatNumber value="${equip.rentalPrice}" type="number" groupingUsed="true" />đ
-                                </td>
-                                <td class="px-6 py-4 text-right text-sm font-bold text-red-600">
-                                    <fmt:formatNumber value="${equip.damageFee}" type="number" groupingUsed="true" />đ
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <c:set var="statusCss" value="bg-gray-100 text-gray-500"/>
-                                    <c:if test="${equip.status == 'AVAILABLE'}"><c:set var="statusCss" value="bg-emerald-100 text-emerald-700"/></c:if>
-                                    <c:if test="${equip.status == 'RENTED'}"><c:set var="statusCss" value="bg-blue-100 text-blue-700"/></c:if>
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${statusCss}">
-                                        ${equip.status}
-                                    </span>
-                                </td>
-                            </tr>
-                        </c:forEach>
-                    </tbody>
-                </table>
-            </div>
+    <c:if test="${not empty flashError}">
+        <div class="bg-rose-50 border border-rose-100 p-5 rounded-3xl text-rose-700 font-bold">${flashError}</div>
+    </c:if>
 
-            <div class="flex justify-end">
-                <div class="bg-emerald-50 px-8 py-4 rounded-3xl border border-emerald-100">
-                    <span class="text-[10px] font-black text-[#008751] uppercase tracking-widest">
-                        Tổng loại dụng cụ: <span class="text-xl ml-2">${equipments.size()}</span>
-                    </span>
+    <c:if test="${not empty error}">
+        <div class="bg-rose-50 border border-rose-100 p-5 rounded-3xl text-rose-700 font-bold">${error}</div>
+    </c:if>
+
+    <section class="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm space-y-5">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cơ sở phụ trách</p>
+                <h2 class="text-2xl font-black uppercase tracking-tight mt-1">${locationName}</h2>
+            </div>
+            <a href="${pageContext.request.contextPath}/manager/location" class="px-5 py-3 rounded-2xl border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-600 hover:border-[#008751] hover:text-[#008751] transition-all">Xem detail cơ sở</a>
+        </div>
+
+        <c:choose>
+            <c:when test="${empty equipments}">
+                <div class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 text-center text-gray-400 font-black uppercase tracking-widest text-[10px]">Không có dụng cụ nào tại cơ sở này.</div>
+            </c:when>
+            <c:otherwise>
+                <div class="space-y-4">
+                    <c:forEach var="e" items="${equipments}">
+                        <form method="post" action="${pageContext.request.contextPath}/manager/location-equipment/update" class="grid grid-cols-1 lg:grid-cols-6 gap-4 items-end bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                            <input type="hidden" name="equipmentId" value="${e.equipmentId}">
+
+                            <div class="lg:col-span-2">
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Dụng cụ</p>
+                                <p class="text-base font-black text-gray-900 mt-1 uppercase">${e.name}</p>
+                                <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">${e.equipmentType}</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Số lượng</label>
+                                <input type="number" min="0" name="quantity" value="${e.quantity}" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 outline-none">
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Trạng thái</label>
+                                <select name="status" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 outline-none">
+                                    <option value="available" <c:if test="${e.status == 'available'}">selected</c:if>>available</option>
+                                    <option value="unavailable" <c:if test="${e.status == 'unavailable'}">selected</c:if>>unavailable</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Giá thuê</p>
+                                <p class="text-sm font-black text-[#008751]"><fmt:formatNumber value="${e.rentalPrice}" pattern="#,##0"/> đ</p>
+                            </div>
+
+                            <div class="lg:col-span-1">
+                                <button type="submit" class="w-full px-5 py-3 rounded-xl bg-[#008751] text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all">Lưu</button>
+                            </div>
+                        </form>
+                    </c:forEach>
                 </div>
-            </div>
-        </c:otherwise>
-    </c:choose>
-
+            </c:otherwise>
+        </c:choose>
+    </section>
 </main>
 
-<jsp:include page="/View/Layout/FooterManager.jsp" />
-<script>lucide.createIcons();</script>
+<jsp:include page="/View/Layout/FooterManager.jsp"/>
 </body>
 </html>

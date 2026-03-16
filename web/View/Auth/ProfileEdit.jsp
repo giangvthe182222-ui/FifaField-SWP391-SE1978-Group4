@@ -45,7 +45,7 @@
             </div>
             <div class="mt-4">
                 <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Lưu</button>
-                <a href="${pageContext.request.contextPath}/auth/profile" class="px-4 py-2 bg-gray-200 rounded">Hủy</a>
+                <a href="${dashboardPath}" class="px-4 py-2 bg-gray-200 rounded">Hủy</a>
             </div>
         </form>
     </div>

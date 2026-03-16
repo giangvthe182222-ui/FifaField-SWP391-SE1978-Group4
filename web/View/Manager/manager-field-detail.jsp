@@ -1,140 +1,117 @@
-<%@page contentType="text/html" pageEncoding="UTF-8"%>
-<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi tiết sân - FIFAFIELD Manager</title>
+    <title>Chi tiết sân - Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }</style>
 </head>
-<body class="antialiased text-gray-900 flex flex-col min-h-screen">
+<body class="bg-slate-100 min-h-screen antialiased text-gray-900">
+<jsp:include page="/View/Layout/HeaderManager.jsp"/>
 
-<jsp:include page="/View/Layout/HeaderManager.jsp" />
+<main class="max-w-7xl mx-auto px-6 py-10 space-y-8">
+    <div class="space-y-5">
+        <a href="${pageContext.request.contextPath}/manager/fields" class="w-10 h-10 bg-white border border-gray-100 rounded-xl text-gray-500 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        </a>
 
-<main class="max-w-4xl mx-auto px-6 py-12 w-full flex-grow">
-
-    <!-- BACK BUTTON -->
-    <button type="button" onclick="history.back()"
-            class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 hover:text-[#008751] transition-all uppercase tracking-widest mb-6">
-        <i data-lucide="arrow-left" class="w-3 h-3"></i> Quay lại danh sách sân
-    </button>
-
-    <c:if test="${not empty error}">
-        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3">
-            <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
-            <p class="text-red-700 text-sm font-semibold">${error}</p>
-        </div>
-    </c:if>
-
-    <c:choose>
-        <c:when test="${empty field}">
-            <div class="bg-white rounded-2xl p-16 text-center shadow border border-gray-100">
-                <i data-lucide="layout-grid" class="w-16 h-16 text-gray-300 mx-auto mb-4"></i>
-                <p class="text-gray-500 font-semibold text-lg">Không tìm thấy sân</p>
-            </div>
-        </c:when>
-        <c:otherwise>
-            <div class="bg-white rounded-2xl shadow border border-gray-100 overflow-hidden">
-
-                <!-- FIELD IMAGE -->
-                <div class="w-full h-64 bg-gray-100 overflow-hidden">
+        <section class="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm">
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="w-full md:w-2/3 h-80 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
                     <c:choose>
                         <c:when test="${not empty field.imageUrl}">
-                            <img src="${pageContext.request.contextPath}/${field.imageUrl}"
-                                 alt="${field.fieldName}"
-                                 class="w-full h-full object-cover"/>
+                            <img src="${pageContext.request.contextPath}/${field.imageUrl}" alt="Ảnh sân" class="w-full h-full object-cover"/>
                         </c:when>
                         <c:otherwise>
-                            <div class="w-full h-full flex items-center justify-center">
-                                <i data-lucide="layout-grid" class="w-16 h-16 text-gray-300"></i>
-                            </div>
+                            <img src="${pageContext.request.contextPath}/assets/img/default_field.jpg" alt="Ảnh sân" class="w-full h-full object-cover"/>
                         </c:otherwise>
                     </c:choose>
                 </div>
-
-                <!-- FIELD INFO -->
-                <div class="p-8">
-                    <div class="flex items-start justify-between mb-6">
-                        <div>
-                            <h1 class="text-3xl font-black text-gray-900 uppercase">${field.fieldName}</h1>
-                            <p class="text-gray-400 text-sm mt-1 font-medium">ID: ${field.fieldId}</p>
-                        </div>
-                        <c:set var="detailStatusCss" value="bg-gray-100 text-gray-600"/>
-                        <c:if test="${field.status eq 'ACTIVE'}"><c:set var="detailStatusCss" value="bg-emerald-100 text-emerald-700"/></c:if>
-                        <c:if test="${field.status eq 'MAINTENANCE'}"><c:set var="detailStatusCss" value="bg-amber-100 text-amber-700"/></c:if>
-                        <span class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-black ${detailStatusCss}">
-                            <i data-lucide="circle" class="w-2.5 h-2.5 fill-current"></i>
-                            ${field.status}
-                        </span>
-                    </div>
-
-                    <!-- INFO GRID -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-
-                        <div class="bg-gray-50 rounded-xl p-5 flex items-start gap-4">
-                            <div class="w-10 h-10 rounded-xl bg-[#008751]/10 flex items-center justify-center flex-shrink-0">
-                                <i data-lucide="users" class="w-5 h-5 text-[#008751]"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-0.5">Loại sân</p>
-                                <p class="font-black text-gray-900 text-lg">
-                                    <c:choose>
-                                        <c:when test="${field.fieldType eq '7-a-side'}">Sân 7 người</c:when>
-                                        <c:when test="${field.fieldType eq '11-a-side'}">Sân 11 người</c:when>
-                                        <c:otherwise>${field.fieldType}</c:otherwise>
-                                    </c:choose>
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="bg-gray-50 rounded-xl p-5 flex items-start gap-4">
-                            <div class="w-10 h-10 rounded-xl bg-[#008751]/10 flex items-center justify-center flex-shrink-0">
-                                <i data-lucide="shield-check" class="w-5 h-5 text-[#008751]"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-0.5">Tình trạng</p>
-                                <p class="font-black text-gray-900 text-lg">${field.fieldCondition}</p>
-                            </div>
-                        </div>
-
-                        <div class="bg-gray-50 rounded-xl p-5 flex items-start gap-4 md:col-span-2">
-                            <div class="w-10 h-10 rounded-xl bg-[#008751]/10 flex items-center justify-center flex-shrink-0">
-                                <i data-lucide="map-pin" class="w-5 h-5 text-[#008751]"></i>
-                            </div>
-                            <div>
-                                <p class="text-xs font-black text-gray-400 uppercase tracking-widest mb-0.5">Thuộc cụm sân</p>
-                                <p class="font-black text-gray-900 text-lg">${locationName}</p>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- ACTIONS -->
-                    <div class="flex flex-wrap gap-3 pt-6 border-t border-gray-100">
-                        <a href="${pageContext.request.contextPath}/manager/field-schedule?fieldId=${field.fieldId}"
-                           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 text-sm font-black hover:bg-gray-200 transition-all">
-                            <i data-lucide="calendar" class="w-4 h-4"></i>
-                            Xem lịch sân
-                        </a>
-                        <a href="${pageContext.request.contextPath}/manager/location/fields"
-                           class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-black hover:bg-gray-50 transition-all">
-                            <i data-lucide="layout-grid" class="w-4 h-4"></i>
-                            Quay về danh sách
-                        </a>
-                    </div>
-
+                <div class="flex-1 space-y-2">
+                    <h1 class="text-3xl font-black uppercase tracking-tight">${field.fieldName}</h1>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Cơ sở: ${locationName}</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Loại sân: ${field.fieldType}</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Tình trạng: ${field.fieldCondition}</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Trạng thái: ${field.status}</p>
                 </div>
             </div>
-        </c:otherwise>
-    </c:choose>
 
+            <c:if test="${not empty location and not empty location.address}">
+                <div class="pt-6">
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Google Map - Vị trí sân</p>
+                    <iframe class="w-full h-80 rounded-2xl border border-slate-100" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${fn:replace(location.address, ' ', '+')}&z=15&output=embed"></iframe>
+                </div>
+            </c:if>
+        </section>
+    </div>
+
+    <section class="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <h2 class="text-2xl font-black uppercase tracking-tight">Lịch sân theo tuần</h2>
+            <div class="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
+                <a href="${pageContext.request.contextPath}/manager/fields/detail?fieldId=${field.fieldId}&date=${prevWeek}" class="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751] transition-all">Tuần trước</a>
+                <span class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-gray-500">${weekStart} - ${weekEnd}</span>
+                <a href="${pageContext.request.contextPath}/manager/fields/detail?fieldId=${field.fieldId}&date=${nextWeek}" class="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751] transition-all">Tuần sau</a>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto pb-4">
+            <div class="flex gap-5 min-w-max">
+                <c:forEach var="entry" items="${schedulesByDate}">
+                    <div class="min-w-[280px] space-y-4">
+                        <div class="bg-white p-4 rounded-2xl border-2 border-gray-50 text-center shadow-sm">
+                            <p class="text-[10px] font-black text-[#008751] uppercase tracking-[0.2em] opacity-70">${displayDateMap[entry.key]}</p>
+                        </div>
+
+                        <c:choose>
+                            <c:when test="${empty entry.value}">
+                                <div class="bg-gray-50 border-2 border-dashed border-gray-100 rounded-[1.5rem] p-8 text-center">
+                                    <p class="text-[10px] font-black text-gray-300 uppercase tracking-widest">Không có lịch trong ngày này</p>
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="space-y-3">
+                                    <c:forEach var="s" items="${entry.value}">
+                                        <c:set var="booked" value="${bookingBySchedule[s.scheduleId]}"/>
+                                        <div class="group border-2 rounded-[1.5rem] p-4 transition-all ${s.status == 'available' ? 'border-gray-50 bg-white hover:border-[#008751] hover:shadow-md' : 'border-gray-100 bg-gray-50/70'}">
+                                            <div class="flex items-start justify-between gap-3 mb-3">
+                                                <p class="text-sm font-black text-gray-900 tracking-tight">${s.startTime} - ${s.endTime}</p>
+                                                <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${s.status == 'available' ? 'bg-emerald-50 text-[#008751]' : 'bg-amber-50 text-amber-500'}">${s.status == 'available' ? 'available' : 'unavailable'}</span>
+                                            </div>
+
+                                            <div class="flex items-center justify-between mb-3">
+                                                <span class="text-[10px] font-black text-[#008751] uppercase tracking-widest"><fmt:formatNumber value="${s.price}" pattern="#,##0"/> đ</span>
+                                                <span class="text-[10px] font-black uppercase tracking-widest ${not empty booked ? 'text-blue-600' : 'text-gray-300'}">${not empty booked ? 'đã có booking' : 'trống'}</span>
+                                            </div>
+
+                                            <c:choose>
+                                                <c:when test="${not empty booked}">
+                                                    <div class="space-y-2">
+                                                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Khách hàng: <span class="text-gray-700">${booked.customerName}</span></p>
+                                                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Số điện thoại: <span class="text-gray-700">${booked.customerPhone}</span></p>
+                                                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Trạng thái booking: <span class="text-gray-700">${booked.status}</span></p>
+                                                    </div>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="block text-center px-3 py-2 rounded-xl border border-gray-200 text-gray-400 text-[10px] font-black uppercase tracking-widest">Chưa có booking</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
+                                    </c:forEach>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
+                </c:forEach>
+            </div>
+        </div>
+    </section>
 </main>
 
-<script>lucide.createIcons();</script>
-<jsp:include page="/View/Layout/FooterManager.jsp" />
+<jsp:include page="/View/Layout/FooterManager.jsp"/>
 </body>
 </html>

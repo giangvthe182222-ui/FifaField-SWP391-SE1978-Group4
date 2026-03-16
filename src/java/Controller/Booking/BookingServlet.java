@@ -40,7 +40,11 @@ public class BookingServlet extends HttpServlet {
 
         try {
             LocationDAO locationDAO = new LocationDAO();
-            List<Location> locations = locationDAO.getAllLocations();
+            List<Location> allLocations = locationDAO.getAllLocations();
+            // Filter out inactive locations for customer
+            List<Location> locations = allLocations.stream()
+                    .filter(loc -> loc.getStatus() != null && "ACTIVE".equalsIgnoreCase(loc.getStatus()))
+                    .collect(Collectors.toList());
             request.setAttribute("locations", locations);
 
             String locationIdParam = request.getParameter("locationId");
@@ -59,43 +63,58 @@ public class BookingServlet extends HttpServlet {
                 // Fields of the location, optionally filtered by field type (5, 7, 11)
                 FieldDAO fieldDAO = new FieldDAO();
                 List<Field> allFields = fieldDAO.getByLocation(locationId);
+                // Filter out inactive/unavailable fields
+                List<Field> availableFields = allFields.stream()
+                        .filter(f -> f.getStatus() != null && 
+                               ("ACTIVE".equalsIgnoreCase(f.getStatus()) || "AVAILABLE".equalsIgnoreCase(f.getStatus())))
+                        .collect(Collectors.toList());
+                
                 if (fieldTypeParam != null && !fieldTypeParam.isBlank()) {
                     final String ft = fieldTypeParam.trim();
-                    fields = allFields.stream()
+                    fields = availableFields.stream()
                             .filter(f -> ft.equalsIgnoreCase(f.getFieldType()) || (f.getFieldType() != null && f.getFieldType().contains(ft)))
                             .collect(Collectors.toList());
                     request.setAttribute("selectedFieldType", fieldTypeParam);
                 } else {
-                    fields = allFields;
+                    fields = availableFields;
                 }
                 request.setAttribute("fields", fields);
-
-                // Location equipment (available only)
-                LocationEquipmentDAO locEquipDAO = new LocationEquipmentDAO(new DBConnection());
-                List<LocationEquipmentViewModel> allEquip = locEquipDAO.getByLocation(locationId);
-                equipments = allEquip.stream()
-                        .filter(e -> "available".equalsIgnoreCase(e.getStatus()) && e.getQuantity() > 0)
-                        .collect(Collectors.toList());
-                request.setAttribute("equipments", equipments);
-
-                // Vouchers for the location (active and within date range)
-                VoucherDAO voucherDAO = new VoucherDAO();
-                List<Voucher> allVouchers = voucherDAO.getByLocation(locationId);
-                LocalDate today = LocalDate.now();
-                vouchers = allVouchers.stream()
-                        .filter(v -> v.getStatus() != null && "active".equalsIgnoreCase(v.getStatus()))
-                        .filter(v -> (v.getStartDate() == null || !v.getStartDate().isAfter(today))
-                        && (v.getEndDate() == null || !v.getEndDate().isBefore(today)))
-                        .collect(Collectors.toList());
-                request.setAttribute("vouchers", vouchers);
 
                 if (fieldIdParam != null && !fieldIdParam.isBlank()) {
 
                     UUID fieldId = UUID.fromString(fieldIdParam);
                     request.setAttribute("selectedFieldId", fieldId);
 
+                    // Load equipments and vouchers only after field is selected
+                    // to avoid blocking when user only chooses location.
+                    LocationEquipmentDAO locEquipDAO = new LocationEquipmentDAO(new DBConnection());
+                    List<LocationEquipmentViewModel> allEquip = locEquipDAO.getByLocation(locationId);
+                    equipments = allEquip.stream()
+                        .filter(e -> "available".equalsIgnoreCase(e.getStatus()) && e.getQuantity() > 0)
+                        .collect(Collectors.toList());
+                    request.setAttribute("equipments", equipments);
+
+                    VoucherDAO voucherDAO = new VoucherDAO();
+                    List<Voucher> allVouchers = voucherDAO.getByLocation(locationId);
+                    LocalDate today = LocalDate.now();
+                    vouchers = allVouchers.stream()
+                        .filter(v -> v.getStatus() != null && "active".equalsIgnoreCase(v.getStatus()))
+                        .filter(v -> (v.getStartDate() == null || !v.getStartDate().isAfter(today))
+                        && (v.getEndDate() == null || !v.getEndDate().isBefore(today)))
+                        .collect(Collectors.toList());
+                    request.setAttribute("vouchers", vouchers);
+
                     ScheduleDAO scheduleDAO = new ScheduleDAO();
-                    List<Schedule> allSchedules = scheduleDAO.getScheduleByField(fieldId);
+                    List<Schedule> allSchedules;
+                    String bookingDateParam = request.getParameter("bookingDate");
+                    if (bookingDateParam != null && !bookingDateParam.isBlank()) {
+                        LocalDate selectedDate = LocalDate.parse(bookingDateParam);
+                        allSchedules = scheduleDAO.getScheduleByFieldAndDate(fieldId, selectedDate);
+                    } else {
+                        LocalDate fromDate = LocalDate.now();
+                        LocalDate toDate = fromDate.plusDays(6);
+                        allSchedules = scheduleDAO.getScheduleByFieldInRange(fieldId, fromDate, toDate);
+                    }
 
                     LocalDateTime now = LocalDateTime.now();
 

@@ -27,7 +27,7 @@
 
         <div class="mt-6">
             <a href="${pageContext.request.contextPath}/auth/profile/edit" class="px-4 py-2 bg-green-600 text-white rounded">Chỉnh sửa</a>
-            <a href="${pageContext.request.contextPath}/View/Customer/home.jsp" class="px-4 py-2 bg-gray-200 rounded">Quay về</a>
+            <a href="${dashboardPath}" class="px-4 py-2 bg-gray-200 rounded">Quay về dashboard</a>
         </div>
     </div>
 </main>

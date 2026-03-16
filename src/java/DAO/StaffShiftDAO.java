@@ -341,5 +341,37 @@ public class StaffShiftDAO {
         }
         return list;
     }
+
+    public List<StaffShiftViewModel> getShiftsForStaff(UUID staffId) throws SQLException {
+        List<StaffShiftViewModel> list = new ArrayList<>();
+        String sql = "SELECT ss.staff_id, u.full_name AS staff_name, ss.field_id, f.field_name, "
+                + "ss.shift_id, sh.shift_name, ss.working_date, ss.assigned_by, ss.status "
+                + "FROM Staff_Shift ss "
+                + "JOIN Users u ON ss.staff_id = u.user_id "
+                + "JOIN Field f ON ss.field_id = f.field_id "
+                + "JOIN Shift sh ON ss.shift_id = sh.shift_id "
+                + "WHERE ss.staff_id = ? "
+                + "ORDER BY ss.working_date ASC";
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, staffId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    StaffShiftViewModel vm = new StaffShiftViewModel();
+                    vm.setStaffId(UUID.fromString(rs.getString("staff_id")));
+                    vm.setStaffName(rs.getString("staff_name"));
+                    vm.setFieldId(UUID.fromString(rs.getString("field_id")));
+                    vm.setFieldName(rs.getString("field_name"));
+                    vm.setShiftId(UUID.fromString(rs.getString("shift_id")));
+                    vm.setShiftName(rs.getString("shift_name"));
+                    vm.setWorkingDate(rs.getDate("working_date").toLocalDate());
+                    vm.setAssignedBy(UUID.fromString(rs.getString("assigned_by")));
+                    vm.setStatus(rs.getString("status"));
+                    list.add(vm);
+                }
+            }
+        }
+        return list;
+    }
 }
 

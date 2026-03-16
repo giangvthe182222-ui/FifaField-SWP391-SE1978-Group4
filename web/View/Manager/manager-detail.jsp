@@ -39,7 +39,9 @@
             <!-- HEADER SECTION -->
             <div class="bg-white rounded-lg shadow-sm border border-slate-200 p-8 mb-6">
                 <div class="mb-4">
-                    <button type="button" onclick="history.back()" class="px-3 py-2 rounded-lg border bg-white text-sm font-semibold hover:bg-slate-50">← Quay lại</button>
+                    <button type="button" onclick="history.back()" class="w-10 h-10 rounded-lg border bg-white text-slate-600 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+                        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+                    </button>
                 </div>
                 <div class="flex items-start justify-between mb-6">
                     <div>
@@ -157,8 +159,8 @@
             <!-- FOOTER NAVIGATION -->
             <div class="mt-8 flex gap-3">
                 <a href="${pageContext.request.contextPath}/manager-list"
-                   class="flex-1 text-center bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-semibold hover:bg-slate-300 transition">
-                    Quay lại danh sách
+                   class="w-10 h-10 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
             </div>
 
