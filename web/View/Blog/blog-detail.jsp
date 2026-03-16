@@ -27,7 +27,9 @@
 </c:if>
 
 <main class="max-w-4xl mx-auto px-6 py-8 space-y-6">
-    <a href="${backPath}" class="inline-flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-[#008751]">← Quay lại danh sách</a>
+    <a href="${backPath}" class="w-10 h-10 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </a>
 
     <article class="bg-white rounded-3xl border border-slate-200 overflow-hidden">
         <c:if test="${not empty blog.imageUrl}">

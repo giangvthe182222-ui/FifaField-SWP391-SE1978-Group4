@@ -10,6 +10,15 @@
     String accountNumber = (String) request.getAttribute("accountNumber");
     String accountName = (String) request.getAttribute("accountName");
     String checkoutUrl = (String) request.getAttribute("checkoutUrl");
+    String bookingDetailPath = (String) request.getAttribute("bookingDetailPath");
+    String bookingHistoryPath = (String) request.getAttribute("bookingHistoryPath");
+
+    if (bookingDetailPath == null || bookingDetailPath.isBlank()) {
+        bookingDetailPath = "/customer/bookingDetail";
+    }
+    if (bookingHistoryPath == null || bookingHistoryPath.isBlank()) {
+        bookingHistoryPath = "/customer/bookings";
+    }
 
     if (booking == null || payment == null) {
         response.sendRedirect(request.getContextPath() + "/View/Booking/Booking.jsp?error=payment_not_found");
@@ -134,40 +143,40 @@
     </head>
     <body>
 
-        <jsp:include page="/View/Layout/Header.jsp" />
+        <jsp:include page="/View/Layout/HeaderCustomer.jsp" />
 
         <main class="payment-shell px-4 pb-6 pt-4">
             <div class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
 
                 <aside class="left-card p-5 space-y-5">
                     <div class="pb-4 border-b border-slate-200">
-                        <h2 class="text-2xl font-black text-slate-900">Thong tin don hang</h2>
-                        <p class="text-sm text-slate-500 mt-1">Thanh toan qua chuyen khoan ngan hang</p>
+                        <h2 class="text-2xl font-black text-slate-900">Thông tin đơn hàng</h2>
+                        <p class="text-sm text-slate-500 mt-1">Thanh toán qua chuyển khoản ngân hàng</p>
                     </div>
 
                     <div class="space-y-4 text-slate-800">
                         <div>
-                            <p class="text-sm text-slate-500">Nha cung cap</p>
+                            <p class="text-sm text-slate-500">Nhà cung cấp</p>
                             <p class="font-bold text-lg leading-7 mt-1">FIFAFIELD</p>
                         </div>
 
                         <div class="pt-3 border-t border-slate-200">
-                            <p class="text-sm text-slate-500">Ma don hang</p>
+                            <p class="text-sm text-slate-500">Mã đơn hàng</p>
                             <p class="font-black text-2xl tracking-wide mt-1"><%= booking.getBookingId().toString().substring(0, 8).toUpperCase() %></p>
                         </div>
 
                         <div class="pt-3 border-t border-slate-200">
-                            <p class="text-sm text-slate-500">Mo ta</p>
-                            <p class="font-semibold text-lg mt-1">Thanh toan dat san</p>
+                            <p class="text-sm text-slate-500">Mô tả</p>
+                            <p class="font-semibold text-lg mt-1">Thanh toán đặt sân</p>
                         </div>
 
                         <div class="pt-3 border-t border-slate-200">
-                            <p class="text-sm text-slate-500">So tien</p>
+                            <p class="text-sm text-slate-500">Số tiền</p>
                             <p class="font-black text-4xl text-[var(--brand-green)] mt-1"><%= String.format("%,d", booking.getTotalPrice().longValue()) %>d</p>
                         </div>
 
                         <div class="pt-3 border-t border-slate-200">
-                            <p class="text-sm text-slate-500">Thong tin dat san</p>
+                            <p class="text-sm text-slate-500">Thông tin đặt sân</p>
                             <p class="font-semibold text-base mt-1"><%= bookingVM != null ? bookingVM.getFieldName() : "--" %></p>
                             <p class="text-sm text-slate-600 mt-1">
                                 <%= (bookingVM != null && bookingVM.getBookingDate() != null) ? bookingVM.getBookingDate().toString() : "--" %>
@@ -176,19 +185,23 @@
                                         ? bookingVM.getStartTime().toString() + " - " + bookingVM.getEndTime().toString()
                                         : "--" %>
                             </p>
+                            <p class="text-sm text-slate-600 mt-2">Trạng thái booking: <span class="font-semibold"><%= booking.getStatus() != null ? booking.getStatus() : "--" %></span></p>
+                            <p class="text-sm text-slate-600 mt-1">Mã lịch: <span class="font-semibold"><%= booking.getScheduleId() != null ? booking.getScheduleId() : "--" %></span></p>
+                            <p class="text-sm text-slate-600 mt-1">Mã giao dịch: <span class="font-semibold"><%= payment.getTransactionCode() != null ? payment.getTransactionCode() : "--" %></span></p>
+                            <p class="text-sm text-slate-600 mt-1">Phương thức thanh toán: <span class="font-semibold"><%= payment.getPaymentMethod() != null ? payment.getPaymentMethod() : "--" %></span></p>
                         </div>
                     </div>
 
                     <div class="timer-box p-4 text-center">
-                        <p class="text-[19px] font-semibold text-[#d0467d]">Don hang se het han sau:</p>
+                        <p class="text-[19px] font-semibold text-[#d0467d]">Đơn hàng sẽ hết hạn sau:</p>
                         <div class="mt-4 flex justify-center gap-4" id="timerWrapper">
                             <div class="timer-pill py-3 px-3">
                                 <p class="text-4xl font-black leading-none" id="minutesBox">1</p>
-                                <p class="text-sm mt-2 font-medium">Phut</p>
+                                <p class="text-sm mt-2 font-medium">Phút</p>
                             </div>
                             <div class="timer-pill py-3 px-3">
                                 <p class="text-4xl font-black leading-none" id="secondsBox">00</p>
-                                <p class="text-sm mt-2 font-medium">Giay</p>
+                                <p class="text-sm mt-2 font-medium">Giây</p>
                             </div>
                         </div>
                     </div>
@@ -197,7 +210,7 @@
                         <form action="${pageContext.request.contextPath}/payment-cancel" method="post" onsubmit="return confirm('Bạn chắc chắn muốn huỷ đặt sân này?');">
                             <input type="hidden" name="bookingId" value="<%= booking.getBookingId() %>" />
                             <button type="submit" class="w-full rounded-xl py-3 border border-[var(--brand-border)] bg-[var(--brand-green-soft)] text-[var(--brand-green-dark)] font-semibold hover:bg-[#def4e8] transition">
-                                Quay lai
+                                Quay lại
                             </button>
                         </form>
                     </div>
@@ -207,8 +220,8 @@
                     <div class="qr-stage space-y-5">
                         <div class="text-center">
                             <p class="text-xs uppercase tracking-[0.35em] text-emerald-100 font-semibold">Bank Transfer QR</p>
-                            <h1 class="text-3xl md:text-4xl font-black mt-2">Thanh toan qua ngan hang</h1>
-                            <p class="text-sm md:text-base text-emerald-100 mt-2">Quet QR hoac mo trang payOS Checkout de hoan tat thanh toan.</p>
+                            <h1 class="text-3xl md:text-4xl font-black mt-2">Thanh toán qua ngân hàng</h1>
+                            <p class="text-sm md:text-base text-emerald-100 mt-2">Quét QR hoặc mở trang payOS Checkout để hoàn tất thanh toán.</p>
                         </div>
 
                         <div class="qr-frame">
@@ -217,19 +230,19 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                             <div class="bg-white/20 rounded-xl p-3">
-                                <p class="text-emerald-100">Ngan hang</p>
+                                <p class="text-emerald-100">Ngân hàng</p>
                                 <p class="font-bold text-white text-lg mt-1"><%= bankCode %> Bank</p>
                             </div>
                             <div class="bg-white/20 rounded-xl p-3">
-                                <p class="text-emerald-100">So tai khoan</p>
+                                <p class="text-emerald-100">Số tài khoản</p>
                                 <p class="font-bold text-white text-lg mt-1"><%= accountNumber %></p>
                             </div>
                             <div class="bg-white/20 rounded-xl p-3 md:col-span-2">
-                                <p class="text-emerald-100">Ten tai khoan</p>
+                                <p class="text-emerald-100">Tên tài khoản</p>
                                 <p class="font-bold text-white text-lg mt-1"><%= accountName %></p>
                             </div>
                             <div class="bg-white/20 rounded-xl p-3 md:col-span-2">
-                                <p class="text-emerald-100">Noi dung chuyen khoan</p>
+                                <p class="text-emerald-100">Nội dung chuyển khoản</p>
                                 <p class="font-black text-white text-xl mt-1 tracking-wide"><%= payment.getTransactionCode() %></p>
                             </div>
                         </div>
@@ -238,7 +251,7 @@
                             <div class="pt-1 text-center">
                                 <a href="<%= checkoutUrl %>" target="_blank" rel="noopener"
                                    class="inline-flex items-center justify-center rounded-xl bg-white text-[var(--brand-green)] font-bold px-5 py-3 hover:bg-emerald-50 transition">
-                                    Mo payOS Checkout
+                                    Mở payOS Checkout
                                 </a>
                             </div>
                         <% } %>
@@ -247,17 +260,17 @@
                     <div id="paymentStatusDiv" class="hidden status-card mt-5 p-4 text-center">
                         <div class="flex items-center justify-center gap-3 mb-1">
                             <svg class="w-7 h-7 text-emerald-600 animate-spin" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="currentColor" stroke-width="3"></circle></svg>
-                            <p class="text-lg font-bold text-emerald-700">Dang xac nhan thanh toan...</p>
+                            <p class="text-lg font-bold text-emerald-700">Đang xác nhận thanh toán...</p>
                         </div>
-                        <p class="text-sm text-emerald-600">He thong dang kiem tra giao dich</p>
+                        <p class="text-sm text-emerald-600">Hệ thống đang kiểm tra giao dịch</p>
                     </div>
 
                     <div class="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                        <p class="font-semibold mb-2">Luu y:</p>
+                        <p class="font-semibold mb-2">Lưu ý:</p>
                         <ul class="space-y-1 list-disc list-inside">
-                            <li>He thong tu dong kiem tra trang thai thanh toan moi 10 giay.</li>
-                            <li>Vui long chuyen dung so tien va dung noi dung de duoc xac nhan.</li>
-                            <li>Khi het thoi gian, he thong se tu dong huy giu cho.</li>
+                            <li>Hệ thống tự động kiểm tra trạng thái thanh toán mỗi 10 giây.</li>
+                            <li>Vui lòng chuyển đúng số tiền và đúng nội dung để được xác nhận.</li>
+                            <li>Khi hết thời gian, hệ thống sẽ tự động hủy giữ chỗ.</li>
                         </ul>
                     </div>
                 </section>
@@ -361,15 +374,15 @@
                         <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                         </svg>
-                        <p class="text-lg font-bold text-green-700">Thanh toan thanh cong!</p>
+                        <p class="text-lg font-bold text-green-700">Thanh toán thành công!</p>
                     </div>
-                    <p class="text-sm text-green-600 mb-3">Don dat san da duoc xac nhan.</p>
-                    <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${bookingId}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">Xem chi tiet booking</a>
+                    <p class="text-sm text-green-600 mb-3">Đơn đặt sân đã được xác nhận.</p>
+                    <a href="${pageContext.request.contextPath}<%= bookingDetailPath %>?id=${bookingId}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">Xem chi tiết booking</a>
                 `;
                 statusDiv.classList.remove('hidden');
 
                 setTimeout(() => {
-                    window.location.href = '${pageContext.request.contextPath}/customer/bookingDetail?id=' + bookingId;
+                    window.location.href = '${pageContext.request.contextPath}<%= bookingDetailPath %>?id=' + bookingId;
                 }, 1800);
             }
 
@@ -380,10 +393,10 @@
                         <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                         </svg>
-                        <p class="text-lg font-bold text-red-700">Thanh toan that bai</p>
+                        <p class="text-lg font-bold text-red-700">Thanh toán thất bại</p>
                     </div>
-                    <p class="text-sm text-red-600 mb-3">Don dat san da bi huy.</p>
-                    <a href="${pageContext.request.contextPath}/booking" class="inline-block bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition">Quay lai dat san</a>
+                    <p class="text-sm text-red-600 mb-3">Đơn đặt sân đã bị hủy.</p>
+                    <a href="${pageContext.request.contextPath}/booking" class="inline-block bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition">Quay lại đặt sân</a>
                 `;
                 statusDiv.classList.remove('hidden');
                 statusDiv.classList.remove('status-card');
@@ -411,7 +424,7 @@
                 }
 
                 alert('Hết thời gian thanh toán. Đơn đặt sân đã bị hủy tự động.');
-                window.location.href = '${pageContext.request.contextPath}/customer/bookings';
+                window.location.href = '${pageContext.request.contextPath}<%= bookingHistoryPath %>';
             }
 
             document.addEventListener('DOMContentLoaded', () => {

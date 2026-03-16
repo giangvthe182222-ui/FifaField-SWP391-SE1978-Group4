@@ -40,6 +40,11 @@
                 <i data-lucide="arrow-left" class="w-3 h-3"></i>
                 QUAY LẠI QUẢN LÝ SÂN
             </a>
+            <a href="${pageContext.request.contextPath}/field-booking-schedule?fieldId=${field.fieldId}&date=${weekStart}&status=${param.status}" 
+               class="inline-flex items-center gap-2 text-[10px] font-black text-blue-500 hover:text-blue-700 transition-all uppercase tracking-widest mb-1">
+                <i data-lucide="calendar-search" class="w-3 h-3"></i>
+                XEM LỊCH KÈM BOOKING
+            </a>
             <h1 class="text-4xl font-black text-gray-900 tracking-tight uppercase leading-none">
                 LỊCH TUẦN: <span class="text-[#008751]">${field.fieldName}</span>
             </h1>

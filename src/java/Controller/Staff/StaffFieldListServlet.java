@@ -1,8 +1,10 @@
 package Controller.Staff;
 
 import DAO.FieldDAO;
+import DAO.LocationDAO;
 import DAO.StaffDAO;
 import Models.Field;
+import Models.Location;
 import Models.StaffViewModel;
 import Models.User;
 
@@ -43,10 +45,12 @@ public class StaffFieldListServlet extends HttpServlet {
             UUID locationId = UUID.fromString(staff.getLocationId());
             FieldDAO fieldDAO = new FieldDAO();
             List<Field> fields = fieldDAO.getByLocation(locationId);
+            Location location = new LocationDAO().getLocationById(locationId);
 
             request.setAttribute("fields", fields);
             request.setAttribute("locationId", staff.getLocationId());
             request.setAttribute("locationName", staff.getLocationName());
+            request.setAttribute("location", location);
             request.getRequestDispatcher("/View/Staff/StaffFieldList.jsp").forward(request, response);
         } catch (Exception e) {
             e.printStackTrace();

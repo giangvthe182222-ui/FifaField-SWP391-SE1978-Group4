@@ -23,8 +23,8 @@
             <p class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">FIFAFIELD LOCATION</p>
             <h1 class="text-4xl font-black tracking-tight uppercase">Chi tiết <span class="text-[#008751]">Cơ sở</span></h1>
         </div>
-        <a href="${pageContext.request.contextPath}/customer/dashboard#locations" class="px-6 py-3 rounded-2xl border border-slate-200 font-black text-xs uppercase tracking-widest text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
-            Quay lại danh sách
+        <a href="${pageContext.request.contextPath}/customer/dashboard#locations" class="w-10 h-10 rounded-xl border border-slate-200 text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
     </div>
 
@@ -132,9 +132,14 @@
                                     <p class="text-xs font-bold text-emerald-700 uppercase tracking-wider mt-1">${f.status}</p>
                                 </div>
                             </div>
-                            <a href="${pageContext.request.contextPath}/booking?locationId=${location.locationId}" class="px-4 py-3 rounded-xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-colors text-center">
-                                Đặt ngay
-                            </a>
+                            <div class="flex flex-col gap-2">
+                                <a href="${pageContext.request.contextPath}/customer/field-schedule?fieldId=${f.fieldId}" class="px-4 py-3 rounded-xl border border-slate-200 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:border-[#008751] hover:text-[#008751] transition-colors text-center">
+                                    Xem lịch sân
+                                </a>
+                                <a href="${pageContext.request.contextPath}/booking?locationId=${location.locationId}&fieldId=${f.fieldId}" class="px-4 py-3 rounded-xl bg-slate-900 text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-colors text-center">
+                                    Đặt ngay
+                                </a>
+                            </div>
                         </article>
                     </c:forEach>
                 </div>

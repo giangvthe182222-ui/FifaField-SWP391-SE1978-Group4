@@ -83,18 +83,6 @@
                 Dụng cụ
             </a>
 
-            <!-- Đặt sân -->
-            <a href="${pageContext.request.contextPath}/bookings"
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                    <path d="M16 2v4M8 2v4M3 10h18"/>
-                </svg>
-                Đặt sân
-            </a>
-
         </nav>
 
         <!-- RIGHT - PROFILE DROPDOWN -->

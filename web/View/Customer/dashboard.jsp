@@ -46,10 +46,16 @@
                 </h1>
                 <p class="text-gray-500 font-bold text-sm uppercase tracking-widest opacity-60">Sẵn sàng cho trận đấu tiếp theo của bạn?</p>
             </div>
-            <a href="${pageContext.request.contextPath}/booking" class="px-10 py-5 rounded-[1.8rem] bg-[#008751] text-white font-black uppercase text-xs tracking-[0.2em] hover:bg-emerald-400 transition-all hover:-translate-y-1 shadow-2xl shadow-[#008751]/20 flex items-center justify-center gap-3">
-                <i data-lucide="zap" class="w-4 h-4"></i>
-                Đặt sân ngay
-            </a>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full md:w-auto">
+                <a href="${pageContext.request.contextPath}/booking?bookingMode=normal" class="px-8 py-5 rounded-[1.8rem] bg-[#008751] text-white font-black uppercase text-xs tracking-[0.2em] hover:bg-emerald-400 transition-all hover:-translate-y-1 shadow-2xl shadow-[#008751]/20 flex items-center justify-center gap-3">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                    Đặt sân thường
+                </a>
+                <a href="${pageContext.request.contextPath}/booking?bookingMode=weekly" class="px-8 py-5 rounded-[1.8rem] border-2 border-[#008751] text-[#008751] bg-white font-black uppercase text-xs tracking-[0.2em] hover:bg-emerald-50 transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
+                    <i data-lucide="calendar-range" class="w-4 h-4"></i>
+                    Đặt sân theo tuần
+                </a>
+            </div>
         </div>
 
         <div class="mt-12">
@@ -288,8 +294,6 @@ function initMap() {
         });
 
     }, index * 200);
-
-});
 
     });
 

@@ -1,24 +1,22 @@
-package Controller.Staff;
+package Controller.Manager;
 
 import DAO.BookingDAO;
 import DAO.FieldDAO;
 import DAO.LocationDAO;
+import DAO.ManagerDAO;
 import DAO.ScheduleDAO;
-import DAO.StaffDAO;
 import Models.BookingViewModel;
 import Models.Field;
 import Models.Location;
+import Models.Manager;
 import Models.Schedule;
-import Models.StaffViewModel;
 import Models.User;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
 import java.io.IOException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -30,45 +28,36 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-@WebServlet(name = "StaffFieldDetailServlet", urlPatterns = {"/staff/fields/detail"})
-public class StaffFieldDetailServlet extends HttpServlet {
+@WebServlet("/manager/fields/detail")
+public class ManagerFieldDetailServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
-            response.sendRedirect(request.getContextPath() + "/login?redirect=staff/fields");
-            return;
-        }
-
-        String fieldIdRaw = request.getParameter("fieldId");
-        if (fieldIdRaw == null || fieldIdRaw.isBlank()) {
-            response.sendRedirect(request.getContextPath() + "/staff/fields");
+            response.sendRedirect(request.getContextPath() + "/login?redirect=manager/fields");
             return;
         }
 
         User user = (User) session.getAttribute("user");
+        String fieldIdRaw = request.getParameter("fieldId");
+        if (fieldIdRaw == null || fieldIdRaw.isBlank()) {
+            response.sendRedirect(request.getContextPath() + "/manager/fields");
+            return;
+        }
 
         try {
-            StaffDAO staffDAO = new StaffDAO();
-            StaffViewModel staff = staffDAO.getStaffById(user.getUserId().toString());
-            if (staff == null || staff.getLocationId() == null) {
-                session.setAttribute("flash_error", "No location assigned to this staff.");
-                response.sendRedirect(request.getContextPath() + "/");
+            Manager manager = new ManagerDAO().getManagerById(user.getUserId());
+            if (manager == null || manager.getLocationId() == null) {
+                response.sendRedirect(request.getContextPath() + "/manager/dashboard");
                 return;
             }
 
             UUID fieldId = UUID.fromString(fieldIdRaw);
-            FieldDAO fieldDAO = new FieldDAO();
-            Field field = fieldDAO.getById(fieldId);
-            if (field == null) {
-                response.sendError(HttpServletResponse.SC_NOT_FOUND, "Field not found");
-                return;
-            }
-
-            if (!field.getLocationId().toString().equalsIgnoreCase(staff.getLocationId())) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "You cannot access this field");
+            Field field = new FieldDAO().getById(fieldId);
+            if (field == null || !manager.getLocationId().equals(field.getLocationId())) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Field is outside manager location");
                 return;
             }
 
@@ -79,28 +68,23 @@ public class StaffFieldDetailServlet extends HttpServlet {
             LocalDate weekStart = baseDate.with(DayOfWeek.SUNDAY);
             LocalDate weekEnd = weekStart.plusDays(6);
 
-            ScheduleDAO scheduleDAO = new ScheduleDAO();
+            List<Schedule> allSchedules = new ScheduleDAO().getScheduleByField(fieldId);
             BookingDAO bookingDAO = new BookingDAO();
-
-            List<Schedule> allSchedules = scheduleDAO.getScheduleByField(fieldId);
             Map<LocalDate, List<Schedule>> schedulesByDate = new LinkedHashMap<>();
             for (int i = 0; i < 7; i++) {
-                schedulesByDate.put(weekStart.plusDays(i), new ArrayList<>());
+                schedulesByDate.put(weekStart.plusDays(i), new ArrayList<Schedule>());
             }
 
             Map<UUID, BookingViewModel> bookingBySchedule = new LinkedHashMap<>();
-            for (Schedule s : allSchedules) {
-                LocalDate bookingDate = s.getBookingDate();
+            for (Schedule schedule : allSchedules) {
+                LocalDate bookingDate = schedule.getBookingDate();
                 if (bookingDate.isBefore(weekStart) || bookingDate.isAfter(weekEnd)) {
                     continue;
                 }
-                schedulesByDate.get(bookingDate).add(s);
-
-                if ("unavailable".equalsIgnoreCase(s.getStatus())) {
-                    BookingViewModel booking = bookingDAO.getByScheduleId(s.getScheduleId());
-                    if (booking != null) {
-                        bookingBySchedule.put(s.getScheduleId(), booking);
-                    }
+                schedulesByDate.get(bookingDate).add(schedule);
+                BookingViewModel booking = bookingDAO.getByScheduleIdForCalendar(schedule.getScheduleId());
+                if (booking != null) {
+                    bookingBySchedule.put(schedule.getScheduleId(), booking);
                 }
             }
 
@@ -111,7 +95,7 @@ public class StaffFieldDetailServlet extends HttpServlet {
             }
 
             request.setAttribute("field", field);
-            request.setAttribute("locationName", staff.getLocationName());
+            request.setAttribute("locationName", manager.getLocationName());
             request.setAttribute("location", location);
             request.setAttribute("schedulesByDate", schedulesByDate);
             request.setAttribute("displayDateMap", displayDateMap);
@@ -120,14 +104,9 @@ public class StaffFieldDetailServlet extends HttpServlet {
             request.setAttribute("weekEnd", weekEnd);
             request.setAttribute("prevWeek", weekStart.minusWeeks(1));
             request.setAttribute("nextWeek", weekStart.plusWeeks(1));
-
-            request.getRequestDispatcher("/View/Staff/StaffFieldDetail.jsp").forward(request, response);
-        } catch (IllegalArgumentException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid UUID format");
+            request.getRequestDispatcher("/View/Manager/manager-field-detail.jsp").forward(request, response);
         } catch (Exception e) {
-            e.printStackTrace();
-            session.setAttribute("flash_error", "Error loading field detail: " + e.getMessage());
-            response.sendRedirect(request.getContextPath() + "/staff/fields");
+            throw new ServletException("Cannot load manager field detail", e);
         }
     }
 }

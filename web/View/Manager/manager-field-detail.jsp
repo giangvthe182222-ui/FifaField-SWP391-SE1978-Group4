@@ -2,22 +2,20 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chi tiết sân - Staff</title>
+    <title>Chi tiết sân - Manager</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen antialiased text-gray-900">
-
-<jsp:include page="/View/Layout/HeaderStaff.jsp"/>
+<jsp:include page="/View/Layout/HeaderManager.jsp"/>
 
 <main class="max-w-7xl mx-auto px-6 py-10 space-y-8">
     <div class="space-y-5">
-        <a href="${pageContext.request.contextPath}/staff/fields" class="w-10 h-10 bg-white border border-gray-100 rounded-xl text-gray-500 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+        <a href="${pageContext.request.contextPath}/manager/fields" class="w-10 h-10 bg-white border border-gray-100 rounded-xl text-gray-500 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
         </a>
 
@@ -35,7 +33,7 @@
                 </div>
                 <div class="flex-1 space-y-2">
                     <h1 class="text-3xl font-black uppercase tracking-tight">${field.fieldName}</h1>
-                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Chi nhánh: ${locationName}</p>
+                    <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Cơ sở: ${locationName}</p>
                     <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Loại sân: ${field.fieldType}</p>
                     <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Tình trạng: ${field.fieldCondition}</p>
                     <p class="text-xs font-bold text-gray-500 uppercase tracking-widest">Trạng thái: ${field.status}</p>
@@ -55,9 +53,9 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <h2 class="text-2xl font-black uppercase tracking-tight">Lịch sân theo tuần</h2>
             <div class="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
-                <a href="${pageContext.request.contextPath}/staff/fields/detail?fieldId=${field.fieldId}&date=${prevWeek}" class="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751] transition-all">Tuần trước</a>
+                <a href="${pageContext.request.contextPath}/manager/fields/detail?fieldId=${field.fieldId}&date=${prevWeek}" class="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751] transition-all">Tuần trước</a>
                 <span class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-gray-500">${weekStart} - ${weekEnd}</span>
-                <a href="${pageContext.request.contextPath}/staff/fields/detail?fieldId=${field.fieldId}&date=${nextWeek}" class="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751] transition-all">Tuần sau</a>
+                <a href="${pageContext.request.contextPath}/manager/fields/detail?fieldId=${field.fieldId}&date=${nextWeek}" class="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751] transition-all">Tuần sau</a>
             </div>
         </div>
 
@@ -87,14 +85,15 @@
 
                                             <div class="flex items-center justify-between mb-3">
                                                 <span class="text-[10px] font-black text-[#008751] uppercase tracking-widest"><fmt:formatNumber value="${s.price}" pattern="#,##0"/> đ</span>
-                                                <span class="text-[10px] font-black uppercase tracking-widest ${not empty booked ? 'text-blue-600' : 'text-gray-300'}">${not empty booked ? 'đã đặt' : 'trống'}</span>
+                                                <span class="text-[10px] font-black uppercase tracking-widest ${not empty booked ? 'text-blue-600' : 'text-gray-300'}">${not empty booked ? 'đã có booking' : 'trống'}</span>
                                             </div>
 
                                             <c:choose>
                                                 <c:when test="${not empty booked}">
                                                     <div class="space-y-2">
                                                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Khách hàng: <span class="text-gray-700">${booked.customerName}</span></p>
-                                                        <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${booked.bookingId}" class="block text-center px-3 py-2 rounded-xl bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#008751] transition-all">Booking detail</a>
+                                                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Số điện thoại: <span class="text-gray-700">${booked.customerPhone}</span></p>
+                                                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Trạng thái booking: <span class="text-gray-700">${booked.status}</span></p>
                                                     </div>
                                                 </c:when>
                                                 <c:otherwise>
@@ -113,7 +112,6 @@
     </section>
 </main>
 
-<jsp:include page="/View/Layout/Footer.jsp"/>
-
+<jsp:include page="/View/Layout/FooterManager.jsp"/>
 </body>
 </html>

@@ -11,7 +11,7 @@
 </head>
 <body class="bg-slate-100 min-h-screen antialiased text-gray-900">
 
-<jsp:include page="/View/Layout/HeaderStaffDashboard.jsp"/>
+<jsp:include page="/View/Layout/HeaderStaff.jsp"/>
 
 <main class="max-w-7xl mx-auto px-6 py-10 space-y-8">
     <section class="bg-white border border-gray-100 rounded-3xl p-8 shadow-sm">
@@ -20,21 +20,27 @@
         <p class="text-sm font-semibold text-gray-500 mt-2">Location phụ trách: ${staff.locationName}</p>
     </section>
 
-    <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <a href="${pageContext.request.contextPath}/booking" class="group bg-white border-2 border-gray-50 rounded-3xl p-7 shadow-sm hover:border-[#008751] hover:shadow-lg transition-all">
+    <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <a href="${pageContext.request.contextPath}/booking?bookingMode=normal" class="group bg-white border-2 border-gray-50 rounded-3xl p-7 shadow-sm hover:border-[#008751] hover:shadow-lg transition-all">
             <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">01</p>
-            <h2 class="text-2xl font-black mt-2 uppercase tracking-tight text-gray-900 group-hover:text-[#008751]">Book sân</h2>
-            <p class="text-sm font-semibold text-gray-500 mt-3">Đi tới trang chọn sân, chọn lịch và tạo booking.</p>
+            <h2 class="text-2xl font-black mt-2 uppercase tracking-tight text-gray-900 group-hover:text-[#008751]">Đặt sân thường</h2>
+            <p class="text-sm font-semibold text-gray-500 mt-3">Đi tới trang booking với mode đặt sân thường.</p>
+        </a>
+
+        <a href="${pageContext.request.contextPath}/booking?bookingMode=weekly" class="group bg-white border-2 border-gray-50 rounded-3xl p-7 shadow-sm hover:border-[#008751] hover:shadow-lg transition-all">
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">02</p>
+            <h2 class="text-2xl font-black mt-2 uppercase tracking-tight text-gray-900 group-hover:text-[#008751]">Đặt sân theo tuần</h2>
+            <p class="text-sm font-semibold text-gray-500 mt-3">Đi tới trang booking với mode đặt theo tuần.</p>
         </a>
 
         <a href="${pageContext.request.contextPath}/staff/my-shifts" class="group bg-white border-2 border-gray-50 rounded-3xl p-7 shadow-sm hover:border-[#008751] hover:shadow-lg transition-all">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">02</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">03</p>
             <h2 class="text-2xl font-black mt-2 uppercase tracking-tight text-gray-900 group-hover:text-[#008751]">Ca làm việc</h2>
             <p class="text-sm font-semibold text-gray-500 mt-3">Xem toàn bộ ca làm việc được phân cho tài khoản staff hiện tại.</p>
         </a>
 
         <a href="${pageContext.request.contextPath}/staff/location" class="group bg-white border-2 border-gray-50 rounded-3xl p-7 shadow-sm hover:border-[#008751] hover:shadow-lg transition-all">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">03</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">04</p>
             <h2 class="text-2xl font-black mt-2 uppercase tracking-tight text-gray-900 group-hover:text-[#008751]">Location</h2>
             <p class="text-sm font-semibold text-gray-500 mt-3">Vào location phụ trách và điều hướng sang sân/lịch hoặc location bookings.</p>
         </a>

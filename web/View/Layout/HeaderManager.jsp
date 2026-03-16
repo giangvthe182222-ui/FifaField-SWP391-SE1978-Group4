@@ -34,8 +34,8 @@
                 Bảng điều khiển
             </a>
 
-            <!-- Đặt sân -->
-            <a href="${pageContext.request.contextPath}/bookings"
+                <!-- Cơ sở của tôi -->
+                <a href="${pageContext.request.contextPath}/manager/location"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -43,11 +43,11 @@
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                     <path d="M16 2v4M8 2v4M3 10h18"/>
                 </svg>
-                Đặt sân
+                Cơ sở của tôi
             </a>
 
-            <!-- Ca làm việc -->
-            <a href="${pageContext.request.contextPath}/manager/shifts"
+            <!-- Sân của tôi -->
+            <a href="${pageContext.request.contextPath}/manager/fields"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -55,11 +55,11 @@
                     <circle cx="12" cy="12" r="9"/>
                     <path d="M12 6v6l4 2"/>
                 </svg>
-                Ca làm việc
+                Sân của tôi
             </a>
 
                 <!-- Nhân viên -->
-                <a href="${pageContext.request.contextPath}/staff-list"
+                <a href="${pageContext.request.contextPath}/manager/staff/list"
                     class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                     text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -72,31 +72,31 @@
                 Nhân viên
             </a>
 
-            <!-- Cụm sân -->
-            <a href="${pageContext.request.contextPath}/locations"
+                <!-- Dụng cụ cơ sở -->
+                <a href="${pageContext.request.contextPath}/manager/location-equipment"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
                      viewBox="0 0 24 24">
-                    <path d="M12 21s7-6.5 7-11a7 7 0 10-14 0c0 4.5 7 11 7 11z"/>
-                    <circle cx="12" cy="10" r="3"/>
+                    <path d="M4 7h16v10H4z"/>
+                    <path d="M8 7V5h8v2"/>
                 </svg>
-                Cụm sân
+                Dụng cụ cơ sở
             </a>
 
-            <!-- Dụng cụ -->
-            <a href="${pageContext.request.contextPath}/equipment-list"
+            <!-- Phân ca -->
+            <a href="${pageContext.request.contextPath}/manager/assign-shift"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
                      viewBox="0 0 24 24">
                     <path d="M12 6v12m6-6H6"/>
                 </svg>
-                Dụng cụ
+                Phân ca
             </a>
 
-            <!-- Lịch cá nhân -->
-            <a href="${pageContext.request.contextPath}/manager/schedule"
+            <!-- Ca đã phân -->
+            <a href="${pageContext.request.contextPath}/manager/staff-shifts"
                class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
                text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
                 <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
@@ -104,7 +104,7 @@
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                     <path d="M7 9h10m-10 8h10M9 4V2m6 2V2"/>
                 </svg>
-                Lịch cá nhân
+                Ca đã phân
             </a>
 
             <!-- Blog -->

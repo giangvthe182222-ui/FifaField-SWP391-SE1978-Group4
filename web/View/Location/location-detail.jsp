@@ -41,7 +41,9 @@
                               class="px-6 py-3 bg-[#004d40] text-white rounded-xl font-black">Vouchers</a>
 
                           <a href="${pageContext.request.contextPath}/locations"
-                              class="px-6 py-3 border rounded-xl font-black">Quay về danh sách</a>
+                              class="w-10 h-10 border rounded-xl text-gray-500 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                          </a>
                 </div>
             </div>
         </div>

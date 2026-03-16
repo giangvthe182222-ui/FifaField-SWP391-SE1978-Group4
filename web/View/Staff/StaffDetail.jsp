@@ -24,9 +24,8 @@
     <!-- TOP NAVIGATION -->
     <div class="flex items-center justify-between">
         <a href="${pageContext.request.contextPath}/staff/list" 
-           class="inline-flex items-center gap-2 text-[10px] font-black text-gray-400 hover:text-[#008751] transition-all uppercase tracking-widest mb-1">
-            <i data-lucide="arrow-left" class="w-3 h-3"></i>
-            QUAY LẠI DANH SÁCH
+           class="w-10 h-10 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
         <div class="bg-white px-6 py-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
             <i data-lucide="shield-check" class="w-4 h-4 text-[#008751]"></i>
@@ -169,9 +168,8 @@
                     </button>
                 </form>
                 <a href="${pageContext.request.contextPath}/staff/list" 
-                   class="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-400 py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
-                    <i data-lucide="list" class="w-4 h-4"></i>
-                    QUAY VỀ DANH SÁCH
+                   class="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-400 rounded-xl border border-gray-100 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i>
                 </a>
             </div>
         </div>

@@ -153,11 +153,11 @@
                     <div class="group relative bg-gray-50/50 border border-gray-100 rounded-[2rem] p-6 hover:bg-white hover:shadow-lg transition-all flex items-center gap-6">
                         <div class="absolute top-0 left-0 w-1.5 h-full bg-amber-500 rounded-l-[2rem]"></div>
                         <div class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-amber-500">
-                            <i data-lucide="calendar-check" class="w-5 h-5"></i>
+                            <i data-lucide="shield-check" class="w-5 h-5"></i>
                         </div>
                         <div class="flex-1">
-                            <p class="text-sm font-black text-gray-900 group-hover:text-amber-600 transition-colors uppercase tracking-tight">Đặt sân thành công: Sân 1 - 18:00</p>
-                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Điều hành lịch trình • 6 giờ trước</p>
+                            <p class="text-sm font-black text-gray-900 group-hover:text-amber-600 transition-colors uppercase tracking-tight">Cập nhật trạng thái hệ thống quản trị</p>
+                            <p class="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Điều hành hệ thống • 6 giờ trước</p>
                         </div>
                     </div>
                 </div>

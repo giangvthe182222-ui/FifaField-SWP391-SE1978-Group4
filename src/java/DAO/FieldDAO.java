@@ -2,7 +2,6 @@ package DAO;
 
 import Models.Field;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -79,6 +78,21 @@ public class FieldDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public boolean updateFieldStatus(UUID fieldId, String status) {
+        String sql = "UPDATE Field SET status = ? WHERE field_id = ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setNString(1, status);
+            ps.setString(2, fieldId.toString());
+            return ps.executeUpdate() == 1;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     // fetch every field in the system
