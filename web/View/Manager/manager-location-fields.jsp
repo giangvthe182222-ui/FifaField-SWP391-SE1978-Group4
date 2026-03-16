@@ -87,7 +87,7 @@
                                     ${field.fieldCondition}
                                 </span>
                             </div>
-                            <a href="${pageContext.request.contextPath}/manager/fields/view?field_id=${field.fieldId}"
+                            <a href="${pageContext.request.contextPath}/manager/fields/detail?fieldId=${field.fieldId}"
                                class="w-full flex items-center justify-center gap-2 py-2 rounded-xl bg-emerald-50 text-[#008751] text-sm font-bold hover:bg-[#008751] hover:text-white transition-all">
                                 <i data-lucide="eye" class="w-4 h-4"></i>
                                 Xem chi tiết

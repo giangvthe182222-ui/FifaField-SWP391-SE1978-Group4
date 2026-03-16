@@ -1,11 +1,9 @@
-package DAO;
+    package DAO;
 
 import Utils.DBConnection;
 import Models.StaffViewModel;
-import Models.Staff;
 
 import java.sql.*;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -14,8 +12,8 @@ public class StaffDAO {
 
     public List<StaffViewModel> getAllStaff() throws SQLException {
         List<StaffViewModel> list = new ArrayList<>();
-        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.phone, l.location_name "
-                   + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Location l ON s.location_id = l.location_id";
+        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, g.email, u.phone, l.location_name "
+                   + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Gmail_Account g ON u.gmail_id = g.gmail_id JOIN Location l ON s.location_id = l.location_id";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -27,6 +25,7 @@ public class StaffDAO {
                     vm.setStatus(rs.getString("status"));
                     vm.setLocationId(rs.getString("location_id"));
                     vm.setFullName(rs.getString("full_name"));
+                    vm.setEmail(rs.getString("email"));
                     vm.setPhone(rs.getString("phone"));
                     vm.setLocationName(rs.getString("location_name"));
                     list.add(vm);
@@ -41,8 +40,8 @@ public class StaffDAO {
      */
     public List<StaffViewModel> getAllStaffByLocation(UUID locationId) throws SQLException {
         List<StaffViewModel> list = new ArrayList<>();
-        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.phone, l.location_name "
-                   + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Location l ON s.location_id = l.location_id "
+        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, g.email, u.phone, l.location_name "
+                   + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Gmail_Account g ON u.gmail_id = g.gmail_id JOIN Location l ON s.location_id = l.location_id "
                    + "WHERE s.location_id = ?";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, locationId.toString());
@@ -56,6 +55,7 @@ public class StaffDAO {
                     vm.setStatus(rs.getString("status"));
                     vm.setLocationId(rs.getString("location_id"));
                     vm.setFullName(rs.getString("full_name"));
+                    vm.setEmail(rs.getString("email"));
                     vm.setPhone(rs.getString("phone"));
                     vm.setLocationName(rs.getString("location_name"));
                     list.add(vm);
@@ -66,8 +66,8 @@ public class StaffDAO {
     }
 
     public StaffViewModel getStaffById(String userId) throws SQLException {
-        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.phone, u.address, u.gender, l.location_name "
-                   + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Location l ON s.location_id = l.location_id WHERE s.user_id = ?";
+        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, g.email, u.phone, u.address, u.gender, l.location_name "
+                   + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Gmail_Account g ON u.gmail_id = g.gmail_id JOIN Location l ON s.location_id = l.location_id WHERE s.user_id = ?";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, userId);
             try (ResultSet rs = ps.executeQuery()) {
@@ -80,6 +80,7 @@ public class StaffDAO {
                     vm.setStatus(rs.getString("status"));
                     vm.setLocationId(rs.getString("location_id"));
                     vm.setFullName(rs.getString("full_name"));
+                    vm.setEmail(rs.getString("email"));
                     vm.setPhone(rs.getString("phone"));
                     vm.setLocationName(rs.getString("location_name"));
                     vm.setAddress(rs.getString("address"));

@@ -32,7 +32,7 @@
         </div>
         <div class="pt-4">
             <button type="submit" class="px-4 py-2 bg-[#008751] text-white rounded">Lưu</button>
-            <a href="${pageContext.request.contextPath}/shifts" class="ml-3 text-gray-600">Hủy</a>
+            <a href="${pageContext.request.contextPath}/manager/shifts" class="ml-3 text-gray-600">Hủy</a>
         </div>
     </form>
 </main>

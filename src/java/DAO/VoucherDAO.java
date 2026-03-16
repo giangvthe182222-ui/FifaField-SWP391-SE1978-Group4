@@ -5,7 +5,6 @@ import Utils.DBConnection;
 
 import java.sql.*;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -100,7 +99,6 @@ public class VoucherDAO {
 
         UUID vid = UUID.randomUUID();
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(insertVoucher)) {
-            if (con == null) throw new SQLException("Không thể kết nối đến database");
             ps.setString(1, vid.toString());
             ps.setNString(2, code);
             if (discountValue != null) {

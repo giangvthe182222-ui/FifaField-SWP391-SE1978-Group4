@@ -3,7 +3,6 @@ package Controller.Booking;
 import DAO.BookingDAO;
 import Models.BookingViewModel;
 import Models.BookingEquipmentViewModel;
-import Models.User;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;

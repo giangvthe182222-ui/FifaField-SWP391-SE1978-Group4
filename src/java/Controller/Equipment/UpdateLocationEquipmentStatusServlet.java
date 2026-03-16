@@ -44,7 +44,7 @@ public class UpdateLocationEquipmentStatusServlet extends HttpServlet {
         
         LocationEquipmentDAO dao = new LocationEquipmentDAO(new DBConnection());
         
-        boolean success = dao.updateStatus(locationId, equipmentId);
+        dao.updateStatus(locationId, equipmentId);
 
         response.sendRedirect(request.getContextPath() + "/location-equipment-list?locationId=" + locationId);
     }

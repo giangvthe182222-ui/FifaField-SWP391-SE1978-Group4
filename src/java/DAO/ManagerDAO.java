@@ -1,7 +1,6 @@
 package DAO;
 
 import Models.Manager;
-import Models.User;
 import Utils.DBConnection;
 
 import java.sql.*;

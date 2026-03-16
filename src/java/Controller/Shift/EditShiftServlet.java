@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.time.LocalTime;
 import java.util.UUID;
 
@@ -24,8 +23,7 @@ public class EditShiftServlet extends HttpServlet {
             request.getRequestDispatcher("/View/Shift/shift-edit.jsp").forward(request, response);
         } catch (Exception ex) {
             ex.printStackTrace();
-            request.setAttribute("error", "Lỗi khi tải ca: " + ex.getMessage());
-            request.getRequestDispatcher("/View/Shift/shifts-list.jsp").forward(request, response);
+            response.sendRedirect(request.getContextPath() + "/manager/shifts");
         }
     }
 
@@ -43,7 +41,7 @@ public class EditShiftServlet extends HttpServlet {
             s.setEndTime(LocalTime.parse(end));
             ShiftDAO dao = new ShiftDAO();
             dao.updateShift(s);
-            response.sendRedirect(request.getContextPath() + "/shifts");
+            response.sendRedirect(request.getContextPath() + "/manager/shifts");
         } catch (Exception ex) {
             ex.printStackTrace();
             request.setAttribute("error", "Lỗi khi cập nhật ca: " + ex.getMessage());

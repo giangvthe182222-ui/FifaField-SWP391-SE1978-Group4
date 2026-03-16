@@ -31,11 +31,18 @@
                 Danh sách các ca làm việc trong hệ thống
             </p>
         </div>
-        <a href="${pageContext.request.contextPath}/manager/assign-shift"
-           class="bg-[#008751] hover:bg-[#007043] text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[#008751]/30 transition-all flex items-center gap-2">
-            <i data-lucide="calendar-plus" class="w-4 h-4"></i>
-            PHÂN CA NHÂN VIÊN
-        </a>
+        <div class="flex items-center gap-3">
+            <a href="${pageContext.request.contextPath}/shifts/add"
+               class="bg-white border border-[#008751] text-[#008751] hover:bg-emerald-50 px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-sm transition-all flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                THÊM CA
+            </a>
+            <a href="${pageContext.request.contextPath}/manager/assign-shift"
+               class="bg-[#008751] hover:bg-[#007043] text-white px-6 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-[#008751]/30 transition-all flex items-center gap-2">
+                <i data-lucide="calendar-plus" class="w-4 h-4"></i>
+                PHÂN CA NHÂN VIÊN
+            </a>
+        </div>
     </div>
 
     <c:if test="${not empty error}">
@@ -80,11 +87,18 @@
                             </div>
                         </div>
                         <div class="mt-4 pt-4 border-t border-gray-100">
-                            <a href="${pageContext.request.contextPath}/manager/assign-shift?shiftId=${shift.shiftId}"
-                               class="text-xs font-black text-[#008751] hover:underline uppercase tracking-wider flex items-center gap-1">
-                                <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
-                                Phân ca này cho nhân viên
-                            </a>
+                            <div class="flex items-center justify-between gap-4">
+                                <a href="${pageContext.request.contextPath}/shifts/edit?id=${shift.shiftId}"
+                                   class="text-xs font-black text-indigo-600 hover:underline uppercase tracking-wider flex items-center gap-1">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                    Sửa ca
+                                </a>
+                                <a href="${pageContext.request.contextPath}/manager/assign-shift?shiftId=${shift.shiftId}"
+                                   class="text-xs font-black text-[#008751] hover:underline uppercase tracking-wider flex items-center gap-1">
+                                    <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>
+                                    Phân ca này cho nhân viên
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </c:forEach>

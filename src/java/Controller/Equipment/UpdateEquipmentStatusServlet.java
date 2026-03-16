@@ -38,10 +38,7 @@ public class UpdateEquipmentStatusServlet extends HttpServlet {
         }
 
         EquipmentDAO dao = new EquipmentDAO(new DBConnection());
-        boolean success = dao.updateStatus(id, newStatus);
-
-        // có thể log nếu cần
-        // if (!success) { ... }
+        dao.updateStatus(id, newStatus);
 
         response.sendRedirect(request.getContextPath() + "/equipment-list");
     }

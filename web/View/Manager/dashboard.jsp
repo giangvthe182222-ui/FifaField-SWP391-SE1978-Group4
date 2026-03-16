@@ -193,7 +193,7 @@
                 </a>
 
                 <!-- Dụng cụ -->
-                <a href="${pageContext.request.contextPath}/manager/location/equipment"
+                <a href="${pageContext.request.contextPath}/manager/location-equipment"
                    class="card-hover flex items-center gap-4 p-5 rounded-2xl bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-100 group sm:col-span-2">
                     <div class="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-purple-200 flex-shrink-0">
                         <i data-lucide="shield" class="w-6 h-6 text-white"></i>

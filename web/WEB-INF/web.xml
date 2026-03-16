@@ -168,10 +168,6 @@
         <servlet-class>Controller.Manager.ManagerShiftsServlet</servlet-class>
     </servlet>
     <servlet>
-        <servlet-name>ShiftsListServlet</servlet-name>
-        <servlet-class>Controller.Shift.ShiftsListServlet</servlet-class>
-    </servlet>
-    <servlet>
         <servlet-name>AddShiftServlet</servlet-name>
         <servlet-class>Controller.Shift.AddShiftServlet</servlet-class>
     </servlet>
@@ -253,19 +249,15 @@
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ManagerFieldDetailServlet</servlet-name>
-        <url-pattern>/manager/fields/view</url-pattern>
+        <url-pattern>/manager/fields/detail</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ManagerLocationEquipmentServlet</servlet-name>
-        <url-pattern>/manager/location/equipment</url-pattern>
+        <url-pattern>/manager/location-equipment</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ManagerShiftsServlet</servlet-name>
         <url-pattern>/manager/shifts</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>ShiftsListServlet</servlet-name>
-        <url-pattern>/shifts</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>AddShiftServlet</servlet-name>

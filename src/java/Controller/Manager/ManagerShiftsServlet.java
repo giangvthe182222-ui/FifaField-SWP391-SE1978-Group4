@@ -2,7 +2,6 @@ package Controller.Manager;
 
 import DAO.ShiftDAO;
 import Models.Shift;
-import Models.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;

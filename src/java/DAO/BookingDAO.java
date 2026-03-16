@@ -955,12 +955,8 @@ public class BookingDAO {
 
                 Date bookingDate = rs.getDate("booking_date");
                 Time startTime = rs.getTime("start_time");
-                Time endTime = rs.getTime("end_time");
                 if (bookingDate != null && startTime != null) {
                     snapshot.scheduleStart = LocalDateTime.of(bookingDate.toLocalDate(), startTime.toLocalTime());
-                }
-                if (bookingDate != null && endTime != null) {
-                    snapshot.scheduleEnd = LocalDateTime.of(bookingDate.toLocalDate(), endTime.toLocalTime());
                 }
                 return snapshot;
             }
@@ -1020,7 +1016,6 @@ public class BookingDAO {
         private UUID scheduleId;
         private String status;
         private LocalDateTime scheduleStart;
-        private LocalDateTime scheduleEnd;
     }
 
 }

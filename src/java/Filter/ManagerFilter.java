@@ -8,7 +8,6 @@ import jakarta.servlet.annotation.WebFilter;
 
 @WebFilter(urlPatterns = {
     "/manager/*",
-    "/shifts",
     "/shifts/*"
 })
 public class ManagerFilter implements Filter {
