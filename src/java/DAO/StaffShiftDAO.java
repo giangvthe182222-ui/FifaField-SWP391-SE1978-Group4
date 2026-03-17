@@ -81,6 +81,21 @@ public class StaffShiftDAO {
         return false;
     }
 
+    public int countWorkedShiftsInRange(UUID staffId, LocalDate start, LocalDate end) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Staff_Shift WHERE staff_id = ? AND working_date BETWEEN ? AND ?";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, staffId.toString());
+            ps.setDate(2, Date.valueOf(start));
+            ps.setDate(3, Date.valueOf(end));
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
+
     public List<StaffShift> getShiftsAssignedBy(UUID managerId) throws SQLException {
         // legacy method still available
         List<StaffShift> list = new ArrayList<>();

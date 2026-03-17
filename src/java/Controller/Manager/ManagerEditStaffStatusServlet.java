@@ -32,9 +32,21 @@ public class ManagerEditStaffStatusServlet extends HttpServlet {
         User user = (User) session.getAttribute("user");
         String staffId = request.getParameter("staffId");
         String newStatus = request.getParameter("status");
+        String returnUrl = request.getParameter("returnUrl");
+
+        String fallbackUrl = request.getContextPath() + "/manager/staff/list";
+        String redirectTarget = fallbackUrl;
+        if (returnUrl != null && !returnUrl.isBlank() && returnUrl.startsWith(request.getContextPath() + "/manager/")) {
+            redirectTarget = returnUrl;
+        }
 
         if (staffId == null || staffId.isBlank() || newStatus == null || newStatus.isBlank()) {
-            response.sendRedirect(request.getContextPath() + "/manager/staff/list?error=invalid");
+            response.sendRedirect(fallbackUrl + "?error=invalid");
+            return;
+        }
+
+        if (!"active".equalsIgnoreCase(newStatus) && !"deactivated".equalsIgnoreCase(newStatus)) {
+            response.sendRedirect(fallbackUrl + "?error=invalid");
             return;
         }
 
@@ -44,7 +56,7 @@ public class ManagerEditStaffStatusServlet extends HttpServlet {
             Manager manager = managerDAO.getManagerById(user.getUserId());
             
             if (manager == null || manager.getLocationId() == null) {
-                response.sendRedirect(request.getContextPath() + "/manager/staff/list?error=no_location");
+                response.sendRedirect(fallbackUrl + "?error=no_location");
                 return;
             }
 
@@ -53,8 +65,8 @@ public class ManagerEditStaffStatusServlet extends HttpServlet {
             UUID.fromString(staffId);
             StaffViewModel staff = staffDAO.getStaffById(staffId);
             
-            if (staff == null || !staff.getLocationId().equals(manager.getLocationId())) {
-                response.sendRedirect(request.getContextPath() + "/manager/staff/list?error=unauthorized");
+            if (staff == null || staff.getLocationId() == null || !staff.getLocationId().equals(manager.getLocationId().toString())) {
+                response.sendRedirect(fallbackUrl + "?error=unauthorized");
                 return;
             }
 
@@ -62,16 +74,21 @@ public class ManagerEditStaffStatusServlet extends HttpServlet {
             boolean success = staffDAO.updateStaffStatus(staffId, newStatus);
             
             if (success) {
-                response.sendRedirect(request.getContextPath() + "/manager/staff/list?success=true");
+                if (redirectTarget.equals(fallbackUrl)) {
+                    response.sendRedirect(fallbackUrl + "?success=true");
+                } else {
+                    String joiner = redirectTarget.contains("?") ? "&" : "?";
+                    response.sendRedirect(redirectTarget + joiner + "success=true");
+                }
             } else {
-                response.sendRedirect(request.getContextPath() + "/manager/staff/list?error=update_failed");
+                response.sendRedirect(fallbackUrl + "?error=update_failed");
             }
             
         } catch (SQLException e) {
             e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/manager/staff/list?error=database");
+            response.sendRedirect(fallbackUrl + "?error=database");
         } catch (IllegalArgumentException e) {
-            response.sendRedirect(request.getContextPath() + "/manager/staff/list?error=invalid_id");
+            response.sendRedirect(fallbackUrl + "?error=invalid_id");
         }
     }
 }

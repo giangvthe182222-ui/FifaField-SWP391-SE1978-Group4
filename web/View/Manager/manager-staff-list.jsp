@@ -66,6 +66,8 @@
                     <c:when test="${param.error == 'invalid'}">Dữ liệu không hợp lệ</c:when>
                     <c:when test="${param.error == 'no_location'}">Bạn chưa được gán cụm sân</c:when>
                     <c:when test="${param.error == 'unauthorized'}">Bạn không có quyền chỉnh sửa nhân viên này</c:when>
+                    <c:when test="${param.error == 'invalid_id'}">ID nhân viên không hợp lệ</c:when>
+                    <c:when test="${param.error == 'not_found'}">Không tìm thấy nhân viên</c:when>
                     <c:when test="${param.error == 'update_failed'}">Cập nhật không thành công</c:when>
                     <c:when test="${param.error == 'database'}">Lỗi kết nối cơ sở dữ liệu</c:when>
                     <c:otherwise>Lỗi không xác định</c:otherwise>
@@ -85,13 +87,14 @@
                     <th class="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-widest">SĐT</th>
                     <th class="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-widest">Ngày vào làm</th>
                     <th class="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-widest">Trạng thái</th>
+                    <th class="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-widest">Chi tiết</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-100">
                 <c:choose>
                     <c:when test="${empty staffList}">
                         <tr>
-                            <td colspan="6" class="py-16 text-center">
+                            <td colspan="7" class="py-16 text-center">
                                 <div class="flex flex-col items-center gap-4">
                                     <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
                                         <i data-lucide="users" class="w-8 h-8 text-slate-300"></i>
@@ -138,6 +141,13 @@
                                             <option value="deactivated" ${sv.status == 'deactivated' ? 'selected' : ''}>Tạm khóa</option>
                                         </select>
                                     </form>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <a href="${pageContext.request.contextPath}/manager/staff/detail?id=${sv.userId}"
+                                       class="inline-flex items-center gap-1 text-xs font-black text-indigo-600 hover:text-indigo-800 uppercase tracking-wider">
+                                        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                                        Xem
+                                    </a>
                                 </td>
                             </tr>
                         </c:forEach>

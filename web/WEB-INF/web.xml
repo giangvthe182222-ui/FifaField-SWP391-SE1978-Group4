@@ -148,6 +148,10 @@
         <servlet-class>Controller.Manager.ManagerEditStaffStatusServlet</servlet-class>
     </servlet>
     <servlet>
+        <servlet-name>ManagerStaffDetailServlet</servlet-name>
+        <servlet-class>Controller.Manager.ManagerStaffDetailServlet</servlet-class>
+    </servlet>
+    <servlet>
         <servlet-name>ManagerLocationServlet</servlet-name>
         <servlet-class>Controller.Manager.ManagerLocationServlet</servlet-class>
     </servlet>
@@ -238,6 +242,10 @@
     <servlet-mapping>
         <servlet-name>ManagerEditStaffStatusServlet</servlet-name>
         <url-pattern>/manager/staff/update-status</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ManagerStaffDetailServlet</servlet-name>
+        <url-pattern>/manager/staff/detail</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ManagerLocationServlet</servlet-name>

@@ -14,6 +14,7 @@ public class StaffViewModel {
     private String phone;
     private String address;
     private String gender;
+    private int workedShiftsThisMonth;
 
     public StaffViewModel() {}
 
@@ -49,4 +50,7 @@ public class StaffViewModel {
 
     public String getGender() { return gender; }
     public void setGender(String gender) { this.gender = gender; }
+
+    public int getWorkedShiftsThisMonth() { return workedShiftsThisMonth; }
+    public void setWorkedShiftsThisMonth(int workedShiftsThisMonth) { this.workedShiftsThisMonth = workedShiftsThisMonth; }
 }
