@@ -189,7 +189,7 @@
                     </a>
 
                     <!-- Thêm ca -->
-                    <a href="${pageContext.request.contextPath}/shifts/add" class="group relative bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-orange-500/30 overflow-hidden hover:shadow-2xl hover:shadow-orange-500/40 transition-all duration-300">
+                    <a href="${pageContext.request.contextPath}/manager/shifts" class="group relative bg-gradient-to-br from-orange-500 to-orange-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-orange-500/30 overflow-hidden hover:shadow-2xl hover:shadow-orange-500/40 transition-all duration-300">
                         <div class="absolute top-0 right-0 opacity-10 group-hover:scale-125 transition-transform duration-500">
                             <i data-lucide="plus-circle" class="w-40 h-40"></i>
                         </div>
@@ -197,8 +197,8 @@
                             <div class="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
                                 <i data-lucide="plus-circle" class="w-6 h-6"></i>
                             </div>
-                            <h3 class="text-xl font-black uppercase tracking-tight leading-none mb-2">Thêm Ca</h3>
-                            <p class="text-orange-100/80 text-sm font-medium">Tạo ca mới cho hệ thống</p>
+                            <h3 class="text-xl font-black uppercase tracking-tight leading-none mb-2">Danh Sách Ca</h3>
+                            <p class="text-orange-100/80 text-sm font-medium">Xem danh sách ca đã tạo</p>
                         </div>
                     </a>
                 </div>

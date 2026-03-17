@@ -19,11 +19,11 @@ public class ShiftsListServlet extends HttpServlet {
             ShiftDAO dao = new ShiftDAO();
             List<Shift> shifts = dao.getAllShifts();
             request.setAttribute("shifts", shifts);
-            request.getRequestDispatcher("/View/Shift/shifts-list.jsp").forward(request, response);
+            request.getRequestDispatcher("/View/Manager/manager-shifts.jsp").forward(request, response);
         } catch (SQLException ex) {
             ex.printStackTrace();
             request.setAttribute("error", "Lỗi khi tải ca: " + ex.getMessage());
-            request.getRequestDispatcher("/View/Shift/shifts-list.jsp").forward(request, response);
+            request.getRequestDispatcher("/View/Manager/manager-shifts.jsp").forward(request, response);
         }
     }
 }

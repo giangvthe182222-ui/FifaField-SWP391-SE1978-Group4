@@ -9,7 +9,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://unpkg.com/alpinejs@3.12.0/dist/cdn.min.js" defer></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
         .staff-row:hover { background-color: #f1f5f9; }
@@ -86,13 +85,14 @@
                     <th class="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-widest">SĐT</th>
                     <th class="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-widest">Ngày vào làm</th>
                     <th class="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-widest">Trạng thái</th>
+                    <th class="px-6 py-4 text-left text-xs font-black text-slate-600 uppercase tracking-widest">Chi tiết</th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-100">
                 <c:choose>
                     <c:when test="${empty staffList}">
                         <tr>
-                            <td colspan="7" class="py-16 text-center">
+                            <td colspan="8" class="py-16 text-center">
                                 <div class="flex flex-col items-center gap-4">
                                     <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center">
                                         <i data-lucide="users" class="w-8 h-8 text-slate-300"></i>
@@ -104,32 +104,7 @@
                     </c:when>
                     <c:otherwise>
                         <c:forEach items="${staffList}" var="staff">
-                            <tr class="staff-row transition-colors duration-150" x-data="{ 
-                                open: false, 
-                                status: '${staff.status}',
-                                saving: false,
-                                updateStatus(newStatus) {
-                                    this.saving = true;
-                                    fetch('${pageContext.request.contextPath}/manager/staff/update-status', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                                        body: 'staffId=${staff.userId}&status=' + newStatus
-                                    })
-                                    .then(response => {
-                                        if (response.redirected) {
-                                            window.location.href = response.url;
-                                        } else {
-                                            this.status = newStatus;
-                                            this.open = false;
-                                        }
-                                    })
-                                    .catch(err => {
-                                        console.error(err);
-                                        alert('Lỗi cập nhật trạng thái');
-                                    })
-                                    .finally(() => this.saving = false);
-                                }
-                            }">
+                            <tr class="staff-row transition-colors duration-150">
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="w-12 h-12 bg-gradient-to-br from-[#008751] to-[#006d41] rounded-full flex items-center justify-center text-white font-black text-base shadow-lg avatar-glow">
                                         ${staff.fullName.charAt(0)}
@@ -151,46 +126,23 @@
                                     <span class="text-sm text-slate-600">${staff.hireDate}</span>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    <div class="relative inline-block text-left">
-                                        <button @click.prevent="open = !open" type="button" :disabled="saving"
-                                            :class="{
-                                                'inline-flex items-center px-4 py-2 rounded-full text-xs font-black uppercase tracking-wider focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all shadow-sm': true,
-                                                'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 focus:ring-emerald-500': status == 'active',
-                                                'bg-slate-100 text-slate-600 hover:bg-slate-200 focus:ring-slate-400': status != 'active',
-                                                'opacity-50 cursor-not-allowed': saving
-                                            }">
-                                            <span :class="status == 'active' ? 'w-2 h-2 rounded-full mr-2 bg-emerald-500 animate-pulse' : 'w-2 h-2 rounded-full mr-2 bg-slate-400'"></span>
-                                            <span x-show="!saving" x-text="status == 'active' ? 'Hoạt động' : 'Tạm khóa'"></span>
-                                            <span x-show="saving" class="flex items-center gap-2">
-                                                <svg class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Đang lưu...
-                                            </span>
-                                            <svg class="ml-2 h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                                            </svg>
-                                        </button>
-
-                                        <div x-show="open" x-cloak @click.away="open=false"
-                                            class="origin-top-left absolute left-0 mt-2 w-48 rounded-xl shadow-2xl bg-white ring-1 ring-black ring-opacity-5 z-10 overflow-hidden">
-                                            <div class="py-2">
-                                                <button @click.prevent="updateStatus('active')"
-                                                   :class="status == 'active' ? 'bg-emerald-50' : ''"
-                                                   class="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-3">
-                                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                                    Hoạt động
-                                                </button>
-                                                <button @click.prevent="updateStatus('deactivated')"
-                                                   :class="status == 'deactivated' ? 'bg-slate-50' : ''"
-                                                   class="w-full text-left px-4 py-3 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-3">
-                                                    <span class="w-2 h-2 rounded-full bg-slate-400"></span>
-                                                    Tạm khóa
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <c:set var="selectCss" value="bg-slate-100 text-slate-600"/>
+                                    <c:if test="${staff.status == 'active'}">
+                                        <c:set var="selectCss" value="bg-emerald-100 text-emerald-700"/>
+                                    </c:if>
+                                    <form action="${pageContext.request.contextPath}/manager/staff/update-status" method="post" onchange="this.submit()">
+                                        <input type="hidden" name="staffId" value="${staff.userId}" />
+                                        <select name="status" class="rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-wider border-0 cursor-pointer focus:ring-2 focus:ring-offset-1 ${selectCss}">
+                                            <option value="active" ${staff.status == 'active' ? 'selected' : ''}>Hoạt động</option>
+                                            <option value="deactivated" ${staff.status == 'deactivated' ? 'selected' : ''}>Tạm khóa</option>
+                                        </select>
+                                    </form>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <a href="${pageContext.request.contextPath}/manager/staff/detail?id=${staff.userId}" class="inline-flex items-center gap-1 font-bold text-indigo-600 hover:text-indigo-800">
+                                        <i data-lucide="eye" class="w-4 h-4"></i>
+                                        Xem
+                                    </a>
                                 </td>
                             </tr>
                         </c:forEach>
@@ -227,10 +179,6 @@
 <script>
     lucide.createIcons();
 </script>
-
-<style>
-    [x-cloak] { display: none !important; }
-</style>
 
 </body>
 </html>

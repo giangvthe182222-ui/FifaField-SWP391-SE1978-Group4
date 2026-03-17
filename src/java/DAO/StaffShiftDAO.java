@@ -81,6 +81,19 @@ public class StaffShiftDAO {
         return false;
     }
 
+    public int countWorkedShifts(UUID staffId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Staff_Shift WHERE staff_id = ? AND working_date <= CAST(GETDATE() AS DATE)";
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, staffId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        }
+        return 0;
+    }
+
     public List<StaffShift> getShiftsAssignedBy(UUID managerId) throws SQLException {
         // legacy method still available
         List<StaffShift> list = new ArrayList<>();

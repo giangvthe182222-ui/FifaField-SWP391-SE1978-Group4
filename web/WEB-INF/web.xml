@@ -148,6 +148,14 @@
         <servlet-class>Controller.Manager.ManagerEditStaffStatusServlet</servlet-class>
     </servlet>
     <servlet>
+        <servlet-name>ManagerStaffDetailServlet</servlet-name>
+        <servlet-class>Controller.Manager.ManagerStaffDetailServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>ManagerShiftsServlet</servlet-name>
+        <servlet-class>Controller.Manager.ManagerShiftsServlet</servlet-class>
+    </servlet>
+    <servlet>
         <servlet-name>ShiftsListServlet</servlet-name>
         <servlet-class>Controller.Shift.ShiftsListServlet</servlet-class>
     </servlet>
@@ -222,6 +230,14 @@
     <servlet-mapping>
         <servlet-name>ManagerEditStaffStatusServlet</servlet-name>
         <url-pattern>/manager/staff/update-status</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ManagerStaffDetailServlet</servlet-name>
+        <url-pattern>/manager/staff/detail</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>ManagerShiftsServlet</servlet-name>
+        <url-pattern>/manager/shifts</url-pattern>
     </servlet-mapping>
     <servlet-mapping>
         <servlet-name>ShiftsListServlet</servlet-name>
