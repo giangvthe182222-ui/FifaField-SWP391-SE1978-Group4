@@ -53,7 +53,7 @@ public class ManagerEditStaffStatusServlet extends HttpServlet {
             UUID.fromString(staffId);
             StaffViewModel staff = staffDAO.getStaffById(staffId);
             
-            if (staff == null || !staff.getLocationId().equals(manager.getLocationId())) {
+            if (staff == null || !staff.getLocationId().equals(manager.getLocationId().toString())) {
                 response.sendRedirect(request.getContextPath() + "/manager/staff/list?error=unauthorized");
                 return;
             }

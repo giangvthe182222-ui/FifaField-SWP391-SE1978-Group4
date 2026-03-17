@@ -19,8 +19,8 @@
     </div>
 
     <div class="space-y-2">
-        <h1 class="text-3xl font-black uppercase tracking-tight">Đặt sân thành công</h1>
-        <p class="text-sm font-semibold text-gray-500">Hệ thống đã ghi nhận đơn đặt sân của bạn.</p>
+        <h1 class="text-3xl font-black uppercase tracking-tight">Đặt sân &amp; thanh toán thành công</h1>
+        <p class="text-sm font-semibold text-gray-500">Hệ thống đã ghi nhận và xác nhận đơn đặt sân của bạn.</p>
     </div>
 
     <c:if test="${not empty booking}">
@@ -38,8 +38,8 @@
         <a href="${pageContext.request.contextPath}${bookingDetailPath}?id=${booking.bookingId}" class="px-5 py-3 rounded-2xl bg-gray-900 text-white text-xs font-black uppercase tracking-widest hover:bg-[#008751] transition-all">
             Xem chi tiết
         </a>
-        <a href="${pageContext.request.contextPath}/payment?bookingId=${booking.bookingId}" class="px-5 py-3 rounded-2xl border border-[#008751] text-[#008751] text-xs font-black uppercase tracking-widest hover:bg-emerald-50 transition-all">
-            Thanh toán ngay
+        <a href="${pageContext.request.contextPath}${bookingListPath}" class="px-5 py-3 rounded-2xl border border-[#008751] text-[#008751] text-xs font-black uppercase tracking-widest hover:bg-emerald-50 transition-all">
+            Lịch sử đặt sân
         </a>
     </div>
 

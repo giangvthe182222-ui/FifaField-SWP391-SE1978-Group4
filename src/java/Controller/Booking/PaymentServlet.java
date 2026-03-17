@@ -143,8 +143,7 @@ public class PaymentServlet extends HttpServlet {
         }
 
         if ("SUCCESS".equalsIgnoreCase(paymentStatus)) {
-            session.setAttribute("flash_success", "Payment already completed!");
-            response.sendRedirect(request.getContextPath() + bookingDetailPath + "?id=" + bookingId.toString());
+            response.sendRedirect(request.getContextPath() + "/booking-success?bookingId=" + bookingId.toString());
             return;
         }
 

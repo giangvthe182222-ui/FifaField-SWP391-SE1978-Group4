@@ -2,7 +2,6 @@ package Controller.Field;
 
 import DAO.FieldDAO;
 import Models.Field;
-import Utils.DBConnection;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
@@ -57,7 +56,7 @@ public class FieldAddServlet extends HttpServlet {
         }
         String name = request.getParameter("fieldName");
         String type = request.getParameter("fieldType");
-        String status = request.getParameter("status");
+        String status = normalizeStatus(request.getParameter("status"));
         String condition = request.getParameter("condition");
 
         String imageUrl = null;
@@ -107,7 +106,7 @@ public class FieldAddServlet extends HttpServlet {
             f.setFieldName(name.trim());
             f.setFieldType(type == null ? "7-a-side" : type);
             f.setImageUrl(imageUrl);
-            f.setStatus(status == null ? "ACTIVE" : status);
+            f.setStatus(status);
             f.setFieldCondition(condition == null ? "GOOD" : condition);
             f.setLocationId(UUID.fromString(locationId));
 
@@ -133,5 +132,16 @@ public class FieldAddServlet extends HttpServlet {
             request.setAttribute("error", "Lỗi hệ thống: " + e.getMessage());
             doGet(request, response);
         }
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null) {
+            return "available";
+        }
+        String normalized = status.trim().toLowerCase();
+        if (!"available".equals(normalized) && !"unavailable".equals(normalized)) {
+            return "available";
+        }
+        return normalized;
     }
 }

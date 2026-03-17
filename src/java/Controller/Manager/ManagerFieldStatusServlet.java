@@ -29,6 +29,14 @@ public class ManagerFieldStatusServlet extends HttpServlet {
         User user = (User) session.getAttribute("user");
         String fieldIdRaw = request.getParameter("fieldId");
         String status = request.getParameter("status");
+        if (status != null) {
+            status = status.trim().toLowerCase();
+        }
+
+        if (!"available".equals(status) && !"unavailable".equals(status)) {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid status");
+            return;
+        }
 
         try {
             Manager manager = new ManagerDAO().getManagerById(user.getUserId());
@@ -47,7 +55,7 @@ public class ManagerFieldStatusServlet extends HttpServlet {
 
             fieldDAO.updateFieldStatus(fieldId, status);
             session.setAttribute("flash_success", "Đã cập nhật trạng thái sân.");
-            response.sendRedirect(request.getContextPath() + "/manager/fields");
+            response.sendRedirect(request.getContextPath() + "/manager/location");
         } catch (Exception e) {
             throw new ServletException("Cannot update field status", e);
         }

@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html lang="vi">
     <head>
@@ -61,8 +62,8 @@
                     <div>
                         <label class="text-xs font-black uppercase text-slate-400">Trạng thái</label>
                         <select name="status" class="w-full px-5 py-4 mt-2 rounded-2xl bg-slate-50 border font-bold">
-                            <option value="ACTIVE" ${field.status == 'ACTIVE' ? 'selected' : ''}>ACTIVE</option>
-                            <option value="INACTIVE" ${field.status == 'INACTIVE' ? 'selected' : ''}>INACTIVE</option>
+                            <option value="available" ${fn:toLowerCase(field.status) == 'available' ? 'selected' : ''}>available</option>
+                            <option value="unavailable" ${fn:toLowerCase(field.status) == 'unavailable' ? 'selected' : ''}>unavailable</option>
                         </select>
                     </div>
 
