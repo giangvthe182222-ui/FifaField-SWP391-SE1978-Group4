@@ -43,19 +43,7 @@
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                     <path d="M16 2v4M8 2v4M3 10h18"/>
                 </svg>
-                Cơ sở của tôi
-            </a>
-
-            <!-- Sân của tôi -->
-            <a href="${pageContext.request.contextPath}/manager/fields"
-               class="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold
-               text-gray-500 hover:text-gray-900 hover:bg-gray-50 transition-all">
-                <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2"
-                     viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="9"/>
-                    <path d="M12 6v6l4 2"/>
-                </svg>
-                Sân của tôi
+                Cơ sở & sân của tôi
             </a>
 
                 <!-- Nhân viên -->

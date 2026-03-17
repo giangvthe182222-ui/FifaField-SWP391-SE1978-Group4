@@ -382,7 +382,7 @@
                 statusDiv.classList.remove('hidden');
 
                 setTimeout(() => {
-                    window.location.href = '${pageContext.request.contextPath}<%= bookingDetailPath %>?id=' + bookingId;
+                    window.location.href = '${pageContext.request.contextPath}/booking-success?bookingId=' + bookingId;
                 }, 1800);
             }
 

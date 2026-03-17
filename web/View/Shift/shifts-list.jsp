@@ -9,7 +9,10 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-50">
-<jsp:include page="/View/Layout/HeaderAdmin.jsp" />
+<c:choose>
+    <c:when test="${sessionScope.user != null and sessionScope.user.role != null and sessionScope.user.role.roleName == 'MANAGER'}"><jsp:include page="/View/Layout/HeaderManager.jsp" /></c:when>
+    <c:otherwise><jsp:include page="/View/Layout/HeaderAdmin.jsp" /></c:otherwise>
+</c:choose>
 <main class="max-w-6xl mx-auto p-6">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Quản lý ca</h1>
@@ -41,6 +44,9 @@
         </table>
     </div>
 </main>
-<jsp:include page="/View/Layout/Footer.jsp" />
+<c:choose>
+    <c:when test="${sessionScope.user != null and sessionScope.user.role != null and sessionScope.user.role.roleName == 'MANAGER'}"><jsp:include page="/View/Layout/FooterManager.jsp" /></c:when>
+    <c:otherwise><jsp:include page="/View/Layout/Footer.jsp" /></c:otherwise>
+</c:choose>
 </body>
 </html>

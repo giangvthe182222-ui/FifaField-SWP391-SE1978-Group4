@@ -214,9 +214,8 @@ public class BookingConfirmServlet extends HttpServlet {
             return;
         }
 
-        // Redirect to booking success page before returning to booking list.
-        session.setAttribute("flash_success", "Booking created successfully.");
-        response.sendRedirect(request.getContextPath() + "/booking-success?bookingId=" + booking.getBookingId().toString());
+        // Redirect to payment page to complete the booking.
+        response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + booking.getBookingId().toString());
     }
 
     private String buildCurrentAppPaymentUrl(HttpServletRequest request) {

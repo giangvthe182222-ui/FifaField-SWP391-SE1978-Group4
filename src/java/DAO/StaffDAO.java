@@ -14,7 +14,7 @@ public class StaffDAO {
 
     public List<StaffViewModel> getAllStaff() throws SQLException {
         List<StaffViewModel> list = new ArrayList<>();
-        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.phone, l.location_name "
+        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.email, u.phone, l.location_name "
                    + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Location l ON s.location_id = l.location_id";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             try (ResultSet rs = ps.executeQuery()) {
@@ -27,6 +27,7 @@ public class StaffDAO {
                     vm.setStatus(rs.getString("status"));
                     vm.setLocationId(rs.getString("location_id"));
                     vm.setFullName(rs.getString("full_name"));
+                    vm.setEmail(rs.getString("email"));
                     vm.setPhone(rs.getString("phone"));
                     vm.setLocationName(rs.getString("location_name"));
                     list.add(vm);
@@ -41,7 +42,7 @@ public class StaffDAO {
      */
     public List<StaffViewModel> getAllStaffByLocation(UUID locationId) throws SQLException {
         List<StaffViewModel> list = new ArrayList<>();
-        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.phone, l.location_name "
+        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.email, u.phone, l.location_name "
                    + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Location l ON s.location_id = l.location_id "
                    + "WHERE s.location_id = ?";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -56,6 +57,7 @@ public class StaffDAO {
                     vm.setStatus(rs.getString("status"));
                     vm.setLocationId(rs.getString("location_id"));
                     vm.setFullName(rs.getString("full_name"));
+                    vm.setEmail(rs.getString("email"));
                     vm.setPhone(rs.getString("phone"));
                     vm.setLocationName(rs.getString("location_name"));
                     list.add(vm);
@@ -66,7 +68,7 @@ public class StaffDAO {
     }
 
     public StaffViewModel getStaffById(String userId) throws SQLException {
-        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.phone, u.address, u.gender, l.location_name "
+        String sql = "SELECT s.user_id, s.employee_code, s.hire_date, s.status, s.location_id, u.full_name, u.email, u.phone, u.address, u.gender, l.location_name "
                    + "FROM Staff s JOIN Users u ON s.user_id = u.user_id JOIN Location l ON s.location_id = l.location_id WHERE s.user_id = ?";
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, userId);
@@ -80,6 +82,7 @@ public class StaffDAO {
                     vm.setStatus(rs.getString("status"));
                     vm.setLocationId(rs.getString("location_id"));
                     vm.setFullName(rs.getString("full_name"));
+                    vm.setEmail(rs.getString("email"));
                     vm.setPhone(rs.getString("phone"));
                     vm.setLocationName(rs.getString("location_name"));
                     vm.setAddress(rs.getString("address"));

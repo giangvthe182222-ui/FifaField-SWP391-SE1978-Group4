@@ -67,8 +67,8 @@
             <div>
                 <label class="text-xs font-black uppercase text-slate-400">Trạng thái</label>
                 <select name="status" class="w-full px-5 py-4 mt-2 rounded-2xl bg-slate-50 border font-bold">
-                    <option value="ACTIVE" ${status == 'ACTIVE' || param.status == 'ACTIVE' ? 'selected' : ''}>ACTIVE</option>
-                    <option value="INACTIVE" ${status == 'INACTIVE' || param.status == 'INACTIVE' ? 'selected' : ''}>INACTIVE</option>
+                    <option value="available" ${status == 'available' || param.status == 'available' ? 'selected' : ''}>available</option>
+                    <option value="unavailable" ${status == 'unavailable' || param.status == 'unavailable' ? 'selected' : ''}>unavailable</option>
                 </select>
             </div>
 

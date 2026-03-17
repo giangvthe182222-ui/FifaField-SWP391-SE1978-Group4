@@ -39,6 +39,37 @@
             <a href="${pageContext.request.contextPath}/manager/location" class="px-5 py-3 rounded-2xl border border-gray-200 text-xs font-black uppercase tracking-widest text-gray-600 hover:border-[#008751] hover:text-[#008751] transition-all">Xem detail cơ sở</a>
         </div>
 
+        <form method="get" action="${pageContext.request.contextPath}/manager/location-equipment" class="grid grid-cols-1 md:grid-cols-12 gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-4">
+            <div class="md:col-span-5">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tên dụng cụ</label>
+                <input type="text" name="search" value="${search}" placeholder="Tìm theo tên..." class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 outline-none">
+            </div>
+
+            <div class="md:col-span-3">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Category</label>
+                <select name="type" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 outline-none">
+                    <option value="">Tất cả category</option>
+                    <c:forEach var="t" items="${typeList}">
+                        <option value="${t}" ${type == t ? 'selected' : ''}>${t}</option>
+                    </c:forEach>
+                </select>
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Status</label>
+                <select name="status" class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-bold text-gray-700 outline-none">
+                    <option value="">Tất cả</option>
+                    <option value="available" ${status == 'available' ? 'selected' : ''}>available</option>
+                    <option value="unavailable" ${status == 'unavailable' ? 'selected' : ''}>unavailable</option>
+                </select>
+            </div>
+
+            <div class="md:col-span-2 flex gap-2 items-end">
+                <button type="submit" class="w-full px-4 py-3 rounded-xl bg-[#008751] text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-all">Lọc</button>
+                <a href="${pageContext.request.contextPath}/manager/location-equipment" class="px-4 py-3 rounded-xl border border-gray-200 text-[10px] font-black uppercase tracking-widest text-gray-600 hover:border-[#008751] hover:text-[#008751] transition-all">Xóa</a>
+            </div>
+        </form>
+
         <c:choose>
             <c:when test="${empty equipments}">
                 <div class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 text-center text-gray-400 font-black uppercase tracking-widest text-[10px]">Không có dụng cụ nào tại cơ sở này.</div>

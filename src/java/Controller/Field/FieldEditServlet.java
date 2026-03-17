@@ -54,7 +54,7 @@ public class FieldEditServlet extends HttpServlet {
             UUID uuid = UUID.fromString(id);
             String name = request.getParameter("fieldName");
             String type = request.getParameter("fieldType");
-            String status = request.getParameter("status");
+            String status = normalizeStatus(request.getParameter("status"));
             String condition = request.getParameter("condition");
             String oldImage = request.getParameter("old_image");
 
@@ -99,5 +99,16 @@ f.setFieldId(uuid);
             e.printStackTrace();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
         }
+    }
+
+    private String normalizeStatus(String status) {
+        if (status == null) {
+            return "available";
+        }
+        String normalized = status.trim().toLowerCase();
+        if (!"available".equals(normalized) && !"unavailable".equals(normalized)) {
+            return "available";
+        }
+        return normalized;
     }
 }

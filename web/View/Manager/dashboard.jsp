@@ -133,7 +133,7 @@
                         </div>
                     </a>
 
-                    <a href="${pageContext.request.contextPath}/manager/fields" class="group relative bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-500/30 overflow-hidden hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300">
+                    <a href="${pageContext.request.contextPath}/manager/location" class="group relative bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-[2.5rem] p-8 text-white shadow-xl shadow-emerald-500/30 overflow-hidden hover:shadow-2xl hover:shadow-emerald-500/40 transition-all duration-300">
                         <div class="absolute top-0 right-0 opacity-10 group-hover:scale-125 transition-transform duration-500">
                             <i data-lucide="layout-grid" class="w-40 h-40"></i>
                         </div>

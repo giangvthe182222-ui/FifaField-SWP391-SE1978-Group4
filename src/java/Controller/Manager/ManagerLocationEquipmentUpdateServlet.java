@@ -62,6 +62,9 @@ public class ManagerLocationEquipmentUpdateServlet extends HttpServlet {
             if (!"available".equals(status) && !"unavailable".equals(status)) {
                 status = quantity > 0 ? "available" : "unavailable";
             }
+            if (quantity <= 0) {
+                status = "unavailable";
+            }
 
             UUID equipmentId = UUID.fromString(equipmentIdRaw);
             LocationEquipmentDAO locationEquipmentDAO = new LocationEquipmentDAO(new DBConnection());

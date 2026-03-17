@@ -27,6 +27,9 @@ public class CustomerFilter implements Filter {
             throws IOException, ServletException {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse res = (HttpServletResponse) response;
+
+        applyNoCacheHeaders(res);
+
         HttpSession session = req.getSession(false);
 
         if (session == null || session.getAttribute("user") == null) {
@@ -43,6 +46,12 @@ public class CustomerFilter implements Filter {
         }
 
         chain.doFilter(request, response);
+    }
+
+    private void applyNoCacheHeaders(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
     }
 
     @Override

@@ -169,6 +169,12 @@ public class LocationEquipmentDAO {
             String status,
             int quantity
     ) {
+        if (quantity <= 0) {
+            status = "unavailable";
+        } else if (status == null || status.isBlank()) {
+            status = "available";
+        }
+
         String sql = "UPDATE le SET le.status = ?, le.quantity = ? FROM Location_Equipment le JOIN Equipment e ON e.equipment_id = le.equipment_id WHERE le.location_id = ? AND le.equipment_id = ?";
 
         try (Connection c = db.getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {

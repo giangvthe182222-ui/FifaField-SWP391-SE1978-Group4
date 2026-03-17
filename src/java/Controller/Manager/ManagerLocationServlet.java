@@ -2,6 +2,8 @@ package Controller.Manager;
 
 import DAO.LocationDAO;
 import DAO.ManagerDAO;
+import DAO.FieldDAO;
+import Models.Field;
 import Models.Location;
 import Models.Manager;
 import Models.User;
@@ -12,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.List;
 
 @WebServlet("/manager/location")
 public class ManagerLocationServlet extends HttpServlet {
@@ -25,6 +28,12 @@ public class ManagerLocationServlet extends HttpServlet {
             return;
         }
 
+        String flashSuccess = (String) session.getAttribute("flash_success");
+        if (flashSuccess != null) {
+            request.setAttribute("flash_success", flashSuccess);
+            session.removeAttribute("flash_success");
+        }
+
         User user = (User) session.getAttribute("user");
         try {
             Manager manager = new ManagerDAO().getManagerById(user.getUserId());
@@ -35,8 +44,10 @@ public class ManagerLocationServlet extends HttpServlet {
             }
 
             Location location = new LocationDAO().getLocationById(manager.getLocationId());
+            List<Field> fields = new FieldDAO().getByLocation(manager.getLocationId());
             request.setAttribute("manager", manager);
             request.setAttribute("location", location);
+            request.setAttribute("fields", fields);
             request.getRequestDispatcher("/View/Manager/manager-location.jsp").forward(request, response);
         } catch (Exception e) {
             throw new ServletException("Cannot load manager location", e);

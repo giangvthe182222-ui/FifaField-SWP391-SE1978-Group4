@@ -2,6 +2,7 @@ package Controller.Manager;
 
 import DAO.LocationEquipmentDAO;
 import DAO.ManagerDAO;
+import DAO.EquipmentDAO;
 import Models.LocationEquipmentViewModel;
 import Models.Manager;
 import Models.User;
@@ -39,6 +40,9 @@ public class ManagerLocationEquipmentServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
+        String search = trimToNull(request.getParameter("search"));
+        String type = trimToNull(request.getParameter("type"));
+        String status = trimToNull(request.getParameter("status"));
 
         try {
             Manager manager = new ManagerDAO().getManagerById(user.getUserId());
@@ -49,14 +53,35 @@ public class ManagerLocationEquipmentServlet extends HttpServlet {
             }
 
             LocationEquipmentDAO locationEquipmentDAO = new LocationEquipmentDAO(new DBConnection());
-            List<LocationEquipmentViewModel> equipments = locationEquipmentDAO.getByLocation(manager.getLocationId());
+            List<LocationEquipmentViewModel> equipments = locationEquipmentDAO.getFiltered(
+                    manager.getLocationId(),
+                    search,
+                    type,
+                    status,
+                    null,
+                    1,
+                    1000
+            );
+            EquipmentDAO equipmentDAO = new EquipmentDAO(new DBConnection());
 
             request.setAttribute("locationId", manager.getLocationId());
             request.setAttribute("locationName", manager.getLocationName());
             request.setAttribute("equipments", equipments);
+            request.setAttribute("typeList", equipmentDAO.getAllTypes());
+            request.setAttribute("search", search);
+            request.setAttribute("type", type);
+            request.setAttribute("status", status);
             request.getRequestDispatcher("/View/Manager/manager-location-equipment.jsp").forward(request, response);
         } catch (Exception e) {
             throw new ServletException("Cannot load location equipment for manager", e);
         }
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
