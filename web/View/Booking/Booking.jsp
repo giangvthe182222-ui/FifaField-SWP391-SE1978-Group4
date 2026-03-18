@@ -51,9 +51,10 @@
                     </div>
                 </div>
             </button>
-            <button type="button" data-mode="weekly" class="booking-mode-btn mode-card elite-card p-6 border-2 transition-all cursor-pointer group ${param.bookingMode == 'weekly' ? 'selected border-[#008751] bg-emerald-50' : 'border-gray-100 bg-white hover:border-[#008751]/30'}">
+            <a href="${pageContext.request.contextPath}/booking/weekly<c:if test="${not empty param.locationId}">?locationId=${param.locationId}<c:if test="${not empty param.fieldId}">&amp;fieldId=${param.fieldId}</c:if></c:if>"
+               class="booking-mode-btn mode-card elite-card p-6 border-2 transition-all cursor-pointer group border-gray-100 bg-white hover:border-[#008751]/30 no-underline">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400">
+                    <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-[#008751]">
                         <i data-lucide="calendar-range" class="w-6 h-6"></i>
                     </div>
                     <div class="text-left">
@@ -61,7 +62,7 @@
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cố định theo chu kỳ hằng tuần</p>
                     </div>
                 </div>
-            </button>
+            </a>
         </div>
     </div>
 
