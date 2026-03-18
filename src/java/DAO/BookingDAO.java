@@ -1023,4 +1023,184 @@ public class BookingDAO {
         private LocalDateTime scheduleEnd;
     }
 
+    /**
+     * Weekly booking: lock multiple schedule slots and create one Booking per slot in a single
+     * atomic transaction.  If ANY slot is already 'unavailable' the whole transaction rolls back.
+     * Equipment (same list) is attached to every booking and stock is decremented per session.
+     *
+     * @param equipmentList equipment to attach to each session (may be null/empty)
+     * @return list of created Booking objects (one per selected schedule)
+     */
+    public List<Booking> insertWeekly(UUID bookerId, UUID fieldId, List<UUID> scheduleIds,
+                                      List<BookingEquipment> equipmentList,
+                                      UUID voucherId, java.math.BigDecimal discountPercent,
+                                      java.time.LocalDateTime paymentDeadline) throws Exception {
+
+        List<Booking> created = new ArrayList<>();
+        int sessionCount = scheduleIds.size();
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            try {
+                java.time.LocalDateTime now = java.time.LocalDateTime.now();
+
+                // ── Pre-check equipment stock across ALL sessions ─────────────────────────
+                if (equipmentList != null && !equipmentList.isEmpty()) {
+                    String stockSql = "SELECT le.quantity FROM Location_Equipment le "
+                            + "INNER JOIN Field f ON f.location_id = le.location_id "
+                            + "WHERE f.field_id = ? AND le.equipment_id = ?";
+                    try (PreparedStatement ps = conn.prepareStatement(stockSql)) {
+                        for (BookingEquipment be : equipmentList) {
+                            ps.setString(1, fieldId.toString());
+                            ps.setString(2, be.getEquipmentId().toString());
+                            ResultSet rs = ps.executeQuery();
+                            int stock = rs.next() ? rs.getInt(1) : 0;
+                            int needed = be.getQuantity() * sessionCount;
+                            if (stock < needed) {
+                                conn.rollback();
+                                throw new Exception("Không đủ số lượng dụng cụ cho tất cả "
+                                        + sessionCount + " phiên trong tuần. "
+                                        + "Tồn kho hiện tại: " + stock + ", cần: " + needed + ".");
+                            }
+                        }
+                    }
+                }
+
+                String lockSql  = "UPDATE [Schedule] SET status = 'unavailable' "
+                        + "WHERE schedule_id = ? AND field_id = ? AND status = 'available'";
+                String priceSql = "SELECT price FROM [Schedule] WHERE schedule_id = ? AND field_id = ?";
+
+                // ── Phase 1: lock every slot + compute per-booking price ──────────────────
+                for (UUID sid : scheduleIds) {
+                    java.math.BigDecimal rawPrice = java.math.BigDecimal.ZERO;
+                    try (PreparedStatement ps = conn.prepareStatement(priceSql)) {
+                        ps.setString(1, sid.toString());
+                        ps.setString(2, fieldId.toString());
+                        ResultSet rs = ps.executeQuery();
+                        if (rs.next()) {
+                            java.math.BigDecimal p = rs.getBigDecimal("price");
+                            if (p != null) rawPrice = p;
+                        } else {
+                            conn.rollback();
+                            throw new Exception("Khung giờ không hợp lệ hoặc không thuộc sân đã chọn.");
+                        }
+                    }
+
+                    try (PreparedStatement ps = conn.prepareStatement(lockSql)) {
+                        ps.setString(1, sid.toString());
+                        ps.setString(2, fieldId.toString());
+                        int affected = ps.executeUpdate();
+                        if (affected == 0) {
+                            conn.rollback();
+                            throw new Exception("Một hoặc nhiều khung giờ đã được đặt bởi người khác. "
+                                    + "Vui lòng kiểm tra lại lịch trống và thử chọn lại.");
+                        }
+                    }
+
+                    // Equipment cost per session
+                    java.math.BigDecimal equipCost = java.math.BigDecimal.ZERO;
+                    if (equipmentList != null) {
+                        for (BookingEquipment be : equipmentList) {
+                            // We don't have rental price here; it was already factored in by the servlet
+                            // totalPrice is passed in via discountPercent on schedule price only –
+                            // the servlet computes the full per-session total and passes it; so we
+                            // store just the field-price-based total and the equipment total is embedded.
+                        }
+                    }
+
+                    java.math.BigDecimal factor = java.math.BigDecimal.ONE.subtract(
+                            discountPercent.divide(java.math.BigDecimal.valueOf(100)));
+                    java.math.BigDecimal totalPrice = rawPrice.multiply(factor);
+
+                    Booking b = new Booking();
+                    b.setBookingId(UUID.randomUUID());
+                    b.setBookerId(bookerId);
+                    b.setFieldId(fieldId);
+                    b.setScheduleId(sid);
+                    b.setVoucherId(voucherId);
+                    b.setBookingTime(now);
+                    b.setStatus("pending");
+                    b.setTotalPrice(totalPrice);
+                    b.setPaymentDeadline(paymentDeadline);
+                    created.add(b);
+                }
+
+                // ── Phase 2: deduct equipment stock once per session ──────────────────────
+                if (equipmentList != null && !equipmentList.isEmpty()) {
+                    String updateEquip = "UPDATE le "
+                            + "SET le.quantity = le.quantity - ?, "
+                            + "    le.status = CASE WHEN le.quantity - ? <= 0 THEN 'unavailable' ELSE 'available' END "
+                            + "FROM Location_Equipment le "
+                            + "INNER JOIN Field f ON f.location_id = le.location_id "
+                            + "WHERE f.field_id = ? AND le.equipment_id = ? AND le.quantity >= ?";
+                    try (PreparedStatement ps = conn.prepareStatement(updateEquip)) {
+                        for (BookingEquipment be : equipmentList) {
+                            int totalQty = be.getQuantity() * sessionCount;
+                            ps.setInt(1, totalQty);
+                            ps.setInt(2, totalQty);
+                            ps.setString(3, fieldId.toString());
+                            ps.setString(4, be.getEquipmentId().toString());
+                            ps.setInt(5, totalQty);
+                            int affected = ps.executeUpdate();
+                            if (affected == 0) {
+                                conn.rollback();
+                                throw new Exception("Dụng cụ không đủ số lượng. Vui lòng giảm số lượng hoặc bỏ chọn.");
+                            }
+                        }
+                    }
+                }
+
+                // ── Phase 3: insert all booking rows ─────────────────────────────────────
+                String insertSql = "INSERT INTO Booking "
+                        + "(booking_id, booker_id, field_id, schedule_id, voucher_id, "
+                        + " status, total_price, payment_deadline) "
+                        + "VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)";
+                try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+                    for (Booking b : created) {
+                        ps.setString(1, b.getBookingId().toString());
+                        ps.setString(2, b.getBookerId().toString());
+                        ps.setString(3, b.getFieldId().toString());
+                        ps.setString(4, b.getScheduleId().toString());
+                        if (b.getVoucherId() != null) {
+                            ps.setString(5, b.getVoucherId().toString());
+                        } else {
+                            ps.setNull(5, Types.VARCHAR);
+                        }
+                        ps.setBigDecimal(6, b.getTotalPrice());
+                        if (b.getPaymentDeadline() != null) {
+                            ps.setTimestamp(7, Timestamp.valueOf(b.getPaymentDeadline()));
+                        } else {
+                            ps.setNull(7, Types.TIMESTAMP);
+                        }
+                        ps.addBatch();
+                    }
+                    ps.executeBatch();
+                }
+
+                // ── Phase 4: insert Booking_Equipment rows for each session ───────────────
+                if (equipmentList != null && !equipmentList.isEmpty()) {
+                    String insertEquip = "INSERT INTO Booking_Equipment (booking_id, equipment_id, quantity) VALUES (?, ?, ?)";
+                    try (PreparedStatement ps = conn.prepareStatement(insertEquip)) {
+                        for (Booking b : created) {
+                            for (BookingEquipment be : equipmentList) {
+                                ps.setString(1, b.getBookingId().toString());
+                                ps.setString(2, be.getEquipmentId().toString());
+                                ps.setInt(3, be.getQuantity());
+                                ps.addBatch();
+                            }
+                        }
+                        ps.executeBatch();
+                    }
+                }
+
+                conn.commit();
+                return created;
+
+            } catch (Exception e) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+                throw e;
+            }
+        }
+    }
+
 }
