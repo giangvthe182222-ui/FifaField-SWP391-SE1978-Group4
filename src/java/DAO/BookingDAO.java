@@ -17,6 +17,7 @@ import Models.BookingViewModel;
 import Models.BookingEquipmentViewModel;
 import Models.Field;
 import Models.Location;
+import java.math.BigDecimal;
 
 public class BookingDAO {
 
@@ -424,7 +425,7 @@ public class BookingDAO {
 
     public BookingViewModel getById(UUID bookingId) {
         synchronizeBookingStates();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name " +
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name " +
             "FROM Booking b " +
             "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
             "LEFT JOIN Field f ON b.field_id = f.field_id " +
@@ -441,6 +442,8 @@ public class BookingDAO {
                 vm.setBookingId(UUID.fromString(rs.getString("booking_id")));
                 vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
+                String locationId = rs.getString("location_id");
+                if (locationId != null) vm.setLocationId(UUID.fromString(locationId));
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
                 if (bd != null) vm.setBookingDate(bd.toLocalDate());
@@ -747,10 +750,115 @@ public class BookingDAO {
         }
     }
 
+    public boolean addEquipmentToBooking(UUID bookingId, List<BookingEquipment> equipmentList, BigDecimal additionalAmount) {
+        lastInsertError = null;
+
+        if (equipmentList == null || equipmentList.isEmpty()) {
+            lastInsertError = "Please select at least one equipment item.";
+            return false;
+        }
+
+        if (additionalAmount == null || additionalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            lastInsertError = "Invalid equipment total.";
+            return false;
+        }
+
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
+            if (snapshot == null) {
+                conn.rollback();
+                lastInsertError = "Booking not found.";
+                return false;
+            }
+
+            if (!STATUS_PAID.equals(snapshot.status) && !STATUS_CHECKED_IN.equals(snapshot.status)) {
+                conn.rollback();
+                lastInsertError = "Only paid or checked-in bookings can add equipment.";
+                return false;
+            }
+
+            if (!isBookingActive(snapshot, LocalDateTime.now())) {
+                conn.rollback();
+                lastInsertError = "This booking is outside its active time window.";
+                return false;
+            }
+
+            String updateEquip = "UPDATE le "
+                    + "SET le.quantity = le.quantity - ?, "
+                    + "    le.status = CASE WHEN le.quantity - ? <= 0 THEN 'unavailable' ELSE 'available' END "
+                    + "FROM Location_Equipment le "
+                    + "INNER JOIN Field f ON f.location_id = le.location_id "
+                    + "INNER JOIN Booking b ON b.field_id = f.field_id "
+                    + "WHERE b.booking_id = ? AND le.equipment_id = ? AND le.quantity >= ?";
+
+            try (PreparedStatement ps = conn.prepareStatement(updateEquip)) {
+                for (BookingEquipment be : equipmentList) {
+                    ps.setInt(1, be.getQuantity());
+                    ps.setInt(2, be.getQuantity());
+                    ps.setString(3, bookingId.toString());
+                    ps.setString(4, be.getEquipmentId().toString());
+                    ps.setInt(5, be.getQuantity());
+
+                    int affected = ps.executeUpdate();
+                    if (affected == 0) {
+                        conn.rollback();
+                        lastInsertError = "Equipment stock changed. Please review selected quantities.";
+                        return false;
+                    }
+                }
+            }
+
+            String updateExistingEquipment = "UPDATE Booking_Equipment SET quantity = quantity + ? WHERE booking_id = ? AND equipment_id = ?";
+            String insertNewEquipment = "INSERT INTO Booking_Equipment (booking_id, equipment_id, quantity) VALUES (?, ?, ?)";
+
+            try (PreparedStatement updatePs = conn.prepareStatement(updateExistingEquipment);
+                 PreparedStatement insertPs = conn.prepareStatement(insertNewEquipment)) {
+                for (BookingEquipment be : equipmentList) {
+                    updatePs.setInt(1, be.getQuantity());
+                    updatePs.setString(2, bookingId.toString());
+                    updatePs.setString(3, be.getEquipmentId().toString());
+
+                    int updated = updatePs.executeUpdate();
+                    if (updated == 0) {
+                        insertPs.setString(1, bookingId.toString());
+                        insertPs.setString(2, be.getEquipmentId().toString());
+                        insertPs.setInt(3, be.getQuantity());
+                        insertPs.executeUpdate();
+                    }
+                }
+            }
+
+            try (PreparedStatement bookingPs = conn.prepareStatement(
+                    "UPDATE Booking SET total_price = ISNULL(total_price, 0) + ? WHERE booking_id = ?")) {
+                bookingPs.setBigDecimal(1, additionalAmount);
+                bookingPs.setString(2, bookingId.toString());
+                bookingPs.executeUpdate();
+            }
+
+            try (PreparedStatement paymentPs = conn.prepareStatement(
+                    "UPDATE Payment SET amount = ISNULL(amount, 0) + ?, payment_time = SYSDATETIME() WHERE booking_id = ?")) {
+                paymentPs.setBigDecimal(1, additionalAmount);
+                paymentPs.setString(2, bookingId.toString());
+                paymentPs.executeUpdate();
+            }
+
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (lastInsertError == null || lastInsertError.isBlank()) {
+                lastInsertError = "Database error while adding equipment: " + e.getMessage();
+            }
+            return false;
+        }
+    }
+
     public List<BookingViewModel> getByLocation(UUID locationId) {
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name " +
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name " +
                 "FROM Booking b " +
                 "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
                 "LEFT JOIN Field f ON b.field_id = f.field_id " +
@@ -765,6 +873,8 @@ public class BookingDAO {
                 vm.setBookingId(UUID.fromString(rs.getString("booking_id")));
                 vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
+                String bookingLocationId = rs.getString("location_id");
+                if (bookingLocationId != null) vm.setLocationId(UUID.fromString(bookingLocationId));
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
                 if (bd != null) vm.setBookingDate(bd.toLocalDate());
@@ -788,7 +898,7 @@ public class BookingDAO {
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, u.phone AS customer_phone ");
+        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name, u.phone AS customer_phone ");
         sql.append("FROM Booking b ");
         sql.append("LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id ");
         sql.append("LEFT JOIN Field f ON b.field_id = f.field_id ");
@@ -827,6 +937,8 @@ public class BookingDAO {
                 vm.setBookingId(UUID.fromString(rs.getString("booking_id")));
                 vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
+                String bookingLocationId = rs.getString("location_id");
+                if (bookingLocationId != null) vm.setLocationId(UUID.fromString(bookingLocationId));
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
                 if (bd != null) vm.setBookingDate(bd.toLocalDate());
@@ -894,6 +1006,23 @@ public class BookingDAO {
         return null;
     }
 
+    public boolean resetPaymentDeadline(UUID bookingId, LocalDateTime newDeadline) {
+        if (bookingId == null || newDeadline == null) {
+            return false;
+        }
+
+        String sql = "UPDATE Booking SET payment_deadline = ? WHERE booking_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setTimestamp(1, Timestamp.valueOf(newDeadline));
+            ps.setString(2, bookingId.toString());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private void synchronizeBookingStates() {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -934,7 +1063,7 @@ public class BookingDAO {
     }
 
     private BookingSnapshot getBookingSnapshot(Connection conn, UUID bookingId) throws SQLException {
-        String sql = "SELECT b.schedule_id, b.status, s.booking_date, s.start_time, s.end_time "
+        String sql = "SELECT b.schedule_id, b.field_id, b.status, s.booking_date, s.start_time, s.end_time "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON s.schedule_id = b.schedule_id "
                 + "WHERE b.booking_id = ?";
@@ -951,6 +1080,10 @@ public class BookingDAO {
                 if (scheduleId != null) {
                     snapshot.scheduleId = UUID.fromString(scheduleId);
                 }
+                String fieldId = rs.getString("field_id");
+                if (fieldId != null) {
+                    snapshot.fieldId = UUID.fromString(fieldId);
+                }
                 snapshot.status = normalizeStatus(rs.getString("status"));
 
                 Date bookingDate = rs.getDate("booking_date");
@@ -965,6 +1098,13 @@ public class BookingDAO {
                 return snapshot;
             }
         }
+    }
+
+    private boolean isBookingActive(BookingSnapshot snapshot, LocalDateTime now) {
+        if (snapshot == null || snapshot.scheduleStart == null || snapshot.scheduleEnd == null) {
+            return false;
+        }
+        return !now.isBefore(snapshot.scheduleStart) && now.isBefore(snapshot.scheduleEnd);
     }
 
     private boolean updateBookingStatus(Connection conn, UUID bookingId, String newStatus, String expectedStatus) throws SQLException {
@@ -1018,6 +1158,7 @@ public class BookingDAO {
     private static class BookingSnapshot {
         private UUID bookingId;
         private UUID scheduleId;
+        private UUID fieldId;
         private String status;
         private LocalDateTime scheduleStart;
         private LocalDateTime scheduleEnd;

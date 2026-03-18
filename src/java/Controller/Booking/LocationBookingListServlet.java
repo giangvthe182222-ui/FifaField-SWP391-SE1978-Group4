@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -84,6 +85,9 @@ public class LocationBookingListServlet extends HttpServlet {
             int startIdx = (pageNum - 1) * PAGE_SIZE;
             int endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
             List<BookingViewModel> pageBookings = new ArrayList<>(allBookings.subList(startIdx, endIdx));
+            for (BookingViewModel booking : pageBookings) {
+                booking.setEquipmentBookingAllowed(isEquipmentBookingAllowed(booking));
+            }
 
             request.setAttribute("bookings", pageBookings);
             request.setAttribute("currentPage", pageNum);
@@ -122,5 +126,21 @@ public class LocationBookingListServlet extends HttpServlet {
         else session.setAttribute("flash_error", "Failed to update status.");
 
         response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
+    }
+
+    private boolean isEquipmentBookingAllowed(BookingViewModel booking) {
+        if (booking == null || booking.getBookingDate() == null || booking.getStartTime() == null || booking.getEndTime() == null) {
+            return false;
+        }
+
+        String status = booking.getStatus() == null ? "" : booking.getStatus().trim().toLowerCase();
+        if (!"paid".equals(status) && !"checked in".equals(status)) {
+            return false;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
+        LocalDateTime end = LocalDateTime.of(booking.getBookingDate(), booking.getEndTime());
+        return !now.isBefore(start) && now.isBefore(end);
     }
 }

@@ -122,6 +122,61 @@
                             </c:otherwise>
                         </c:choose>
                     </div>
+
+                    <div class="pt-8 border-t border-gray-50 space-y-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
+                            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Thêm vật tư cho khách</h2>
+                        </div>
+
+                        <c:choose>
+                            <c:when test="${canAddEquipment and not empty availableEquipments}">
+                                <div class="bg-emerald-50 border border-emerald-100 rounded-3xl p-5">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#008751]">Chỉ áp dụng khi booking đã thanh toán và đang nằm trong khung giờ sử dụng</p>
+                                    <p class="text-sm font-semibold text-emerald-800 mt-2">Staff có thể thêm equipment trực tiếp cho booking này trước khi hết giờ ${booking.endTime}.</p>
+                                </div>
+
+                                <form method="post" action="${pageContext.request.contextPath}/staff/bookingDetail" class="space-y-4">
+                                    <input type="hidden" name="action" value="addEquipment" />
+                                    <input type="hidden" name="id" value="${booking.bookingId}" />
+
+                                    <div class="space-y-4">
+                                        <c:forEach var="item" items="${availableEquipments}">
+                                            <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                                <div class="space-y-1">
+                                                    <p class="text-sm font-black text-gray-900 uppercase tracking-tight">${item.name}</p>
+                                                    <div class="flex flex-wrap items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                                        <span>Còn lại: ${item.quantity}</span>
+                                                        <span>Đơn giá: <fmt:formatNumber value="${item.rentalPrice}" pattern="#,##0"/> đ</span>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-3 justify-end">
+                                                    <label for="equipment_${item.equipmentId}" class="text-[9px] font-black uppercase tracking-widest text-gray-400">Số lượng</label>
+                                                    <input id="equipment_${item.equipmentId}" type="number" min="0" max="${item.quantity}" value="0" name="equipment_${item.equipmentId}" class="w-24 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-black text-gray-900 focus:border-[#008751] focus:ring focus:ring-[#008751]/10 outline-none" />
+                                                </div>
+                                            </div>
+                                        </c:forEach>
+                                    </div>
+
+                                    <button type="submit" class="w-full md:w-auto bg-gray-900 hover:bg-[#008751] text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 inline-flex items-center justify-center gap-2 shadow-lg shadow-gray-200">
+                                        <i data-lucide="package-plus" class="w-4 h-4"></i>
+                                        THÊM EQUIPMENT VÀO BOOKING
+                                    </button>
+                                </form>
+                            </c:when>
+                            <c:when test="${canAddEquipment}">
+                                <div class="py-6 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-100">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Không còn equipment khả dụng tại location này</p>
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="py-6 px-6 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-100 space-y-2">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Chưa đủ điều kiện thêm equipment</p>
+                                    <p class="text-sm font-semibold text-gray-500">Booking phải ở trạng thái paid hoặc checked in, và thời điểm hiện tại phải còn nằm trong khung giờ ${booking.startTime} - ${booking.endTime}.</p>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </section>
             </div>
 
@@ -139,6 +194,7 @@
                         </h2>
 
                         <form method="post" action="${pageContext.request.contextPath}/staff/bookingDetail" class="space-y-6">
+                            <input type="hidden" name="action" value="updateStatus" />
                             <input type="hidden" name="id" value="${booking.bookingId}" />
                             
                             <div class="space-y-2">

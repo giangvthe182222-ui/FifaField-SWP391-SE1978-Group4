@@ -231,6 +231,32 @@ CREATE TABLE Feedback (
 );
 GO
 
+CREATE TABLE Supplementary_Equipment_Rental (
+    rental_id VARCHAR(36) PRIMARY KEY,
+    original_booking_id VARCHAR(36) NOT NULL,
+    customer_id VARCHAR(36) NOT NULL,
+    field_id VARCHAR(36) NOT NULL,
+    location_id VARCHAR(36) NOT NULL,
+    created_time DATETIME2 DEFAULT SYSDATETIME(),
+    status NVARCHAR(30) DEFAULT 'pending',
+    total_price DECIMAL(10,2),
+    CONSTRAINT FK_Rental_OriginalBooking FOREIGN KEY (original_booking_id) REFERENCES Booking(booking_id),
+    CONSTRAINT FK_Rental_Customer FOREIGN KEY (customer_id) REFERENCES Users(user_id),
+    CONSTRAINT FK_Rental_Field FOREIGN KEY (field_id) REFERENCES Field(field_id),
+    CONSTRAINT FK_Rental_Location FOREIGN KEY (location_id) REFERENCES Location(location_id)
+);
+GO
+
+CREATE TABLE Supplementary_Equipment (
+    rental_id VARCHAR(36) NOT NULL,
+    equipment_id VARCHAR(36) NOT NULL,
+    quantity INT CHECK (quantity > 0),
+    CONSTRAINT PK_SupplEquipment PRIMARY KEY (rental_id, equipment_id),
+    CONSTRAINT FK_SupplEquip_Rental FOREIGN KEY (rental_id) REFERENCES Supplementary_Equipment_Rental(rental_id),
+    CONSTRAINT FK_SupplEquip_Equipment FOREIGN KEY (equipment_id) REFERENCES Equipment(equipment_id)
+);
+GO
+
 CREATE TRIGGER trg_AfterInsertEquipment
 ON Equipment
 AFTER INSERT

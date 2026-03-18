@@ -9,6 +9,7 @@ public class BookingViewModel {
     private UUID bookingId;
     private UUID bookerId;
     private UUID fieldId;
+    private UUID locationId;
     private UUID scheduleId;
     private LocalDate bookingDate;
     private LocalTime startTime;
@@ -18,6 +19,7 @@ public class BookingViewModel {
     private String customerPhone;
     private String status;
     private BigDecimal totalPrice;
+    private boolean equipmentBookingAllowed;
 
     public BookingViewModel() {}
 
@@ -29,6 +31,9 @@ public class BookingViewModel {
 
     public UUID getFieldId() { return fieldId; }
     public void setFieldId(UUID fieldId) { this.fieldId = fieldId; }
+
+    public UUID getLocationId() { return locationId; }
+    public void setLocationId(UUID locationId) { this.locationId = locationId; }
 
     public UUID getScheduleId() { return scheduleId; }
     public void setScheduleId(UUID scheduleId) { this.scheduleId = scheduleId; }
@@ -56,4 +61,7 @@ public class BookingViewModel {
 
     public BigDecimal getTotalPrice() { return totalPrice; }
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
+
+    public boolean isEquipmentBookingAllowed() { return equipmentBookingAllowed; }
+    public void setEquipmentBookingAllowed(boolean equipmentBookingAllowed) { this.equipmentBookingAllowed = equipmentBookingAllowed; }
 }
