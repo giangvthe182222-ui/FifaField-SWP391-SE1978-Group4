@@ -143,10 +143,10 @@
                         <div>
                             <p class="text-sm font-black text-blue-900 uppercase tracking-tight mb-2">Lưu ý</p>
                             <ul class="text-xs font-semibold text-blue-800 space-y-2">
-                                <li>• Tính tiền riêng, không cộng vào booking gốc</li>
+                                <li>• Tính tiền riêng trước, chỉ cộng vào booking sau khi thanh toán thành công</li>
                                 <li>• Không có deadline thanh toán</li>
                                 <li>• Trả tiền lúc nào cũng được</li>
-                                <li>• Trừ kho trực tiếp khi thêm</li>
+                                <li>• Booking sẽ chuyển trạng thái pending extra trong lúc chờ thanh toán</li>
                             </ul>
                         </div>
                     </div>

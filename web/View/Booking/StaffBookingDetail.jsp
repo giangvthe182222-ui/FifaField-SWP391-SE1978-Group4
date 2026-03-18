@@ -64,7 +64,7 @@
                             <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
                             <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Thông tin trận đấu</h2>
                         </div>
-                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' || booking.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : booking.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : booking.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : booking.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : booking.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' || booking.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : booking.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : booking.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : booking.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : booking.status == 'pending extra' ? 'bg-orange-50 text-orange-600 border border-orange-100' : booking.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
                             ${booking.status}
                         </span>
                     </div>
@@ -132,8 +132,8 @@
                         <c:choose>
                             <c:when test="${canAddEquipment and not empty availableEquipments}">
                                 <div class="bg-emerald-50 border border-emerald-100 rounded-3xl p-5">
-                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#008751]">Chỉ áp dụng khi booking đã thanh toán và đang nằm trong khung giờ sử dụng</p>
-                                    <p class="text-sm font-semibold text-emerald-800 mt-2">Staff có thể thêm equipment trực tiếp cho booking này trước khi hết giờ ${booking.endTime}.</p>
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#008751]">Chỉ áp dụng khi booking đã checked in và đang trong khung giờ sử dụng</p>
+                                    <p class="text-sm font-semibold text-emerald-800 mt-2">Khi tạo thêm equipment, booking sẽ chuyển sang pending extra cho đến khi khoản bổ sung được thanh toán.</p>
                                 </div>
 
                                 <form method="post" action="${pageContext.request.contextPath}/staff/bookingDetail" class="space-y-4">
@@ -172,7 +172,7 @@
                             <c:otherwise>
                                 <div class="py-6 px-6 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-100 space-y-2">
                                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Chưa đủ điều kiện thêm equipment</p>
-                                    <p class="text-sm font-semibold text-gray-500">Booking phải ở trạng thái paid hoặc checked in, và thời điểm hiện tại phải còn nằm trong khung giờ ${booking.startTime} - ${booking.endTime}.</p>
+                                    <p class="text-sm font-semibold text-gray-500">Booking phải ở trạng thái checked in và thời điểm hiện tại nằm trong khung giờ ${booking.startTime} - ${booking.endTime}.</p>
                                 </div>
                             </c:otherwise>
                         </c:choose>
@@ -203,6 +203,7 @@
                                     <option value="pending" ${booking.status=='pending' ? 'selected' : ''} class="text-gray-900">pending</option>
                                     <option value="paid" ${booking.status=='paid' ? 'selected' : ''} class="text-gray-900">paid</option>
                                     <option value="checked in" ${booking.status=='checked in' ? 'selected' : ''} class="text-gray-900">checked in</option>
+                                    <option value="pending extra" ${booking.status=='pending extra' ? 'selected' : ''} class="text-gray-900">pending extra</option>
                                     <option value="completed" ${booking.status=='completed' ? 'selected' : ''} class="text-gray-900">completed</option>
                                     <option value="pending refund" ${booking.status=='pending refund' ? 'selected' : ''} class="text-gray-900">pending refund</option>
                                     <option value="cancelled" ${booking.status=='cancelled' ? 'selected' : ''} class="text-gray-900">cancelled</option>

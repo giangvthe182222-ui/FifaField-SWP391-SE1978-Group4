@@ -2,10 +2,12 @@ package Controller.Booking;
 
 import DAO.BookingDAO;
 import DAO.LocationEquipmentDAO;
+import DAO.PaymentDAO;
 import Models.BookingEquipment;
 import Models.BookingViewModel;
 import Models.BookingEquipmentViewModel;
 import Models.LocationEquipmentViewModel;
+import Models.Payment;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -27,6 +29,25 @@ import Utils.DBConnection;
 
 @WebServlet(name = "StaffBookingDetailServlet", urlPatterns = {"/staff/bookingDetail"})
 public class StaffBookingDetailServlet extends HttpServlet {
+
+    private static String payloadKey(UUID bookingId) {
+        return "supp_equipment_payload_" + bookingId;
+    }
+
+    private static String amountKey(UUID bookingId) {
+        return "supp_equipment_amount_" + bookingId;
+    }
+
+    private static String serializeEquipmentPayload(List<BookingEquipment> equipmentList) {
+        StringBuilder sb = new StringBuilder();
+        for (BookingEquipment be : equipmentList) {
+            if (sb.length() > 0) {
+                sb.append(',');
+            }
+            sb.append(be.getEquipmentId()).append(':').append(be.getQuantity());
+        }
+        return sb.toString();
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -123,7 +144,7 @@ public class StaffBookingDetailServlet extends HttpServlet {
         }
 
         if (!isEquipmentBookingAllowed(booking) || booking.getLocationId() == null) {
-            session.setAttribute("flash_error", "Only active paid bookings can add equipment.");
+            session.setAttribute("flash_error", "Booking must be checked in and still within its slot time to add equipment.");
             response.sendRedirect(request.getContextPath() + "/staff/bookingDetail?id=" + bookingId);
             return;
         }
@@ -179,17 +200,27 @@ public class StaffBookingDetailServlet extends HttpServlet {
             return;
         }
 
-        boolean ok = bookingDAO.addEquipmentToBooking(bookingId, selectedEquipments, additionalAmount);
-        if (ok) {
-            session.setAttribute("flash_success", "Added equipment to booking successfully.");
-        } else {
-            String error = bookingDAO.getLastInsertError();
-            session.setAttribute("flash_error", (error == null || error.isBlank())
-                    ? "Failed to add equipment to booking."
-                    : error);
+        PaymentDAO paymentDAO = new PaymentDAO();
+        boolean pendingMarked = paymentDAO.markSupplementaryPending(bookingId, additionalAmount);
+        if (!pendingMarked) {
+            session.setAttribute("flash_error", "Failed to initialize supplementary payment.");
+            response.sendRedirect(request.getContextPath() + "/staff/bookingDetail?id=" + bookingId);
+            return;
         }
 
-        response.sendRedirect(request.getContextPath() + "/staff/bookingDetail?id=" + bookingId);
+        if (!bookingDAO.markBookingPendingExtra(bookingId)) {
+            Payment payment = paymentDAO.getPaymentByBookingId(bookingId);
+            if (payment != null && payment.getPaymentId() != null) {
+                paymentDAO.updatePaymentFailed(payment.getPaymentId());
+            }
+            session.setAttribute("flash_error", "Only checked-in bookings in active slot can start supplementary payment.");
+            response.sendRedirect(request.getContextPath() + "/staff/bookingDetail?id=" + bookingId);
+            return;
+        }
+
+        session.setAttribute(payloadKey(bookingId), serializeEquipmentPayload(selectedEquipments));
+        session.setAttribute(amountKey(bookingId), additionalAmount.toPlainString());
+        response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + bookingId + "&source=supplementary");
     }
 
     private boolean isEquipmentBookingAllowed(BookingViewModel booking) {
@@ -198,7 +229,7 @@ public class StaffBookingDetailServlet extends HttpServlet {
         }
 
         String status = booking.getStatus() == null ? "" : booking.getStatus().trim().toLowerCase();
-        if (!"paid".equals(status) && !"checked in".equals(status)) {
+        if (!"checked in".equals(status)) {
             return false;
         }
 

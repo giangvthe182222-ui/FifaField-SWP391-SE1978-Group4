@@ -203,7 +203,11 @@
                     </div>
 
                     <div class="timer-box p-4 text-center">
-                        <p class="text-[19px] font-semibold text-[#d0467d]">Đơn hàng sẽ hết hạn sau:</p>
+                        <p class="text-[19px] font-semibold text-[#d0467d]">
+                            <%= "supplementary".equalsIgnoreCase(paymentSource)
+                                    ? "Thanh toán equipment bổ sung (không giới hạn thời gian):"
+                                    : "Đơn hàng sẽ hết hạn sau:" %>
+                        </p>
                         <div class="mt-4 flex justify-center gap-4" id="timerWrapper">
                             <div class="timer-pill py-3 px-3">
                                 <p class="text-4xl font-black leading-none" id="minutesBox">1</p>
@@ -320,6 +324,7 @@
             const expiredMessage = paymentSource === 'supplementary'
                 ? 'Hết thời gian thanh toán. Đơn equipment bổ sung đã bị hủy tự động.'
                 : 'Hết thời gian thanh toán. Đơn đặt sân đã bị hủy tự động.';
+            const hasPaymentDeadline = paymentSource !== 'supplementary';
             const initialTimeRemaining = parseInt(document.getElementById('timeRemainingVal').value || '0', 10);
             let timeRemaining = initialTimeRemaining;
             const checkIntervalMs = 10000;
@@ -345,6 +350,13 @@
             }
 
             function updateTimerDisplay() {
+                if (!hasPaymentDeadline) {
+                    document.getElementById('minutesBox').textContent = '--';
+                    document.getElementById('secondsBox').textContent = '--';
+                    document.getElementById('timerWrapper').classList.remove('timer-warning');
+                    return;
+                }
+
                 const safeTime = Math.max(0, timeRemaining);
                 const minutes = Math.floor(safeTime / 60);
                 const seconds = safeTime % 60;
@@ -393,12 +405,12 @@
                         showPaymentSuccess();
                     } else if (paymentStatus === 'FAILED') {
                         paymentChecked = true;
-                        if (expired || timeRemaining <= 0) {
+                        if (hasPaymentDeadline && (expired || timeRemaining <= 0)) {
                             showPaymentExpired();
                         } else {
                             showPaymentFailed();
                         }
-                    } else if (expired || timeRemaining <= 0) {
+                    } else if (hasPaymentDeadline && (expired || timeRemaining <= 0)) {
                         paymentChecked = true;
                         showPaymentExpired();
                     }
@@ -490,6 +502,16 @@
             document.addEventListener('DOMContentLoaded', () => {
                 lucide.createIcons();
                 updateTimerDisplay();
+
+                if (!hasPaymentDeadline) {
+                    const checkIntervalId = setInterval(() => {
+                        checkPaymentStatus();
+                        if (paymentChecked) {
+                            clearInterval(checkIntervalId);
+                        }
+                    }, checkIntervalMs);
+                    return;
+                }
 
                 setInterval(() => {
                     timeRemaining = Math.max(0, timeRemaining - 1);

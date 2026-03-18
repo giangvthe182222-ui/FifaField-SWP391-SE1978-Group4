@@ -134,7 +134,7 @@ public class LocationBookingListServlet extends HttpServlet {
         }
 
         String status = booking.getStatus() == null ? "" : booking.getStatus().trim().toLowerCase();
-        if (!"paid".equals(status) && !"checked in".equals(status)) {
+        if (!"checked in".equals(status)) {
             return false;
         }
 

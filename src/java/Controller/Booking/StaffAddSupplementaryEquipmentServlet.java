@@ -2,9 +2,11 @@ package Controller.Booking;
 
 import DAO.BookingDAO;
 import DAO.LocationEquipmentDAO;
+import DAO.PaymentDAO;
 import Models.BookingViewModel;
 import Models.LocationEquipmentViewModel;
 import Models.BookingEquipment;
+import Models.Payment;
 import Utils.DBConnection;
 
 import jakarta.servlet.ServletException;
@@ -22,6 +24,25 @@ import java.util.UUID;
 
 @WebServlet(name = "StaffAddSupplementaryEquipmentServlet", urlPatterns = {"/staff/addSupplementaryEquipment"})
 public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
+
+    private static String payloadKey(UUID bookingId) {
+        return "supp_equipment_payload_" + bookingId;
+    }
+
+    private static String amountKey(UUID bookingId) {
+        return "supp_equipment_amount_" + bookingId;
+    }
+
+    private static String serializeEquipmentPayload(List<BookingEquipment> equipmentList) {
+        StringBuilder sb = new StringBuilder();
+        for (BookingEquipment be : equipmentList) {
+            if (sb.length() > 0) {
+                sb.append(',');
+            }
+            sb.append(be.getEquipmentId()).append(':').append(be.getQuantity());
+        }
+        return sb.toString();
+    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -51,6 +72,12 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
 
         if (booking.getLocationId() == null) {
             session.setAttribute("flash_error", "Booking location not found.");
+            response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
+            return;
+        }
+
+        if (!isEquipmentBookingAllowed(booking)) {
+            session.setAttribute("flash_error", "Booking must be checked in and still within its slot time to add equipment.");
             response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
             return;
         }
@@ -146,17 +173,43 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
             return;
         }
 
-        boolean ok = bookingDAO.addEquipmentToBooking(bookingId, selectedEquipments, totalPrice);
-
-        if (ok) {
-            response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + bookingId + "&resetDeadline=1&source=supplementary");
-        } else {
-            String error = bookingDAO.getLastInsertError();
-            session.setAttribute("flash_error", (error == null || error.isBlank())
-                    ? "Failed to add equipment."
-                    : error);
+        PaymentDAO paymentDAO = new PaymentDAO();
+        boolean pendingMarked = paymentDAO.markSupplementaryPending(bookingId, totalPrice);
+        if (!pendingMarked) {
+            session.setAttribute("flash_error", "Failed to initialize supplementary payment.");
             response.sendRedirect(request.getContextPath() + "/staff/addSupplementaryEquipment?bookingId=" + bookingId);
+            return;
         }
+
+        if (!bookingDAO.markBookingPendingExtra(bookingId)) {
+            Payment payment = paymentDAO.getPaymentByBookingId(bookingId);
+            if (payment != null && payment.getPaymentId() != null) {
+                paymentDAO.updatePaymentFailed(payment.getPaymentId());
+            }
+            session.setAttribute("flash_error", "Only checked-in bookings in active slot can start supplementary payment.");
+            response.sendRedirect(request.getContextPath() + "/staff/addSupplementaryEquipment?bookingId=" + bookingId);
+            return;
+        }
+
+        session.setAttribute(payloadKey(bookingId), serializeEquipmentPayload(selectedEquipments));
+        session.setAttribute(amountKey(bookingId), totalPrice.toPlainString());
+        response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + bookingId + "&source=supplementary");
+    }
+
+    private boolean isEquipmentBookingAllowed(BookingViewModel booking) {
+        if (booking == null || booking.getBookingDate() == null || booking.getStartTime() == null || booking.getEndTime() == null) {
+            return false;
+        }
+
+        String status = booking.getStatus() == null ? "" : booking.getStatus().trim().toLowerCase();
+        if (!"checked in".equals(status)) {
+            return false;
+        }
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime start = java.time.LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
+        java.time.LocalDateTime end = java.time.LocalDateTime.of(booking.getBookingDate(), booking.getEndTime());
+        return !now.isBefore(start) && now.isBefore(end);
     }
 
     private void moveFlashMessages(HttpSession session, HttpServletRequest request) {
