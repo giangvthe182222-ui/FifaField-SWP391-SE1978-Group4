@@ -9,6 +9,7 @@ import Models.Field;
 import Models.Location;
 import Models.LocationEquipmentViewModel;
 import Models.Schedule;
+import Models.User;
 import Models.Voucher;
 import Utils.DBConnection;
 
@@ -33,6 +34,7 @@ public class BookingServlet extends HttpServlet {
             throws ServletException, IOException {
 
         jakarta.servlet.http.HttpSession session = request.getSession(false);
+        boolean isStaffUser = false;
         if (session != null) {
             String flashSuccess = (String) session.getAttribute("flash_success");
             if (flashSuccess != null) {
@@ -44,7 +46,16 @@ public class BookingServlet extends HttpServlet {
                 request.setAttribute("flashError", flashError);
                 session.removeAttribute("flash_error");
             }
+
+            Object userObj = session.getAttribute("user");
+            if (userObj instanceof User) {
+                User user = (User) userObj;
+                if (user.getRole() != null && user.getRole().getRoleName() != null) {
+                    isStaffUser = "STAFF".equalsIgnoreCase(user.getRole().getRoleName());
+                }
+            }
         }
+        request.setAttribute("isStaffUser", isStaffUser);
 
         try {
             LocationDAO locationDAO = new LocationDAO();

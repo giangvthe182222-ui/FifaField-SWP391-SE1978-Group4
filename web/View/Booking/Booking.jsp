@@ -233,6 +233,25 @@
                 </c:choose>
             </section>
 
+            <c:if test="${isStaffUser}">
+                <section class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-10 space-y-8">
+                    <div class="flex items-center gap-4">
+                        <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
+                        <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">4. Thông tin khách vãng lai</h2>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Số điện thoại khách <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"></i>
+                            <input type="text" name="bookingPhone" maxlength="20" required
+                                   placeholder="Nhập số điện thoại khách"
+                                   value="${param.bookingPhone}"
+                                   class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 input-focus" />
+                        </div>
+                    </div>
+                </section>
+            </c:if>
+
             <!-- 4. Voucher Section -->
             <c:if test="${not empty vouchers}">
                 <section class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-10 space-y-8">
