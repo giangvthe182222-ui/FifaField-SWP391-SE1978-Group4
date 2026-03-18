@@ -31,21 +31,32 @@ public class WeeklyBookingSuccessServlet extends HttpServlet {
 
         @SuppressWarnings("unchecked")
         List<String> bookingIds = (List<String>) session.getAttribute("weeklyBookingIds");
+        String weeklyGroupId = (String) session.getAttribute("weeklyBookingGroupId");
         if (bookingIds == null || bookingIds.isEmpty()) {
             response.sendRedirect(request.getContextPath() + "/booking/weekly");
             return;
         }
         // consume from session so refreshing doesn't re-show stale data
         session.removeAttribute("weeklyBookingIds");
+        session.removeAttribute("weeklyBookingGroupId");
 
         BookingDAO bookingDAO = new BookingDAO();
         List<BookingViewModel> bookings = new ArrayList<>();
-        for (String id : bookingIds) {
+        if (weeklyGroupId != null && !weeklyGroupId.isBlank()) {
             try {
-                BookingViewModel bvm = bookingDAO.getById(UUID.fromString(id));
-                if (bvm != null) bookings.add(bvm);
+                bookings = bookingDAO.getByWeeklyGroupId(UUID.fromString(weeklyGroupId));
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+        if (bookings.isEmpty()) {
+            for (String id : bookingIds) {
+                try {
+                    BookingViewModel bvm = bookingDAO.getById(UUID.fromString(id));
+                    if (bvm != null) bookings.add(bvm);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
         }
 
@@ -57,6 +68,7 @@ public class WeeklyBookingSuccessServlet extends HttpServlet {
 
         request.setAttribute("bookings",      bookings);
         request.setAttribute("historyPath",   historyPath);
+        request.setAttribute("weeklyGroupId", weeklyGroupId);
         request.getRequestDispatcher("/View/Booking/WeeklyBookingSuccess.jsp").forward(request, response);
     }
 }

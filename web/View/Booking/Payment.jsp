@@ -12,6 +12,9 @@
     String checkoutUrl = (String) request.getAttribute("checkoutUrl");
     String bookingDetailPath = (String) request.getAttribute("bookingDetailPath");
     String bookingHistoryPath = (String) request.getAttribute("bookingHistoryPath");
+    Boolean isWeeklyGroupPayment = (Boolean) request.getAttribute("isWeeklyGroupPayment");
+    Integer weeklySessionCount = (Integer) request.getAttribute("weeklySessionCount");
+    String weeklyGroupId = (String) request.getAttribute("weeklyGroupId");
 
     if (bookingDetailPath == null || bookingDetailPath.isBlank()) {
         bookingDetailPath = "/customer/bookingDetail";
@@ -167,12 +170,12 @@
 
                         <div class="pt-3 border-t border-slate-200">
                             <p class="text-sm text-slate-500">Mô tả</p>
-                            <p class="font-semibold text-lg mt-1">Thanh toán đặt sân</p>
+                            <p class="font-semibold text-lg mt-1"><%= Boolean.TRUE.equals(isWeeklyGroupPayment) ? "Thanh toán lịch tuần" : "Thanh toán đặt sân" %></p>
                         </div>
 
                         <div class="pt-3 border-t border-slate-200">
                             <p class="text-sm text-slate-500">Số tiền</p>
-                            <p class="font-black text-4xl text-[var(--brand-green)] mt-1"><%= String.format("%,d", booking.getTotalPrice().longValue()) %>d</p>
+                            <p class="font-black text-4xl text-[var(--brand-green)] mt-1"><%= String.format("%,d", payment.getAmount().longValue()) %>d</p>
                         </div>
 
                         <div class="pt-3 border-t border-slate-200">
@@ -187,6 +190,9 @@
                             </p>
                             <p class="text-sm text-slate-600 mt-2">Trạng thái booking: <span class="font-semibold"><%= booking.getStatus() != null ? booking.getStatus() : "--" %></span></p>
                             <p class="text-sm text-slate-600 mt-1">Mã lịch: <span class="font-semibold"><%= booking.getScheduleId() != null ? booking.getScheduleId() : "--" %></span></p>
+                            <% if (Boolean.TRUE.equals(isWeeklyGroupPayment)) { %>
+                            <p class="text-sm text-slate-600 mt-1">Số ca trong tuần: <span class="font-semibold"><%= weeklySessionCount != null ? weeklySessionCount : 0 %></span></p>
+                            <% } %>
                             <p class="text-sm text-slate-600 mt-1">Mã giao dịch: <span class="font-semibold"><%= payment.getTransactionCode() != null ? payment.getTransactionCode() : "--" %></span></p>
                             <p class="text-sm text-slate-600 mt-1">Phương thức thanh toán: <span class="font-semibold"><%= payment.getPaymentMethod() != null ? payment.getPaymentMethod() : "--" %></span></p>
                         </div>
@@ -209,6 +215,9 @@
                     <div>
                         <form action="${pageContext.request.contextPath}/payment-cancel" method="post" onsubmit="return confirm('Bạn chắc chắn muốn huỷ đặt sân này?');">
                             <input type="hidden" name="bookingId" value="<%= booking.getBookingId() %>" />
+                            <% if (Boolean.TRUE.equals(isWeeklyGroupPayment) && weeklyGroupId != null) { %>
+                            <input type="hidden" name="weeklyGroupId" value="<%= weeklyGroupId %>" />
+                            <% } %>
                             <button type="submit" class="w-full rounded-xl py-3 border border-[var(--brand-border)] bg-[var(--brand-green-soft)] text-[var(--brand-green-dark)] font-semibold hover:bg-[#def4e8] transition">
                                 Quay lại
                             </button>

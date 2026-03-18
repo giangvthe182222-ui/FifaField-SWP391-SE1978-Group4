@@ -294,6 +294,46 @@ public class BookingDAO {
         return list;
     }
 
+    public List<BookingViewModel> getByWeeklyGroupId(UUID weeklyGroupId) {
+        synchronizeBookingStates();
+        List<BookingViewModel> list = new ArrayList<>();
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, "
+                + "s.booking_date, s.start_time, s.end_time, f.field_name, l.location_name "
+                + "FROM Booking b "
+                + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
+                + "LEFT JOIN Field f ON b.field_id = f.field_id "
+                + "LEFT JOIN Location l ON f.location_id = l.location_id "
+                + "WHERE b.weekly_group_id = ? "
+                + "ORDER BY s.booking_date, s.start_time";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, weeklyGroupId.toString());
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                BookingViewModel vm = new BookingViewModel();
+                vm.setBookingId(UUID.fromString(rs.getString("booking_id")));
+                vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
+                vm.setFieldId(UUID.fromString(rs.getString("field_id")));
+                vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
+                Date bd = rs.getDate("booking_date");
+                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                Time st = rs.getTime("start_time");
+                if (st != null) vm.setStartTime(st.toLocalTime());
+                Time et = rs.getTime("end_time");
+                if (et != null) vm.setEndTime(et.toLocalTime());
+                vm.setFieldName(rs.getString("field_name"));
+                vm.setLocationName(rs.getString("location_name"));
+                vm.setStatus(rs.getString("status"));
+                vm.setTotalPrice(rs.getBigDecimal("total_price"));
+                list.add(vm);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
     public List<BookingViewModel> getCustomerCalendarBookings(UUID bookerId, LocalDate fromDate, LocalDate toDate, LocalDate selectedDate, UUID locationId, UUID fieldId) {
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
@@ -669,6 +709,43 @@ public class BookingDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public boolean markWeeklyGroupPaid(UUID weeklyGroupId) {
+        String sql = "UPDATE Booking SET status = 'paid' WHERE weekly_group_id = ? AND status = 'pending'";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, weeklyGroupId.toString());
+            ps.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean cancelWeeklyGroupForPayment(UUID weeklyGroupId) {
+        List<UUID> bookingIds = new ArrayList<>();
+        String sql = "SELECT booking_id FROM Booking WHERE weekly_group_id = ? AND status = 'pending'";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, weeklyGroupId.toString());
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                bookingIds.add(UUID.fromString(rs.getString("booking_id")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+        boolean allOk = true;
+        for (UUID bookingId : bookingIds) {
+            if (!cancelBookingForPayment(bookingId)) {
+                allOk = false;
+            }
+        }
+        return allOk;
     }
 
     public boolean updateStatus(UUID bookingId, String newStatus) {
@@ -1048,7 +1125,8 @@ public class BookingDAO {
     public List<Booking> insertWeekly(UUID bookerId, UUID fieldId, List<UUID> scheduleIds,
                                       List<BookingEquipment> equipmentList,
                                       UUID voucherId, java.math.BigDecimal discountPercent,
-                                      java.time.LocalDateTime paymentDeadline) throws Exception {
+                                      java.time.LocalDateTime paymentDeadline,
+                                      UUID weeklyGroupId) throws Exception {
 
         List<Booking> created = new ArrayList<>();
         int sessionCount = scheduleIds.size();
@@ -1136,6 +1214,7 @@ public class BookingDAO {
                     b.setStatus("pending");
                     b.setTotalPrice(totalPrice);
                     b.setPaymentDeadline(paymentDeadline);
+                    b.setWeeklyGroupId(weeklyGroupId);
                     created.add(b);
                 }
 
@@ -1166,9 +1245,9 @@ public class BookingDAO {
 
                 // ── Phase 3: insert all booking rows ─────────────────────────────────────
                 String insertSql = "INSERT INTO Booking "
-                        + "(booking_id, booker_id, field_id, schedule_id, voucher_id, "
+                        + "(booking_id, booker_id, field_id, schedule_id, voucher_id, weekly_group_id, "
                         + " status, total_price, payment_deadline) "
-                        + "VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)";
+                        + "VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)";
                 try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
                     for (Booking b : created) {
                         ps.setString(1, b.getBookingId().toString());
@@ -1180,11 +1259,16 @@ public class BookingDAO {
                         } else {
                             ps.setNull(5, Types.VARCHAR);
                         }
-                        ps.setBigDecimal(6, b.getTotalPrice());
-                        if (b.getPaymentDeadline() != null) {
-                            ps.setTimestamp(7, Timestamp.valueOf(b.getPaymentDeadline()));
+                        if (b.getWeeklyGroupId() != null) {
+                            ps.setString(6, b.getWeeklyGroupId().toString());
                         } else {
-                            ps.setNull(7, Types.TIMESTAMP);
+                            ps.setNull(6, Types.VARCHAR);
+                        }
+                        ps.setBigDecimal(7, b.getTotalPrice());
+                        if (b.getPaymentDeadline() != null) {
+                            ps.setTimestamp(8, Timestamp.valueOf(b.getPaymentDeadline()));
+                        } else {
+                            ps.setNull(8, Types.TIMESTAMP);
                         }
                         ps.addBatch();
                     }

@@ -29,22 +29,27 @@ public class PaymentDAO {
      */
     public boolean createPayment(Payment payment) {
         setLastError(null);
-        String sql = "INSERT INTO Payment (payment_id, booking_id, amount, payment_method, payment_status, "
-                + "transaction_code, qr_content, bank_code, account_number) "
-                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Payment (payment_id, booking_id, weekly_group_id, amount, payment_method, payment_status, "
+            + "transaction_code, qr_content, bank_code, account_number) "
+            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, payment.getPaymentId().toString());
             ps.setString(2, payment.getBookingId().toString());
-            ps.setBigDecimal(3, payment.getAmount());
-            ps.setString(4, payment.getPaymentMethod());
-            ps.setString(5, payment.getPaymentStatus());
-            ps.setString(6, payment.getTransactionCode());
-            ps.setString(7, payment.getQrContent());
-            ps.setString(8, payment.getBankCode());
-            ps.setString(9, payment.getAccountNumber());
+            if (payment.getWeeklyGroupId() != null) {
+                ps.setString(3, payment.getWeeklyGroupId().toString());
+            } else {
+                ps.setNull(3, Types.VARCHAR);
+            }
+            ps.setBigDecimal(4, payment.getAmount());
+            ps.setString(5, payment.getPaymentMethod());
+            ps.setString(6, payment.getPaymentStatus());
+            ps.setString(7, payment.getTransactionCode());
+            ps.setString(8, payment.getQrContent());
+            ps.setString(9, payment.getBankCode());
+            ps.setString(10, payment.getAccountNumber());
 
             int affected = ps.executeUpdate();
             if (affected <= 0) {
@@ -70,6 +75,25 @@ public class PaymentDAO {
             e.printStackTrace();
             return false;
         }
+    }
+
+    public Payment getPaymentByWeeklyGroupId(UUID weeklyGroupId) {
+        String sql = "SELECT * FROM Payment WHERE weekly_group_id = ? ORDER BY payment_time DESC";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, weeklyGroupId.toString());
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return extractPaymentFromResultSet(rs);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     /**
@@ -252,6 +276,14 @@ public class PaymentDAO {
         payment.setQrContent(rs.getString("qr_content"));
         payment.setBankCode(rs.getString("bank_code"));
         payment.setAccountNumber(rs.getString("account_number"));
+        try {
+            String wg = rs.getString("weekly_group_id");
+            if (wg != null && !wg.isBlank()) {
+                payment.setWeeklyGroupId(UUID.fromString(wg));
+            }
+        } catch (SQLException ignored) {
+            // Backward compatibility when schema has not been migrated yet.
+        }
 
         return payment;
     }

@@ -26,34 +26,16 @@
                 <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Lọc theo ngày</label>
                 <input type="date" name="date" value="${selectedDate}" class="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
             </div>
-            <div>
-                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Lọc theo cơ sở</label>
-                <select name="locationId" class="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none min-w-[220px]">
-                    <option value="">Tất cả cơ sở</option>
-                    <c:forEach var="loc" items="${locationOptions}">
-                        <option value="${loc.locationId}" ${selectedLocationId == loc.locationId ? 'selected' : ''}>${loc.locationName}</option>
-                    </c:forEach>
-                </select>
-            </div>
-            <div>
-                <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Lọc theo sân</label>
-                <select name="fieldId" class="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none min-w-[220px]">
-                    <option value="">Tất cả sân</option>
-                    <c:forEach var="f" items="${fieldOptions}">
-                        <option value="${f.fieldId}" ${selectedFieldId == f.fieldId ? 'selected' : ''}>${f.fieldName}</option>
-                    </c:forEach>
-                </select>
-            </div>
             <button type="submit" class="px-6 py-3 rounded-2xl bg-[#008751] text-white font-black text-[10px] uppercase tracking-widest hover:bg-emerald-400 transition-all">Lọc</button>
             <a href="${pageContext.request.contextPath}/customer/my-calendar" class="px-6 py-3 rounded-2xl border border-gray-200 text-gray-500 font-black text-[10px] uppercase tracking-widest hover:border-[#008751] hover:text-[#008751] transition-all text-center">Xóa lọc</a>
         </form>
 
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div class="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
-                <a href="${pageContext.request.contextPath}/customer/my-calendar?weekDate=${prevWeek}<c:if test='${not empty selectedLocationId}'>&locationId=${selectedLocationId}</c:if><c:if test='${not empty selectedFieldId}'>&fieldId=${selectedFieldId}</c:if>"
+                <a href="${pageContext.request.contextPath}/customer/my-calendar?weekDate=${prevWeek}<c:if test='${not empty selectedDate}'>&date=${selectedDate}</c:if>"
                    class="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751] transition-all">Tuần trước</a>
                 <span class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-gray-500">${weekStart} - ${weekEnd}</span>
-                <a href="${pageContext.request.contextPath}/customer/my-calendar?weekDate=${nextWeek}<c:if test='${not empty selectedLocationId}'>&locationId=${selectedLocationId}</c:if><c:if test='${not empty selectedFieldId}'>&fieldId=${selectedFieldId}</c:if>"
+                <a href="${pageContext.request.contextPath}/customer/my-calendar?weekDate=${nextWeek}<c:if test='${not empty selectedDate}'>&date=${selectedDate}</c:if>"
                    class="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751] transition-all">Tuần sau</a>
             </div>
         </div>

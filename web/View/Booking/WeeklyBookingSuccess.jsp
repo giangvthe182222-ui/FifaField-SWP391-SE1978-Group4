@@ -41,7 +41,7 @@
             Đặt Sân <span class="text-[#008751]">Thành Công!</span>
         </h1>
         <p class="text-gray-500 font-semibold max-w-lg mx-auto">
-            Các ca trong tuần đã được giữ chỗ. Vui lòng thanh toán mỗi ca trong vòng
+            Các ca trong tuần đã được giữ chỗ. Vui lòng thanh toán <span class="font-black text-[#008751]">1 lần cho toàn bộ lịch tuần</span> trong vòng
             <span class="font-black text-amber-600">2 giờ</span> để xác nhận.
             Ca chưa thanh toán sẽ tự động bị hủy.
         </p>
@@ -85,7 +85,7 @@
                     <th class="text-left px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ngày</th>
                     <th class="text-left px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Giờ</th>
                     <th class="text-right px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Giá</th>
-                    <th class="text-center px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Thanh toán</th>
+                    <th class="text-center px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Trạng thái</th>
                 </tr>
             </thead>
             <tbody>
@@ -103,13 +103,7 @@
                     <td class="px-6 py-4 text-right font-black text-[#008751]">
                         <fmt:formatNumber value="${b.totalPrice}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
                     </td>
-                    <td class="px-6 py-4 text-center">
-                        <a href="${pageContext.request.contextPath}/payment?bookingId=${b.bookingId}"
-                           class="inline-flex items-center gap-1.5 px-4 py-2 bg-[#008751] hover:bg-[#006d41] text-white text-xs font-black uppercase tracking-wide rounded-xl transition-all shadow-sm shadow-[#008751]/20">
-                            <i data-lucide="credit-card" class="w-3 h-3"></i>
-                            Thanh toán
-                        </a>
-                    </td>
+                    <td class="px-6 py-4 text-center text-xs font-black uppercase tracking-wide text-amber-600">${b.status}</td>
                 </tr>
             </c:forEach>
             </tbody>
@@ -126,6 +120,16 @@
         </c:otherwise>
         </c:choose>
     </div>
+
+    <c:if test="${not empty weeklyGroupId and not empty bookings}">
+        <div class="text-center">
+            <a href="${pageContext.request.contextPath}/payment?weeklyGroupId=${weeklyGroupId}"
+               class="inline-flex items-center justify-center gap-2 px-10 py-4 bg-[#008751] hover:bg-[#006d41] text-white font-black uppercase tracking-widest text-sm rounded-2xl transition-all shadow-lg shadow-[#008751]/20">
+                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                Thanh toán toàn bộ lịch tuần
+            </a>
+        </div>
+    </c:if>
 
     <%-- Action buttons --%>
     <div class="flex flex-col sm:flex-row gap-4 justify-center">

@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 public class Payment {
     private UUID paymentId;
     private UUID bookingId;
+    private UUID weeklyGroupId;
     private BigDecimal amount;
     private String paymentMethod;
     private String paymentStatus;
@@ -43,6 +44,9 @@ public class Payment {
 
     public UUID getBookingId() { return bookingId; }
     public void setBookingId(UUID bookingId) { this.bookingId = bookingId; }
+
+    public UUID getWeeklyGroupId() { return weeklyGroupId; }
+    public void setWeeklyGroupId(UUID weeklyGroupId) { this.weeklyGroupId = weeklyGroupId; }
 
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
