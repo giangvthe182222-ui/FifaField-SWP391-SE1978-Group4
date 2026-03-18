@@ -14,6 +14,8 @@
 <jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
 
 <main class="flex-grow max-w-7xl mx-auto w-full px-6 py-10 space-y-8">
+    <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
+
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
             <p class="text-xs font-black uppercase tracking-[0.2em] text-slate-400">Customer Blog</p>
@@ -22,8 +24,6 @@
         </div>
         <a href="${pageContext.request.contextPath}/customer/dashboard" class="px-5 py-3 rounded-2xl border border-slate-200 font-black uppercase text-xs tracking-wider text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">Về dashboard</a>
     </div>
-
-    <jsp:include page="/View/Layout/CustomerQuickPanel.jsp"/>
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         <c:forEach var="blog" items="${blogs}">

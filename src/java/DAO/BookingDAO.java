@@ -299,13 +299,14 @@ public class BookingDAO {
         List<BookingViewModel> list = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name ");
+        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, l.location_name, u.full_name AS customer_name ");
         sql.append("FROM Booking b ");
         sql.append("LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id ");
         sql.append("LEFT JOIN Field f ON b.field_id = f.field_id ");
+        sql.append("LEFT JOIN Location l ON f.location_id = l.location_id ");
         sql.append("LEFT JOIN Users u ON b.booker_id = u.user_id ");
         sql.append("WHERE b.booker_id = ? ");
-        sql.append("AND LOWER(ISNULL(b.status, '')) IN ('pending', 'paid', 'completed') ");
+        sql.append("AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') ");
         sql.append("AND s.booking_date >= ? AND s.booking_date <= ? ");
 
         if (selectedDate != null) {
@@ -352,6 +353,7 @@ public class BookingDAO {
                 if (et != null) vm.setEndTime(et.toLocalTime());
 
                 vm.setFieldName(rs.getString("field_name"));
+                vm.setLocationName(rs.getString("location_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setStatus(rs.getString("status"));
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
@@ -365,17 +367,29 @@ public class BookingDAO {
     }
 
     public List<Field> getCustomerCalendarFields(UUID bookerId) {
+        return getCustomerCalendarFields(bookerId, null);
+    }
+
+    public List<Field> getCustomerCalendarFields(UUID bookerId, UUID locationId) {
         synchronizeBookingStates();
         List<Field> fields = new ArrayList<>();
-        String sql = "SELECT DISTINCT f.field_id, f.field_name, f.field_type, f.image_url, f.status, f.[condition], f.location_id " +
-                "FROM Booking b " +
-                "JOIN Field f ON b.field_id = f.field_id " +
-                "WHERE b.booker_id = ? " +
-                "AND LOWER(ISNULL(b.status, '')) IN ('pending', 'paid', 'completed') " +
-                "ORDER BY f.field_name";
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT DISTINCT f.field_id, f.field_name, f.field_type, f.image_url, f.status, f.[condition], f.location_id ");
+        sql.append("FROM Booking b ");
+        sql.append("JOIN Field f ON b.field_id = f.field_id ");
+        sql.append("WHERE b.booker_id = ? ");
+        sql.append("AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') ");
+        if (locationId != null) {
+            sql.append("AND f.location_id = ? ");
+        }
+        sql.append("ORDER BY f.field_name");
 
-        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, bookerId.toString());
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            int idx = 1;
+            ps.setString(idx++, bookerId.toString());
+            if (locationId != null) {
+                ps.setString(idx++, locationId.toString());
+            }
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
                 Field f = new Field();
@@ -403,7 +417,7 @@ public class BookingDAO {
                 "JOIN Field f ON b.field_id = f.field_id " +
                 "JOIN Location l ON f.location_id = l.location_id " +
                 "WHERE b.booker_id = ? " +
-                "AND LOWER(ISNULL(b.status, '')) IN ('pending', 'paid', 'completed') " +
+                "AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') " +
                 "ORDER BY l.location_name";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {

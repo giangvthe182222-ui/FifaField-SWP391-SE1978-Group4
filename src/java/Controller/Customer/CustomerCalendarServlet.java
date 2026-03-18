@@ -36,6 +36,7 @@ public class CustomerCalendarServlet extends HttpServlet {
         }
 
         String dateRaw = request.getParameter("date");
+        String weekDateRaw = request.getParameter("weekDate");
         String locationIdRaw = request.getParameter("locationId");
         String fieldIdRaw = request.getParameter("fieldId");
 
@@ -48,7 +49,16 @@ public class CustomerCalendarServlet extends HttpServlet {
             selectedDate = null;
         }
 
-        LocalDate baseDate = selectedDate != null ? selectedDate : LocalDate.now();
+        LocalDate weekDate = null;
+        try {
+            if (weekDateRaw != null && !weekDateRaw.isBlank()) {
+                weekDate = LocalDate.parse(weekDateRaw);
+            }
+        } catch (Exception e) {
+            weekDate = null;
+        }
+
+        LocalDate baseDate = weekDate != null ? weekDate : (selectedDate != null ? selectedDate : LocalDate.now());
         LocalDate weekStart = baseDate.with(DayOfWeek.SUNDAY);
         LocalDate weekEnd = weekStart.plusDays(6);
 
@@ -74,7 +84,7 @@ public class CustomerCalendarServlet extends HttpServlet {
         List<BookingViewModel> bookings = bookingDAO.getCustomerCalendarBookings(
             user.getUserId(), weekStart, weekEnd, selectedDate, locationId, fieldId
         );
-        List<Field> fieldOptions = bookingDAO.getCustomerCalendarFields(user.getUserId());
+        List<Field> fieldOptions = bookingDAO.getCustomerCalendarFields(user.getUserId(), locationId);
         List<Location> locationOptions = bookingDAO.getCustomerCalendarLocations(user.getUserId());
 
         Map<LocalDate, List<BookingViewModel>> bookingsByDate = new LinkedHashMap<>();

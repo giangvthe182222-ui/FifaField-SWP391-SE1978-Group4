@@ -24,6 +24,7 @@
 <jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
 
 <main class="flex-grow max-w-7xl mx-auto w-full px-6 py-12 space-y-12">
+    <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
     
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -37,8 +38,6 @@
             Về Dashboard
         </a>
     </div>
-
-    <jsp:include page="/View/Layout/CustomerQuickPanel.jsp"/>
 
     <c:if test="${not empty error}">
         <div class="bg-rose-50 border border-rose-100 p-5 rounded-3xl flex items-center gap-4">
