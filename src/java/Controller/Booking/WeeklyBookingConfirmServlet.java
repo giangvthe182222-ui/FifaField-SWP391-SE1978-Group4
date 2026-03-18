@@ -3,6 +3,7 @@ package Controller.Booking;
 import DAO.BookingDAO;
 import DAO.LocationEquipmentDAO;
 import DAO.VoucherDAO;
+import DAO.WeeklyBookingGroupDAO;
 import Models.Booking;
 import Models.BookingEquipment;
 import Models.LocationEquipmentViewModel;
@@ -123,21 +124,46 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
 
         // For weekly bookings give users 2 hours to pay each booking
         LocalDateTime paymentDeadline = LocalDateTime.now().plusHours(2);
+        UUID weeklyGroupId = UUID.randomUUID();
+
+        WeeklyBookingGroupDAO weeklyGroupDAO = new WeeklyBookingGroupDAO();
+        Models.WeeklyBookingGroup group = new Models.WeeklyBookingGroup();
+        group.setWeeklyGroupId(weeklyGroupId);
+        group.setBookerId(bookerId);
+        group.setStatus("pending");
+        group.setPaymentDeadline(paymentDeadline);
+        group.setTotalAmount(BigDecimal.ZERO);
+
+        if (!weeklyGroupDAO.create(group)) {
+            session.setAttribute("flash_error", "Không thể tạo nhóm đặt sân theo tuần.");
+            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam));
+            return;
+        }
 
         // --- Atomic weekly insert ---
         BookingDAO bookingDAO = new BookingDAO();
         try {
             List<Booking> created = bookingDAO.insertWeekly(
-                    bookerId, fieldId, scheduleIds, equipmentList, voucherId, discountPercent, paymentDeadline);
+                    bookerId, fieldId, scheduleIds, equipmentList, voucherId, discountPercent, paymentDeadline, weeklyGroupId);
+
+            BigDecimal total = BigDecimal.ZERO;
+            for (Booking b : created) {
+                if (b.getTotalPrice() != null) {
+                    total = total.add(b.getTotalPrice());
+                }
+            }
+            weeklyGroupDAO.updateTotalAmount(weeklyGroupId, total);
 
             // Store new booking IDs in session so the success page can display them
             List<String> ids = new ArrayList<>();
             for (Booking b : created) ids.add(b.getBookingId().toString());
             session.setAttribute("weeklyBookingIds", ids);
+            session.setAttribute("weeklyBookingGroupId", weeklyGroupId.toString());
 
             response.sendRedirect(request.getContextPath() + "/booking/weekly-success");
 
         } catch (Exception e) {
+            weeklyGroupDAO.delete(weeklyGroupId);
             String msg = e.getMessage();
             if (msg == null || msg.isBlank()) msg = "Đặt sân theo tuần thất bại. Vui lòng thử lại.";
             session.setAttribute("flash_error", msg);

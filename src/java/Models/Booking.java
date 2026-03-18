@@ -17,6 +17,7 @@ public class Booking {
     private UUID fieldId;
     private UUID scheduleId;
     private UUID voucherId;
+    private UUID weeklyGroupId;
     
     private LocalDateTime bookingTime;
     private String status;
@@ -53,6 +54,9 @@ public class Booking {
 
     public UUID getVoucherId() { return voucherId; }
     public void setVoucherId(UUID voucherId) { this.voucherId = voucherId; }
+
+    public UUID getWeeklyGroupId() { return weeklyGroupId; }
+    public void setWeeklyGroupId(UUID weeklyGroupId) { this.weeklyGroupId = weeklyGroupId; }
 
     public LocalDateTime getBookingTime() { return bookingTime; }
     public void setBookingTime(LocalDateTime bookingTime) { this.bookingTime = bookingTime; }

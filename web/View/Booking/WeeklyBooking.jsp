@@ -22,9 +22,10 @@
         /* Slot cells */
         .slot-avail { cursor: pointer; transition: all .12s; }
         .slot-avail:hover  { background-color: #ecfdf5; border-color: #34d399 !important; }
-        .slot-avail.picked { background-color: #d1fae5; border-color: #008751 !important; }
-        .slot-avail.picked .slot-icon { color: #008751; }
+        .slot-avail.picked { background-color: #bbf7d0; border-color: #047857 !important; box-shadow: 0 0 0 2px rgba(4,120,87,.22), 0 10px 20px rgba(4,120,87,.14); }
+        .slot-avail.picked .slot-icon { color: #065f46; }
         .day-today-header { border-top: 3px solid #008751; }
+        .day-column { min-width: 260px; }
     </style>
 </head>
 <body class="antialiased text-gray-900 flex flex-col min-h-screen">
@@ -118,7 +119,9 @@
         <input type="hidden" name="fieldId"    id="hFieldId"    value="${selectedFieldId}">
         <input type="hidden" name="locationId" id="hLocationId" value="${selectedLocationId}">
         <input type="hidden" name="weekStart"  id="hWeekStart"  value="${weekStart}">
+        <input type="hidden" name="weekCount"  id="hWeekCount"  value="${selectedWeekCount}">
         <%-- fieldType is only for GET filter, not needed in POST --%>
+        <div id="autoRecurringSelections" class="hidden"></div>
 
         <%-- ═══════════════════════════════════════════════════════════
              LEFT PANEL
@@ -193,7 +196,7 @@
 
             <%-- ── STEP 2: Chọn lịch theo tuần ──────────────────────────── --%>
             <section class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-10 space-y-8">
-                <div class="flex items-center justify-between flex-wrap gap-4">
+                <div class="bg-white px-6 py-5 rounded-[2rem] shadow-sm border border-gray-100 flex items-center justify-between flex-wrap gap-4">
                     <div class="flex items-center gap-4">
                         <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
                         <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">2. Chọn lịch theo tuần</h2>
@@ -201,8 +204,9 @@
                     <c:if test="${not empty selectedFieldId}">
                     <%-- Week navigation --%>
                     <div class="flex items-center gap-3">
-                        <a href="${pageContext.request.contextPath}/booking/weekly?locationId=${selectedLocationId}&fieldType=${selectedFieldType}&fieldId=${selectedFieldId}&weekStart=${prevWeekStart}"
-                           class="w-9 h-9 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-xl hover:border-[#008751] hover:text-[#008751] transition-all text-gray-500">
+                        <a href="${pageContext.request.contextPath}/booking/weekly?locationId=${selectedLocationId}&fieldType=${selectedFieldType}&fieldId=${selectedFieldId}&weekStart=${prevWeekStart}&weekCount=${selectedWeekCount}"
+                           data-week-start="${prevWeekStart}"
+                                    class="week-nav-link w-9 h-9 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-xl hover:border-[#008751] hover:text-[#008751] transition-all text-gray-500">
                             <i data-lucide="chevron-left" class="w-4 h-4"></i>
                         </a>
                         <%
@@ -213,13 +217,36 @@
                         <span class="text-sm font-black text-gray-700 whitespace-nowrap">
                             <%= ws.format(df) %> – <%= we.format(df) %>
                         </span>
-                        <a href="${pageContext.request.contextPath}/booking/weekly?locationId=${selectedLocationId}&fieldType=${selectedFieldType}&fieldId=${selectedFieldId}&weekStart=${nextWeekStart}"
-                           class="w-9 h-9 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-xl hover:border-[#008751] hover:text-[#008751] transition-all text-gray-500">
+                        <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-[#008751] text-[10px] font-black uppercase tracking-widest">
+                            ${selectedWeekCount} tuần
+                        </span>
+                                <a href="${pageContext.request.contextPath}/booking/weekly?locationId=${selectedLocationId}&fieldType=${selectedFieldType}&fieldId=${selectedFieldId}&weekStart=${nextWeekStart}&weekCount=${selectedWeekCount}"
+                                    data-week-start="${nextWeekStart}"
+                                    class="week-nav-link w-9 h-9 flex items-center justify-center bg-gray-50 border border-gray-200 rounded-xl hover:border-[#008751] hover:text-[#008751] transition-all text-gray-500">
                             <i data-lucide="chevron-right" class="w-4 h-4"></i>
                         </a>
                     </div>
                     </c:if>
                 </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Số tuần đặt lặp</label>
+                        <select id="weekCountSelect" onchange="filterSubmit()"
+                                class="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl font-black text-xs text-gray-700 input-focus cursor-pointer uppercase tracking-widest">
+                            <c:forEach begin="4" end="12" var="wc">
+                                <option value="${wc}" <c:if test="${wc == selectedWeekCount}">selected</c:if>>${wc} tuần</option>
+                            </c:forEach>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Quy tắc auto chọn</label>
+                        <div class="w-full px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-2xl text-[11px] font-bold text-emerald-700 leading-relaxed">
+                            Chọn 1 ca ở tuần đầu -> hệ thống tự chọn cùng thứ và cùng giờ cho các tuần tiếp theo nếu còn trống.
+                        </div>
+                    </div>
+                </div>
+                <div id="autoRecurringNotice" class="text-[10px] font-bold text-gray-500"></div>
 
                 <c:choose>
                 <c:when test="${empty selectedFieldId}">
@@ -235,10 +262,12 @@
                         <i data-lucide="calendar-x" class="w-12 h-12 text-gray-200 mx-auto"></i>
                         <p class="text-[10px] font-black text-gray-300 uppercase tracking-widest">Không có lịch trong tuần này</p>
                         <div class="flex justify-center gap-3">
-                            <a href="${pageContext.request.contextPath}/booking/weekly?locationId=${selectedLocationId}&fieldType=${selectedFieldType}&fieldId=${selectedFieldId}&weekStart=${prevWeekStart}"
-                               class="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl text-xs font-bold transition-all">← Tuần trước</a>
-                            <a href="${pageContext.request.contextPath}/booking/weekly?locationId=${selectedLocationId}&fieldType=${selectedFieldType}&fieldId=${selectedFieldId}&weekStart=${nextWeekStart}"
-                               class="px-5 py-2.5 bg-[#008751] hover:bg-[#006d41] text-white rounded-2xl text-xs font-bold transition-all">Tuần sau →</a>
+                                     <a href="${pageContext.request.contextPath}/booking/weekly?locationId=${selectedLocationId}&fieldType=${selectedFieldType}&fieldId=${selectedFieldId}&weekStart=${prevWeekStart}&weekCount=${selectedWeekCount}"
+                                 data-week-start="${prevWeekStart}"
+                                 class="week-nav-link px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-2xl text-xs font-bold transition-all">← Tuần trước</a>
+                                     <a href="${pageContext.request.contextPath}/booking/weekly?locationId=${selectedLocationId}&fieldType=${selectedFieldType}&fieldId=${selectedFieldId}&weekStart=${nextWeekStart}&weekCount=${selectedWeekCount}"
+                                 data-week-start="${nextWeekStart}"
+                                 class="week-nav-link px-5 py-2.5 bg-[#008751] hover:bg-[#006d41] text-white rounded-2xl text-xs font-bold transition-all">Tuần sau →</a>
                         </div>
                     </div>
                 </c:when>
@@ -263,77 +292,79 @@
                         </span>
                     </div>
 
-                    <%-- Weekly grid --%>
-                    <div class="overflow-x-auto custom-scrollbar -mx-2 px-2 pb-2">
-                    <table class="w-full min-w-[700px] border-collapse text-sm">
-                        <thead>
-                        <tr>
-                            <th class="w-28 text-left px-3 py-3 text-[9px] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100">Khung giờ</th>
-                            <%
-                                java.time.LocalDate today = java.time.LocalDate.now();
-                                @SuppressWarnings("unchecked")
-                                List<java.time.LocalDate> wdList = (List<java.time.LocalDate>) request.getAttribute("weekDates");
-                                java.time.format.DateTimeFormatter dowFmt  = java.time.format.DateTimeFormatter.ofPattern("EEE", new Locale("vi","VN"));
-                                java.time.format.DateTimeFormatter dateFmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM");
-                                for (java.time.LocalDate d : wdList) {
-                                    boolean isToday = d.equals(today);
-                            %>
-                            <th class="text-center px-1.5 py-3 border-b border-gray-100 <%= isToday ? "day-today-header" : "" %>">
-                                <div class="text-[9px] font-black uppercase tracking-widest <%= isToday ? "text-[#008751]" : "text-gray-400" %>"><%= d.format(dowFmt) %></div>
-                                <div class="text-xs font-black mt-0.5 <%= isToday ? "bg-[#008751] text-white rounded-lg px-2 py-0.5 inline-block" : "text-gray-800" %>">
-                                    <%= d.format(dateFmt) %>
+                    <%-- Weekly board (FieldSchedule-like day columns) --%>
+                    <div class="overflow-x-auto custom-scrollbar pb-6" id="weeklyScroll">
+                        <div class="flex gap-6 min-w-max px-2">
+                            <c:forEach var="d" items="${weekDates}" varStatus="dSt">
+                                <div class="day-column space-y-4">
+                                    <div class="bg-white p-5 rounded-[1.8rem] border-2 border-gray-50 shadow-sm flex flex-col items-center text-center hover:border-[#008751] transition-all">
+                                        <span class="text-[10px] font-black text-[#008751] uppercase tracking-[0.25em] opacity-70">
+                                            <%= ((java.time.LocalDate) pageContext.findAttribute("d")).format(java.time.format.DateTimeFormatter.ofPattern("EEE", new Locale("vi","VN"))) %>
+                                        </span>
+                                        <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight mt-1">
+                                            ${fn:substring(d,8,10)}/${fn:substring(d,5,7)}
+                                        </h3>
+                                    </div>
+
+                                    <div class="space-y-3">
+                                        <c:forEach var="row" items="${gridRows}">
+                                            <c:set var="cell" value="${row.cells[dSt.index]}"/>
+                                            <c:choose>
+                                                <c:when test="${not cell.exists}">
+                                                    <div class="bg-gray-50 border-2 border-dashed border-gray-100 rounded-[1.3rem] p-4 text-center opacity-70">
+                                                        <span class="text-[10px] font-black text-gray-300 uppercase tracking-widest">Không có lịch</span>
+                                                    </div>
+                                                </c:when>
+                                                <c:when test="${cell.available}">
+                                                    <label class="slot-avail block border-2 rounded-[1.4rem] p-4 bg-white shadow-sm ${cell.selected ? 'picked border-[#047857] bg-emerald-100/70' : 'border-gray-50 hover:border-[#008751] hover:shadow-xl'}"
+                                                           for="sc_${cell.scheduleId}">
+                                                        <input type="checkbox" id="sc_${cell.scheduleId}"
+                                                               name="scheduleIds" value="${cell.scheduleId}"
+                                                               data-date="${cell.bookingDate}"
+                                                               data-start="${cell.startTime}"
+                                                               class="slot-cb sr-only"
+                                                               <c:if test="${cell.selected}">checked</c:if>
+                                                               onchange="onCellChange(this)">
+                                                        <div class="flex justify-between items-start mb-3">
+                                                            <div class="text-sm font-black text-gray-900 tracking-tight">${row.startTime} - ${row.endTime}</div>
+                                                            <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-emerald-50 text-[#008751]">available</span>
+                                                        </div>
+                                                        <div class="flex items-center justify-between">
+                                                            <span class="text-[10px] font-black text-[#008751] uppercase tracking-widest"><fmt:formatNumber value="${cell.price}" pattern="#,##0"/>đ</span>
+                                                            <i data-lucide="${cell.selected ? 'check-square' : 'clock'}" class="w-4 h-4 ${cell.selected ? 'text-[#065f46]' : 'text-gray-300'} slot-icon"></i>
+                                                        </div>
+                                                    </label>
+                                                </c:when>
+                                                <c:when test="${not cell.past}">
+                                                    <div class="border-2 border-rose-200 bg-rose-50 rounded-[1.4rem] p-4 opacity-85">
+                                                        <div class="flex justify-between items-start mb-3">
+                                                            <div class="text-sm font-black text-rose-700 tracking-tight">${row.startTime} - ${row.endTime}</div>
+                                                            <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-rose-100 text-rose-600">booked</span>
+                                                        </div>
+                                                        <div class="flex items-center justify-between">
+                                                            <span class="text-[10px] font-black text-rose-600 uppercase tracking-widest">Đã đặt</span>
+                                                            <i data-lucide="x" class="w-4 h-4 text-rose-400"></i>
+                                                        </div>
+                                                    </div>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <div class="border-2 border-gray-200 bg-gray-100 rounded-[1.4rem] p-4 opacity-80">
+                                                        <div class="flex justify-between items-start mb-3">
+                                                            <div class="text-sm font-black text-gray-500 tracking-tight">${row.startTime} - ${row.endTime}</div>
+                                                            <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-gray-200 text-gray-500">past</span>
+                                                        </div>
+                                                        <div class="flex items-center justify-between">
+                                                            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest">Đã qua</span>
+                                                            <i data-lucide="clock" class="w-4 h-4 text-gray-400"></i>
+                                                        </div>
+                                                    </div>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </c:forEach>
+                                    </div>
                                 </div>
-                            </th>
-                            <% } %>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <c:forEach var="row" items="${gridRows}">
-                        <tr class="border-b border-gray-50 hover:bg-gray-50/40 transition-colors">
-                            <td class="px-3 py-3 align-middle">
-                                <div class="text-sm font-black text-gray-800 leading-tight">${row.startTime}</div>
-                                <div class="text-[9px] text-gray-400 font-bold">→ ${row.endTime}</div>
-                            </td>
-                            <c:forEach var="cell" items="${row.cells}">
-                            <td class="px-1 py-2 align-middle">
-                                <c:choose>
-                                    <c:when test="${not cell.exists}">
-                                        <div class="w-full h-14 rounded-xl bg-gray-50 border border-dashed border-gray-200 flex items-center justify-center">
-                                            <span class="text-[9px] text-gray-300 font-bold">—</span>
-                                        </div>
-                                    </c:when>
-                                    <c:when test="${cell.available}">
-                                        <label class="slot-avail block w-full h-14 rounded-xl bg-emerald-50 border-2 border-emerald-200 flex flex-col items-center justify-center gap-0.5 select-none"
-                                               for="sc_${cell.scheduleId}">
-                                            <input type="checkbox" id="sc_${cell.scheduleId}"
-                                                   name="scheduleIds" value="${cell.scheduleId}"
-                                                   class="slot-cb sr-only"
-                                                   onchange="onCellChange(this)">
-                                            <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400 slot-icon"></i>
-                                            <span class="text-[9px] font-black text-emerald-700 leading-tight">
-                                                <fmt:formatNumber value="${cell.price}" pattern="#,##0"/>đ
-                                            </span>
-                                        </label>
-                                    </c:when>
-                                    <c:when test="${not cell.past}">
-                                        <div class="w-full h-14 rounded-xl bg-rose-50 border-2 border-rose-200 flex flex-col items-center justify-center gap-0.5">
-                                            <i data-lucide="x" class="w-3.5 h-3.5 text-rose-400"></i>
-                                            <span class="text-[9px] font-black text-rose-500 leading-tight">Đã đặt</span>
-                                        </div>
-                                    </c:when>
-                                    <c:otherwise>
-                                        <div class="w-full h-14 rounded-xl bg-gray-100 border-2 border-gray-200 flex flex-col items-center justify-center gap-0.5">
-                                            <i data-lucide="clock" class="w-3.5 h-3.5 text-gray-300"></i>
-                                            <span class="text-[9px] font-black text-gray-400 leading-tight">Đã qua</span>
-                                        </div>
-                                    </c:otherwise>
-                                </c:choose>
-                            </td>
                             </c:forEach>
-                        </tr>
-                        </c:forEach>
-                        </tbody>
-                    </table>
+                        </div>
                     </div>
                 </c:otherwise>
                 </c:choose>
@@ -446,11 +477,12 @@
                         <div class="flex justify-between items-start gap-4">
                             <span class="text-[10px] font-black uppercase tracking-widest opacity-60">Tuần</span>
                             <span class="text-sm font-bold text-right">
-                                <%
-                                    if (request.getAttribute("weekStart") != null) {
-                                        out.print(ws.format(df) + " – " + we.format(df));
-                                    } else { out.print("—"); }
-                                %>
+                                <c:choose>
+                                    <c:when test="${not empty weekStart and not empty weekEnd}">
+                                        ${weekStart} – ${weekEnd}
+                                    </c:when>
+                                    <c:otherwise>—</c:otherwise>
+                                </c:choose>
                             </span>
                         </div>
                         <div class="flex justify-between items-start gap-4">
@@ -509,6 +541,26 @@
 }
 </script>
 
+<script id="allRangeSchedulesData" type="application/json">
+[
+<c:forEach var="s" items="${allRangeSchedules}" varStatus="st">
+{"id":"${s.scheduleId}","date":"${s.bookingDate}","start":"${s.startTime}","status":"${s.status}","price":${s.price}}<c:if test="${not st.last}">,</c:if>
+</c:forEach>
+]
+</script>
+
+<script id="selectedScheduleIdsData" type="application/json">
+[
+<c:forEach var="sid" items="${selectedScheduleIds}" varStatus="st">"${sid}"<c:if test="${not st.last}">,</c:if></c:forEach>
+]
+</script>
+
+<script id="anchorScheduleIdsData" type="application/json">
+[
+<c:forEach var="sid" items="${anchorScheduleIds}" varStatus="st">"${sid}"<c:if test="${not st.last}">,</c:if></c:forEach>
+]
+</script>
+
 <jsp:include page="/View/Layout/Footer.jsp"/>
 
 <script>
@@ -520,15 +572,159 @@
     var slotPrices = {};
     try { slotPrices = JSON.parse(rawPricesJson); } catch(e) {}
 
+    var rawAllSchedulesJson = (document.getElementById('allRangeSchedulesData') || {}).textContent || '[]';
+    var allRangeSchedules = [];
+    try { allRangeSchedules = JSON.parse(rawAllSchedulesJson); } catch(e) {}
+
+    var rawSelectedIdsJson = (document.getElementById('selectedScheduleIdsData') || {}).textContent || '[]';
+    var persistedSelectedIds = {};
+    try {
+        JSON.parse(rawSelectedIdsJson).forEach(function(id) {
+            if (id) persistedSelectedIds[String(id)] = true;
+        });
+    } catch (e) {}
+
+    var rawAnchorIdsJson = (document.getElementById('anchorScheduleIdsData') || {}).textContent || '[]';
+    var persistedAnchorIds = {};
+    try {
+        JSON.parse(rawAnchorIdsJson).forEach(function(id) {
+            if (id) persistedAnchorIds[String(id)] = true;
+        });
+    } catch (e) {}
+
+    function normalizeTime(raw) {
+        if (!raw) return '';
+        var t = String(raw);
+        return t.length >= 5 ? t.substring(0, 5) : t;
+    }
+
+    var scheduleByDateStart = {};
+    var scheduleById = {};
+    allRangeSchedules.forEach(function(s) {
+        var id = String(s.id || '');
+        var date = String(s.date || '');
+        var start = normalizeTime(s.start);
+        if (id && !(id in slotPrices)) slotPrices[id] = parseNum(s.price);
+        if (id) scheduleById[id] = s;
+        if (date && start) scheduleByDateStart[date + '|' + start] = s;
+    });
+
     // ── Helpers ───────────────────────────────────────────────────────────────
     function getChecked() { return Array.from(document.querySelectorAll('.slot-cb:checked')); }
+    function getAutoSelectedIds() {
+        return Array.from(document.querySelectorAll('#autoRecurringSelections input[name="scheduleIds"]')).map(function(inp){
+            return inp.value;
+        });
+    }
+    function getVisibleSlotIds() {
+        return Array.from(document.querySelectorAll('.slot-cb')).map(function(cb){ return cb.value; });
+    }
     function fmt(v) { return Math.round(v).toLocaleString('vi-VN') + ' đ'; }
     function parseNum(v) { var n = parseFloat(String(v).replace(/[^0-9.-]/g,'')); return isNaN(n)?0:n; }
+    function pad2(n) { return n < 10 ? '0' + n : String(n); }
+    function addDays(dateStr, days) {
+        var p = String(dateStr || '').split('-');
+        if (p.length !== 3) return '';
+        var d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+        if (isNaN(d.getTime())) return '';
+        d.setDate(d.getDate() + days);
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+
+    function rebuildAutoRecurringSelections() {
+        var container = document.getElementById('autoRecurringSelections');
+        var notice = document.getElementById('autoRecurringNotice');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        var weekCountSel = document.getElementById('weekCountSelect');
+        var weekCount = parseInt(weekCountSel ? weekCountSel.value : '4', 10);
+        if (isNaN(weekCount) || weekCount < 4) weekCount = 4;
+
+        var hWeekCount = document.getElementById('hWeekCount');
+        if (hWeekCount) hWeekCount.value = String(weekCount);
+
+        var checked = getChecked();
+        var baseIds = {};
+        checked.forEach(function(cb) { baseIds[String(cb.value)] = true; });
+
+        var autoIds = {};
+        var skipped = 0;
+
+        Object.keys(persistedAnchorIds).forEach(function(anchorId) {
+            var anchor = scheduleById[String(anchorId)];
+            if (!anchor) return;
+
+            var baseDate = String(anchor.date || '');
+            var baseStart = normalizeTime(anchor.start);
+            if (!baseDate || !baseStart) return;
+
+            for (var w = 1; w < weekCount; w++) {
+                var targetDate = addDays(baseDate, w * 7);
+                if (!targetDate) continue;
+
+                var target = scheduleByDateStart[targetDate + '|' + baseStart];
+                if (!target) { skipped++; continue; }
+
+                var targetStatus = String(target.status || '').toLowerCase();
+                var targetId = String(target.id || '');
+                if (targetStatus !== 'available' || !targetId || baseIds[targetId]) {
+                    skipped++;
+                    continue;
+                }
+                autoIds[targetId] = true;
+            }
+        });
+
+        Object.keys(autoIds).forEach(function(id) {
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'scheduleIds';
+            input.value = id;
+            container.appendChild(input);
+        });
+
+        if (notice) {
+            var autoCount = Object.keys(autoIds).length;
+            if (autoCount > 0 || skipped > 0) {
+                notice.textContent = 'Tự động thêm ' + autoCount + ' ca cho các tuần tiếp theo' + (skipped > 0 ? ('; bỏ qua ' + skipped + ' ca không còn trống') : '') + '.';
+                notice.className = 'text-[10px] font-bold text-emerald-700';
+            } else {
+                notice.textContent = 'Chọn ca ở tuần đầu để hệ thống tự thêm các tuần tiếp theo.';
+                notice.className = 'text-[10px] font-bold text-gray-500';
+            }
+        }
+    }
+
+    function buildSelectedIdsForNavigation() {
+        var merged = {};
+        Object.keys(persistedSelectedIds).forEach(function(id) { merged[id] = true; });
+
+        // Reconcile current visible week with user edits (allow unselect on this week)
+        getVisibleSlotIds().forEach(function(id) { delete merged[id]; });
+        getChecked().forEach(function(cb) { merged[String(cb.value)] = true; });
+        getAutoSelectedIds().forEach(function(id) { merged[String(id)] = true; });
+
+        return Object.keys(merged);
+    }
+
+    function buildAnchorIdsForNavigation() {
+        return Object.keys(persistedAnchorIds);
+    }
+
+    function syncPersistedSelectionSet() {
+        var next = {};
+        buildSelectedIdsForNavigation().forEach(function(id) { next[id] = true; });
+        persistedSelectedIds = next;
+    }
 
     function updateSummary() {
         var checked   = getChecked();
-        var count     = checked.length;
+        var autoIds   = getAutoSelectedIds();
+        var count     = checked.length + autoIds.length;
         var fieldSum  = checked.reduce(function(s, cb){ return s + (slotPrices[cb.value]||0); }, 0);
+        fieldSum += autoIds.reduce(function(s, id){ return s + (slotPrices[id] || 0); }, 0);
         var equipSum  = 0;
         document.querySelectorAll('.equipment-qty').forEach(function(inp){
             equipSum += (parseInt(inp.value,10)||0) * parseNum(inp.dataset.unitPrice);
@@ -578,21 +774,34 @@
     }
 
     window.onCellChange = function(cb) {
+        var sid = String(cb.value);
+        if (cb.checked) persistedAnchorIds[sid] = true;
+        else delete persistedAnchorIds[sid];
+
         setCellVisual(cb, cb.checked);
+        rebuildAutoRecurringSelections();
+        syncPersistedSelectionSet();
         updateSummary();
     };
 
     window.selectAll = function() {
         document.querySelectorAll('.slot-cb').forEach(function(cb){
-            if (!cb.checked) { cb.checked = true; setCellVisual(cb, true); }
+            if (!cb.checked) { cb.checked = true; }
+            persistedAnchorIds[String(cb.value)] = true;
+            setCellVisual(cb, true);
         });
+        rebuildAutoRecurringSelections();
+        syncPersistedSelectionSet();
         updateSummary();
     };
 
     window.clearAll = function() {
-        document.querySelectorAll('.slot-cb:checked').forEach(function(cb){
+        document.querySelectorAll('.slot-cb').forEach(function(cb){
             cb.checked = false; setCellVisual(cb, false);
+            delete persistedAnchorIds[String(cb.value)];
         });
+        rebuildAutoRecurringSelections();
+        syncPersistedSelectionSet();
         updateSummary();
     };
 
@@ -618,13 +827,34 @@
         var fieldVal = fieldSel  ? fieldSel.value  : '';
         var ft = '${selectedFieldType}';
         var ws = '${weekStart}';
+        var wcSel = document.getElementById('weekCountSelect');
+        var wc = wcSel ? wcSel.value : '${selectedWeekCount}';
 
         if (locVal)   params.set('locationId', locVal);
         if (ft)       params.set('fieldType',  ft);
         if (fieldVal) params.set('fieldId',    fieldVal);
         if (ws)       params.set('weekStart',  ws);
+        if (wc)       params.set('weekCount',  wc);
+        var selectedIds = buildSelectedIdsForNavigation();
+        if (selectedIds.length > 0) params.set('selectedIds', selectedIds.join(','));
+        var anchorIds = buildAnchorIdsForNavigation();
+        if (anchorIds.length > 0) params.set('anchorIds', anchorIds.join(','));
         window.location.href = baseUrl + '?' + params.toString();
     };
+
+    document.querySelectorAll('.week-nav-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var nextUrl = new URL(this.href, window.location.origin);
+            var selectedIds = buildSelectedIdsForNavigation();
+            if (selectedIds.length > 0) nextUrl.searchParams.set('selectedIds', selectedIds.join(','));
+            else nextUrl.searchParams.delete('selectedIds');
+            var anchorIds = buildAnchorIdsForNavigation();
+            if (anchorIds.length > 0) nextUrl.searchParams.set('anchorIds', anchorIds.join(','));
+            else nextUrl.searchParams.delete('anchorIds');
+            window.location.href = nextUrl.toString();
+        });
+    });
 
     // ── Equipment qty changes re-calc summary ────────────────────────────────
     document.querySelectorAll('.equipment-qty').forEach(function(inp){
@@ -632,7 +862,7 @@
     });
 
     window.confirmSubmit = function() {
-        var count = getChecked().length;
+        var count = getChecked().length + getAutoSelectedIds().length;
         if (count === 0) {
             document.getElementById('noSelectMsg').classList.remove('hidden');
             return false;
@@ -645,6 +875,16 @@
         );
     };
 
+    // Re-check slots persisted from previous week page and keep visual state in sync.
+    document.querySelectorAll('.slot-cb').forEach(function(cb) {
+        if (persistedSelectedIds[String(cb.value)]) {
+            cb.checked = true;
+            setCellVisual(cb, true);
+        }
+    });
+
+    rebuildAutoRecurringSelections();
+    syncPersistedSelectionSet();
     updateSummary();
 })();
 </script>

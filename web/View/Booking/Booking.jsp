@@ -463,7 +463,7 @@
                     ? 'bg-emerald-50 text-[#008751]'
                     : 'bg-amber-50 text-amber-500';
                 var statusText = isAvailable ? 'available' : 'unavailable';
-                var selectedClass = isSelected ? ' border-[#008751] bg-emerald-50/40' : '';
+                var selectedClass = isSelected ? ' border-[#065f46] bg-emerald-100 shadow-2xl shadow-emerald-200/60 ring-2 ring-[#047857]/35 -translate-y-0.5' : '';
 
                 slotsHtml += '<div class="' + cardClass + selectedClass + ' group border-2 rounded-[1.5rem] p-4 transition-all" data-id="' + s.id + '" data-date="' + d + '" data-available="' + isAvailable + '">' +
                     '<div class="flex justify-between items-start mb-3">' +

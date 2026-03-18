@@ -35,6 +35,44 @@ public class PaymentCancelServlet extends HttpServlet {
 
         User user = (User) session.getAttribute("user");
         String bookingIdParam = request.getParameter("bookingId");
+        String weeklyGroupIdParam = request.getParameter("weeklyGroupId");
+
+        if (weeklyGroupIdParam != null && !weeklyGroupIdParam.isBlank()) {
+            UUID weeklyGroupId;
+            try {
+                weeklyGroupId = UUID.fromString(weeklyGroupIdParam);
+            } catch (IllegalArgumentException e) {
+                session.setAttribute("flash_error", "Invalid weekly group ID format.");
+                response.sendRedirect(request.getContextPath() + "/customer/bookings");
+                return;
+            }
+
+            WeeklyBookingGroupDAO groupDAO = new WeeklyBookingGroupDAO();
+            WeeklyBookingGroup group = groupDAO.getById(weeklyGroupId);
+            if (group == null || !group.getBookerId().equals(user.getUserId())) {
+                session.setAttribute("flash_error", "Weekly group not found.");
+                response.sendRedirect(request.getContextPath() + "/customer/bookings");
+                return;
+            }
+
+            BookingDAO bookingDAO = new BookingDAO();
+            PaymentDAO paymentDAO = new PaymentDAO();
+            Payment payment = paymentDAO.getPaymentByWeeklyGroupId(weeklyGroupId);
+
+            boolean cancelled = bookingDAO.cancelWeeklyGroupForPayment(weeklyGroupId);
+            if (payment != null) {
+                paymentDAO.updatePaymentFailed(payment.getPaymentId());
+            }
+            groupDAO.updateStatus(weeklyGroupId, "cancelled");
+
+            if (cancelled) {
+                session.setAttribute("flash_success", "Weekly booking group cancelled due to payment timeout.");
+            } else {
+                session.setAttribute("flash_error", "Failed to cancel weekly booking group.");
+            }
+            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            return;
+        }
 
         if (bookingIdParam == null || bookingIdParam.isBlank()) {
             session.setAttribute("flash_error", "Invalid booking ID.");

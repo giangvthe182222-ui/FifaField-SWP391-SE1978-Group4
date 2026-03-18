@@ -2,8 +2,6 @@ package Controller.Customer;
 
 import DAO.BookingDAO;
 import Models.BookingViewModel;
-import Models.Field;
-import Models.Location;
 import Models.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -20,7 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.UUID;
 
 @WebServlet("/customer/my-calendar")
 public class CustomerCalendarServlet extends HttpServlet {
@@ -37,8 +34,6 @@ public class CustomerCalendarServlet extends HttpServlet {
 
         String dateRaw = request.getParameter("date");
         String weekDateRaw = request.getParameter("weekDate");
-        String locationIdRaw = request.getParameter("locationId");
-        String fieldIdRaw = request.getParameter("fieldId");
 
         LocalDate selectedDate = null;
         try {
@@ -62,30 +57,10 @@ public class CustomerCalendarServlet extends HttpServlet {
         LocalDate weekStart = baseDate.with(DayOfWeek.SUNDAY);
         LocalDate weekEnd = weekStart.plusDays(6);
 
-        UUID locationId = null;
-        try {
-            if (locationIdRaw != null && !locationIdRaw.isBlank()) {
-                locationId = UUID.fromString(locationIdRaw);
-            }
-        } catch (Exception e) {
-            locationId = null;
-        }
-
-        UUID fieldId = null;
-        try {
-            if (fieldIdRaw != null && !fieldIdRaw.isBlank()) {
-                fieldId = UUID.fromString(fieldIdRaw);
-            }
-        } catch (Exception e) {
-            fieldId = null;
-        }
-
         BookingDAO bookingDAO = new BookingDAO();
         List<BookingViewModel> bookings = bookingDAO.getCustomerCalendarBookings(
-            user.getUserId(), weekStart, weekEnd, selectedDate, locationId, fieldId
+            user.getUserId(), weekStart, weekEnd, selectedDate, null, null
         );
-        List<Field> fieldOptions = bookingDAO.getCustomerCalendarFields(user.getUserId(), locationId);
-        List<Location> locationOptions = bookingDAO.getCustomerCalendarLocations(user.getUserId());
 
         Map<LocalDate, List<BookingViewModel>> bookingsByDate = new LinkedHashMap<>();
         for (int i = 0; i < 7; i++) {
@@ -106,11 +81,7 @@ public class CustomerCalendarServlet extends HttpServlet {
 
         request.setAttribute("bookingsByDate", bookingsByDate);
         request.setAttribute("displayDateMap", displayDateMap);
-        request.setAttribute("locationOptions", locationOptions);
-        request.setAttribute("fieldOptions", fieldOptions);
         request.setAttribute("selectedDate", selectedDate != null ? selectedDate.toString() : "");
-        request.setAttribute("selectedLocationId", locationId);
-        request.setAttribute("selectedFieldId", fieldId);
         request.setAttribute("weekStart", weekStart);
         request.setAttribute("weekEnd", weekEnd);
         request.setAttribute("prevWeek", weekStart.minusWeeks(1));

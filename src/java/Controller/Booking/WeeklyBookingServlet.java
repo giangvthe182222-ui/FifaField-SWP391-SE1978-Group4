@@ -59,6 +59,56 @@ public class WeeklyBookingServlet extends HttpServlet {
                     .collect(Collectors.toList());
             request.setAttribute("locations", locations);
 
+            // --- Number of weeks ---
+            int selectedWeekCount = 4;
+            String weekCountParam = request.getParameter("weekCount");
+            if (weekCountParam != null && !weekCountParam.isBlank()) {
+                try {
+                    selectedWeekCount = Integer.parseInt(weekCountParam);
+                } catch (NumberFormatException ignored) {
+                    selectedWeekCount = 4;
+                }
+            }
+            if (selectedWeekCount < 4) selectedWeekCount = 4;
+            if (selectedWeekCount > 12) selectedWeekCount = 12;
+            request.setAttribute("selectedWeekCount", selectedWeekCount);
+
+            // --- Persisted selected schedule IDs across week navigation ---
+            Set<String> selectedScheduleIds = new LinkedHashSet<>();
+            String selectedIdsParam = request.getParameter("selectedIds");
+            if (selectedIdsParam != null && !selectedIdsParam.isBlank()) {
+                String[] chunks = selectedIdsParam.split(",");
+                for (String chunk : chunks) {
+                    if (chunk == null) continue;
+                    String token = chunk.trim();
+                    if (token.isEmpty()) continue;
+                    try {
+                        selectedScheduleIds.add(UUID.fromString(token).toString());
+                    } catch (IllegalArgumentException ignored) {
+                        // Ignore invalid IDs in query
+                    }
+                }
+            }
+            request.setAttribute("selectedScheduleIds", selectedScheduleIds);
+            request.setAttribute("selectedScheduleIdsCsv", String.join(",", selectedScheduleIds));
+
+            Set<String> anchorScheduleIds = new LinkedHashSet<>();
+            String anchorIdsParam = request.getParameter("anchorIds");
+            if (anchorIdsParam != null && !anchorIdsParam.isBlank()) {
+                String[] chunks = anchorIdsParam.split(",");
+                for (String chunk : chunks) {
+                    if (chunk == null) continue;
+                    String token = chunk.trim();
+                    if (token.isEmpty()) continue;
+                    try {
+                        anchorScheduleIds.add(UUID.fromString(token).toString());
+                    } catch (IllegalArgumentException ignored) {
+                        // Ignore invalid IDs in query
+                    }
+                }
+            }
+            request.setAttribute("anchorScheduleIds", anchorScheduleIds);
+
             // --- Week navigation ---
             String weekStartParam = request.getParameter("weekStart");
             LocalDate weekStart;
@@ -68,8 +118,10 @@ public class WeeklyBookingServlet extends HttpServlet {
                 weekStart = LocalDate.now().with(DayOfWeek.MONDAY);
             }
             LocalDate weekEnd = weekStart.plusDays(6);
+            LocalDate rangeEnd = weekStart.plusWeeks(selectedWeekCount).minusDays(1);
             request.setAttribute("weekStart", weekStart.toString());
             request.setAttribute("weekEnd", weekEnd.toString());
+            request.setAttribute("rangeEnd", rangeEnd.toString());
             request.setAttribute("prevWeekStart", weekStart.minusWeeks(1).toString());
             request.setAttribute("nextWeekStart", weekStart.plusWeeks(1).toString());
 
@@ -136,13 +188,18 @@ public class WeeklyBookingServlet extends HttpServlet {
                 request.setAttribute("selectedField", fd.getById(fieldId));
 
                 ScheduleDAO scheduleDAO = new ScheduleDAO();
-                List<Schedule> allSchedules = scheduleDAO.getScheduleByFieldInRange(fieldId, weekStart, weekEnd);
+                List<Schedule> allSchedules = scheduleDAO.getScheduleByFieldInRange(fieldId, weekStart, rangeEnd);
+                request.setAttribute("allRangeSchedules", allSchedules);
 
                 LocalDate today = LocalDate.now();
 
+                List<Schedule> firstWeekSchedules = allSchedules.stream()
+                    .filter(s -> !s.getBookingDate().isBefore(weekStart) && !s.getBookingDate().isAfter(weekEnd))
+                    .collect(Collectors.toList());
+
                 // Collect all distinct start-times (sorted)
                 Set<LocalTime> timeSlotSet = new TreeSet<>();
-                for (Schedule s : allSchedules) timeSlotSet.add(s.getStartTime());
+                for (Schedule s : firstWeekSchedules) timeSlotSet.add(s.getStartTime());
 
                 // Build grid rows: each row = one time slot, 7 cells (one per day)
                 List<Map<String, Object>> gridRows = new ArrayList<>();
@@ -151,7 +208,7 @@ public class WeeklyBookingServlet extends HttpServlet {
 
                     // find end-time from any schedule at this slot
                     LocalTime endTime = null;
-                    for (Schedule s : allSchedules) {
+                    for (Schedule s : firstWeekSchedules) {
                         if (s.getStartTime().equals(slot)) { endTime = s.getEndTime(); break; }
                     }
                     row.put("startTime", slot.toString().substring(0, 5));  // "HH:mm"
@@ -161,7 +218,7 @@ public class WeeklyBookingServlet extends HttpServlet {
                     for (LocalDate date : weekDates) {
                         Map<String, Object> cell = new LinkedHashMap<>();
                         Schedule found = null;
-                        for (Schedule s : allSchedules) {
+                        for (Schedule s : firstWeekSchedules) {
                             if (s.getStartTime().equals(slot) && s.getBookingDate().equals(date)) {
                                 found = s;
                                 break;
@@ -174,10 +231,13 @@ public class WeeklyBookingServlet extends HttpServlet {
                                     (date.equals(today) && slot.isBefore(java.time.LocalTime.now()));
                             cell.put("exists",      true);
                             cell.put("scheduleId",  found.getScheduleId().toString());
+                            cell.put("bookingDate", found.getBookingDate().toString());
+                            cell.put("startTime",   found.getStartTime().toString().substring(0, 5));
                             cell.put("price",       found.getPrice());
                             cell.put("available",   "available".equalsIgnoreCase(found.getStatus()) && !isPast);
                             cell.put("past",        isPast);
                             cell.put("status",      found.getStatus());
+                            cell.put("selected",    selectedScheduleIds.contains(found.getScheduleId().toString()));
                         }
                         cells.add(cell);
                     }
