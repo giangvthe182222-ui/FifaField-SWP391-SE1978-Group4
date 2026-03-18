@@ -35,6 +35,10 @@
 </c:choose>
 
 <main class="flex-grow max-w-7xl mx-auto px-6 py-12 w-full space-y-12">
+
+    <c:if test="${viewMode == 'customer'}">
+        <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
+    </c:if>
     
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -183,16 +187,33 @@
                                             </p>
                                         </div>
                                         <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-100 w-full sm:w-auto">
-                                            <select name="status_${b.bookingId}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-700 focus:ring-0 cursor-pointer px-3">
-                                                <option value="pending" ${b.status == 'pending' ? 'selected' : ''}>pending</option>
-                                                <option value="paid" ${b.status == 'paid' ? 'selected' : ''}>paid</option>
-                                                <option value="checked in" ${b.status == 'checked in' ? 'selected' : ''}>checked in</option>
-                                                <option value="completed" ${b.status == 'completed' ? 'selected' : ''}>completed</option>
-                                                <option value="pending refund" ${b.status == 'pending refund' ? 'selected' : ''}>pending refund</option>
-                                                <option value="cancelled" ${b.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
-                                                <option value="refunded" ${b.status == 'refunded' ? 'selected' : ''}>refunded</option>
-                                            </select>
-                                            <button type="button" onclick="updateStatus('${b.bookingId}')" class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors">Update</button>
+                                            <c:choose>
+                                                <c:when test="${viewMode == 'staff'}">
+                                                    <c:set var="canStaffUpdate" value="${staffCanCheckInMap[b.bookingId] || staffCanRefundMap[b.bookingId]}"/>
+                                                    <select name="status_${b.bookingId}" ${!canStaffUpdate ? 'disabled' : ''} class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-700 focus:ring-0 cursor-pointer px-3 ${!canStaffUpdate ? 'opacity-60 cursor-not-allowed' : ''}">
+                                                        <option value="${b.status}" selected>${b.status}</option>
+                                                        <c:if test="${staffCanCheckInMap[b.bookingId] && b.status != 'checked in'}">
+                                                            <option value="checked in">checked in</option>
+                                                        </c:if>
+                                                        <c:if test="${staffCanRefundMap[b.bookingId] && b.status != 'refunded'}">
+                                                            <option value="refunded">refunded</option>
+                                                        </c:if>
+                                                    </select>
+                                                    <button type="button" onclick="updateStatus('${b.bookingId}')" ${!canStaffUpdate ? 'disabled' : ''} class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors ${!canStaffUpdate ? 'opacity-50 cursor-not-allowed hover:bg-gray-900' : ''}">Update</button>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <select name="status_${b.bookingId}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-700 focus:ring-0 cursor-pointer px-3">
+                                                        <option value="pending" ${b.status == 'pending' ? 'selected' : ''}>pending</option>
+                                                        <option value="paid" ${b.status == 'paid' ? 'selected' : ''}>paid</option>
+                                                        <option value="checked in" ${b.status == 'checked in' ? 'selected' : ''}>checked in</option>
+                                                        <option value="completed" ${b.status == 'completed' ? 'selected' : ''}>completed</option>
+                                                        <option value="pending refund" ${b.status == 'pending refund' ? 'selected' : ''}>pending refund</option>
+                                                        <option value="cancelled" ${b.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
+                                                        <option value="refunded" ${b.status == 'refunded' ? 'selected' : ''}>refunded</option>
+                                                    </select>
+                                                    <button type="button" onclick="updateStatus('${b.bookingId}')" class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors">Update</button>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </div>
                                         <c:choose>
                                             <c:when test="${viewMode == 'staff'}">

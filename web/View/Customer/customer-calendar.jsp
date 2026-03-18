@@ -13,6 +13,8 @@
 <jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
 
 <main class="max-w-7xl mx-auto px-6 py-10 space-y-8">
+    <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
+
     <div class="space-y-2">
         <h1 class="text-4xl font-black uppercase tracking-tight">Lịch chơi <span class="text-[#008751]">cá nhân</span></h1>
         <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.25em]">Lịch chung hiển thị booking của bạn ở trạng thái pending, paid, completed</p>
@@ -48,10 +50,10 @@
 
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div class="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
-                <a href="${pageContext.request.contextPath}/customer/my-calendar?date=${prevWeek}<c:if test='${not empty selectedLocationId}'>&locationId=${selectedLocationId}</c:if><c:if test='${not empty selectedFieldId}'>&fieldId=${selectedFieldId}</c:if>"
+                <a href="${pageContext.request.contextPath}/customer/my-calendar?weekDate=${prevWeek}<c:if test='${not empty selectedLocationId}'>&locationId=${selectedLocationId}</c:if><c:if test='${not empty selectedFieldId}'>&fieldId=${selectedFieldId}</c:if>"
                    class="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751] transition-all">Tuần trước</a>
                 <span class="px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-gray-500">${weekStart} - ${weekEnd}</span>
-                <a href="${pageContext.request.contextPath}/customer/my-calendar?date=${nextWeek}<c:if test='${not empty selectedLocationId}'>&locationId=${selectedLocationId}</c:if><c:if test='${not empty selectedFieldId}'>&fieldId=${selectedFieldId}</c:if>"
+                <a href="${pageContext.request.contextPath}/customer/my-calendar?weekDate=${nextWeek}<c:if test='${not empty selectedLocationId}'>&locationId=${selectedLocationId}</c:if><c:if test='${not empty selectedFieldId}'>&fieldId=${selectedFieldId}</c:if>"
                    class="px-4 py-2 rounded-xl border border-gray-200 text-gray-500 hover:border-[#008751] hover:text-[#008751] transition-all">Tuần sau</a>
             </div>
         </div>
@@ -76,8 +78,11 @@
                                         <div class="border-2 rounded-[1.5rem] p-4 transition-all border-gray-50 bg-white hover:border-[#008751] hover:shadow-md">
                                             <div class="flex items-start justify-between gap-3 mb-3">
                                                 <p class="text-sm font-black text-gray-900 tracking-tight">${b.startTime} - ${b.endTime}</p>
-                                                <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'completed' ? 'bg-emerald-50 text-emerald-700' : (b.status == 'paid' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700')}">${b.status}</span>
+                                                <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'completed' ? 'bg-emerald-50 text-emerald-700' : (b.status == 'paid' ? 'bg-blue-50 text-blue-700' : (b.status == 'checked in' ? 'bg-purple-50 text-purple-700' : 'bg-amber-50 text-amber-700'))}">${b.status}</span>
                                             </div>
+
+                                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cơ sở</p>
+                                            <p class="text-sm font-black text-gray-700 uppercase tracking-tight mt-1">${empty b.locationName ? '--' : b.locationName}</p>
 
                                             <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sân</p>
                                             <p class="text-sm font-black text-gray-800 uppercase tracking-tight mt-1">${b.fieldName}</p>
