@@ -310,6 +310,26 @@ public class PaymentDAO {
         return false;
     }
 
+    public boolean markSupplementaryPending(UUID bookingId, BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return false;
+        }
+
+        String sql = "UPDATE Payment SET amount = ?, payment_status = 'PENDING', payment_time = SYSDATETIME() WHERE booking_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setBigDecimal(1, amount);
+            ps.setString(2, bookingId.toString());
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     private boolean updatePaymentStatusByBooking(UUID bookingId, String paymentStatus, boolean touchPaymentTime) {
         String sql = touchPaymentTime
                 ? "UPDATE Payment SET payment_status = ?, payment_time = SYSDATETIME() WHERE booking_id = ?"

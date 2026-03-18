@@ -12,9 +12,19 @@
     String checkoutUrl = (String) request.getAttribute("checkoutUrl");
     String bookingDetailPath = (String) request.getAttribute("bookingDetailPath");
     String bookingHistoryPath = (String) request.getAttribute("bookingHistoryPath");
+    String paymentSource = (String) request.getAttribute("paymentSource");
+    String supplementaryRentalId = (String) request.getAttribute("supplementaryRentalId");
+    String paymentDescription = (String) request.getAttribute("paymentDescription");
     Boolean isWeeklyGroupPayment = (Boolean) request.getAttribute("isWeeklyGroupPayment");
     Integer weeklySessionCount = (Integer) request.getAttribute("weeklySessionCount");
     String weeklyGroupId = (String) request.getAttribute("weeklyGroupId");
+
+    if (paymentSource == null || paymentSource.isBlank()) {
+        paymentSource = "booking";
+    }
+    if (paymentDescription == null || paymentDescription.isBlank()) {
+        paymentDescription = Boolean.TRUE.equals(isWeeklyGroupPayment) ? "Thanh toán lịch tuần" : "Thanh toán đặt sân";
+    }
 
     if (bookingDetailPath == null || bookingDetailPath.isBlank()) {
         bookingDetailPath = "/customer/bookingDetail";
@@ -170,7 +180,7 @@
 
                         <div class="pt-3 border-t border-slate-200">
                             <p class="text-sm text-slate-500">Mô tả</p>
-                            <p class="font-semibold text-lg mt-1"><%= Boolean.TRUE.equals(isWeeklyGroupPayment) ? "Thanh toán lịch tuần" : "Thanh toán đặt sân" %></p>
+                            <p class="font-semibold text-lg mt-1"><%= paymentDescription %></p>
                         </div>
 
                         <div class="pt-3 border-t border-slate-200">
@@ -199,7 +209,11 @@
                     </div>
 
                     <div class="timer-box p-4 text-center">
-                        <p class="text-[19px] font-semibold text-[#d0467d]">Đơn hàng sẽ hết hạn sau:</p>
+                        <p class="text-[19px] font-semibold text-[#d0467d]">
+                            <%= "supplementary".equalsIgnoreCase(paymentSource)
+                                    ? "Thanh toán equipment bổ sung (không giới hạn thời gian):"
+                                    : "Đơn hàng sẽ hết hạn sau:" %>
+                        </p>
                         <div class="mt-4 flex justify-center gap-4" id="timerWrapper">
                             <div class="timer-pill py-3 px-3">
                                 <p class="text-4xl font-black leading-none" id="minutesBox">1</p>
@@ -213,15 +227,21 @@
                     </div>
 
                     <div>
-                        <form action="${pageContext.request.contextPath}/payment-cancel" method="post" onsubmit="return confirm('Bạn chắc chắn muốn huỷ đặt sân này?');">
-                            <input type="hidden" name="bookingId" value="<%= booking.getBookingId() %>" />
-                            <% if (Boolean.TRUE.equals(isWeeklyGroupPayment) && weeklyGroupId != null) { %>
-                            <input type="hidden" name="weeklyGroupId" value="<%= weeklyGroupId %>" />
-                            <% } %>
-                            <button type="submit" class="w-full rounded-xl py-3 border border-[var(--brand-border)] bg-[var(--brand-green-soft)] text-[var(--brand-green-dark)] font-semibold hover:bg-[#def4e8] transition">
+                        <% if ("supplementary".equalsIgnoreCase(paymentSource)) { %>
+                            <a href="${pageContext.request.contextPath}<%= bookingHistoryPath %>" class="block w-full text-center rounded-xl py-3 border border-[var(--brand-border)] bg-[var(--brand-green-soft)] text-[var(--brand-green-dark)] font-semibold hover:bg-[#def4e8] transition">
                                 Quay lại
-                            </button>
-                        </form>
+                            </a>
+                        <% } else { %>
+                            <form action="${pageContext.request.contextPath}/payment-cancel" method="post" onsubmit="return confirm('Bạn chắc chắn muốn huỷ đặt sân này?');">
+                                <input type="hidden" name="bookingId" value="<%= booking.getBookingId() %>" />
+                                <% if (Boolean.TRUE.equals(isWeeklyGroupPayment) && weeklyGroupId != null) { %>
+                                <input type="hidden" name="weeklyGroupId" value="<%= weeklyGroupId %>" />
+                                <% } %>
+                                <button type="submit" class="w-full rounded-xl py-3 border border-[var(--brand-border)] bg-[var(--brand-green-soft)] text-[var(--brand-green-dark)] font-semibold hover:bg-[#def4e8] transition">
+                                    Quay lại
+                                </button>
+                            </form>
+                        <% } %>
                     </div>
                 </aside>
 
@@ -290,6 +310,30 @@
 
         <script>
             const bookingId = '<%= booking.getBookingId() %>';
+            const paymentSource = '<%= paymentSource %>';
+            const supplementaryRentalId = '<%= supplementaryRentalId != null ? supplementaryRentalId : "" %>';
+            const successMessage = paymentSource === 'supplementary'
+                ? 'Thanh toán equipment bổ sung đã được xác nhận.'
+                : 'Đơn đặt sân đã được xác nhận.';
+            const successLink = paymentSource === 'supplementary'
+                ? '${pageContext.request.contextPath}<%= bookingHistoryPath %>'
+                : '${pageContext.request.contextPath}<%= bookingDetailPath %>?id=' + bookingId;
+            const successLinkLabel = paymentSource === 'supplementary'
+                ? 'Quay về danh sách booking'
+                : 'Xem chi tiết booking';
+            const failedMessage = paymentSource === 'supplementary'
+                ? 'Đơn equipment bổ sung đã bị hủy.'
+                : 'Đơn đặt sân đã bị hủy.';
+            const failedLink = paymentSource === 'supplementary'
+                ? '${pageContext.request.contextPath}<%= bookingHistoryPath %>'
+                : '${pageContext.request.contextPath}/booking';
+            const failedLinkLabel = paymentSource === 'supplementary'
+                ? 'Quay về danh sách booking'
+                : 'Quay lại đặt sân';
+            const expiredMessage = paymentSource === 'supplementary'
+                ? 'Hết thời gian thanh toán. Đơn equipment bổ sung đã bị hủy tự động.'
+                : 'Hết thời gian thanh toán. Đơn đặt sân đã bị hủy tự động.';
+            const hasPaymentDeadline = paymentSource !== 'supplementary';
             const initialTimeRemaining = parseInt(document.getElementById('timeRemainingVal').value || '0', 10);
             let timeRemaining = initialTimeRemaining;
             const checkIntervalMs = 10000;
@@ -315,6 +359,13 @@
             }
 
             function updateTimerDisplay() {
+                if (!hasPaymentDeadline) {
+                    document.getElementById('minutesBox').textContent = '--';
+                    document.getElementById('secondsBox').textContent = '--';
+                    document.getElementById('timerWrapper').classList.remove('timer-warning');
+                    return;
+                }
+
                 const safeTime = Math.max(0, timeRemaining);
                 const minutes = Math.floor(safeTime / 60);
                 const seconds = safeTime % 60;
@@ -342,7 +393,9 @@
                     },
                     body: new URLSearchParams({
                         'action': 'check_payment',
-                        'bookingId': bookingId
+                        'bookingId': bookingId,
+                        'source': paymentSource,
+                        'rentalId': supplementaryRentalId
                     })
                 })
                 .then(response => response.text())
@@ -361,12 +414,12 @@
                         showPaymentSuccess();
                     } else if (paymentStatus === 'FAILED') {
                         paymentChecked = true;
-                        if (expired || timeRemaining <= 0) {
+                        if (hasPaymentDeadline && (expired || timeRemaining <= 0)) {
                             showPaymentExpired();
                         } else {
                             showPaymentFailed();
                         }
-                    } else if (expired || timeRemaining <= 0) {
+                    } else if (hasPaymentDeadline && (expired || timeRemaining <= 0)) {
                         paymentChecked = true;
                         showPaymentExpired();
                     }
@@ -385,13 +438,17 @@
                         </svg>
                         <p class="text-lg font-bold text-green-700">Thanh toán thành công!</p>
                     </div>
-                    <p class="text-sm text-green-600 mb-3">Đơn đặt sân đã được xác nhận.</p>
-                    <a href="${pageContext.request.contextPath}<%= bookingDetailPath %>?id=${bookingId}" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">Xem chi tiết booking</a>
+                    <p class="text-sm text-green-600 mb-3">` + successMessage + `</p>
+                    <a href="` + successLink + `" class="inline-block bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition">` + successLinkLabel + `</a>
                 `;
                 statusDiv.classList.remove('hidden');
 
                 setTimeout(() => {
-                    window.location.href = '${pageContext.request.contextPath}/booking-success?bookingId=' + bookingId;
+                    if (paymentSource === 'supplementary') {
+                        window.location.href = '${pageContext.request.contextPath}<%= bookingHistoryPath %>';
+                    } else {
+                        window.location.href = '${pageContext.request.contextPath}/booking-success?bookingId=' + bookingId;
+                    }
                 }, 1800);
             }
 
@@ -404,8 +461,8 @@
                         </svg>
                         <p class="text-lg font-bold text-red-700">Thanh toán thất bại</p>
                     </div>
-                    <p class="text-sm text-red-600 mb-3">Đơn đặt sân đã bị hủy.</p>
-                    <a href="${pageContext.request.contextPath}/booking" class="inline-block bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition">Quay lại đặt sân</a>
+                    <p class="text-sm text-red-600 mb-3">` + failedMessage + `</p>
+                    <a href="` + failedLink + `" class="inline-block bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition">` + failedLinkLabel + `</a>
                 `;
                 statusDiv.classList.remove('hidden');
                 statusDiv.classList.remove('status-card');
@@ -419,26 +476,51 @@
                 paymentExpiredHandled = true;
 
                 try {
-                    await fetch('${pageContext.request.contextPath}/payment-cancel', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded'
-                        },
-                        body: new URLSearchParams({
-                            bookingId: bookingId
-                        })
-                    });
+                    if (paymentSource === 'supplementary') {
+                        await fetch('${pageContext.request.contextPath}/payment', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: new URLSearchParams({
+                                action: 'check_payment',
+                                bookingId: bookingId,
+                                source: paymentSource,
+                                rentalId: supplementaryRentalId
+                            })
+                        });
+                    } else {
+                        await fetch('${pageContext.request.contextPath}/payment-cancel', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded'
+                            },
+                            body: new URLSearchParams({
+                                bookingId: bookingId
+                            })
+                        });
+                    }
                 } catch (error) {
                     // Ignore cancellation request errors; redirect still occurs below.
                 }
 
-                alert('Hết thời gian thanh toán. Đơn đặt sân đã bị hủy tự động.');
+                alert(expiredMessage);
                 window.location.href = '${pageContext.request.contextPath}<%= bookingHistoryPath %>';
             }
 
             document.addEventListener('DOMContentLoaded', () => {
                 lucide.createIcons();
                 updateTimerDisplay();
+
+                if (!hasPaymentDeadline) {
+                    const checkIntervalId = setInterval(() => {
+                        checkPaymentStatus();
+                        if (paymentChecked) {
+                            clearInterval(checkIntervalId);
+                        }
+                    }, checkIntervalMs);
+                    return;
+                }
 
                 setInterval(() => {
                     timeRemaining = Math.max(0, timeRemaining - 1);

@@ -215,14 +215,22 @@
                                                 </c:otherwise>
                                             </c:choose>
                                         </div>
-                                        <c:choose>
-                                            <c:when test="${viewMode == 'staff'}">
-                                                <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">Chi tiết</a>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span class="w-full md:w-auto bg-gray-100 text-gray-500 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">Theo dõi tại lịch sân</span>
-                                            </c:otherwise>
-                                        </c:choose>
+                                        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                            <c:if test="${viewMode == 'staff' && (b.status == 'paid' || b.status == 'checked in')}">
+                                                <a href="${pageContext.request.contextPath}/staff/addSupplementaryEquipment?bookingId=${b.bookingId}" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-blue-200">
+                                                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                                    THÊM
+                                                </a>
+                                            </c:if>
+                                            <c:choose>
+                                                <c:when test="${viewMode == 'staff'}">
+                                                    <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">${b.equipmentBookingAllowed ? 'Chi tiết / thêm equipment' : 'Chi tiết'}</a>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="w-full md:w-auto bg-gray-100 text-gray-500 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">Theo dõi tại lịch sân</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
                                     </div>
 
                                 </div>

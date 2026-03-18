@@ -261,3 +261,7 @@ BEGIN
     CROSS JOIN Equipment e;
 END;
 GO
+
+-- Cleanup snippet for existing databases that previously created supplementary tables:
+-- DROP TABLE IF EXISTS Supplementary_Equipment;
+-- DROP TABLE IF EXISTS Supplementary_Equipment_Rental;

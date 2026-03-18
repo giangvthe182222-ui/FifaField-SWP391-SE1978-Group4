@@ -13,12 +13,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.time.LocalDateTime;
 import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -26,6 +29,24 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 @WebServlet(name = "PaymentServlet", urlPatterns = {"/payment"})
 public class PaymentServlet extends HttpServlet {
+
+    private static String payloadKey(UUID bookingId) {
+        return "supp_equipment_payload_" + bookingId;
+    }
+
+    private static String amountKey(UUID bookingId) {
+        return "supp_equipment_amount_" + bookingId;
+    }
+
+    private static class SupplementaryDraft {
+        private final List<BookingEquipment> equipments;
+        private final BigDecimal amount;
+
+        private SupplementaryDraft(List<BookingEquipment> equipments, BigDecimal amount) {
+            this.equipments = equipments;
+            this.amount = amount;
+        }
+    }
 
     private String resolveBookingHistoryPath(User user) {
         if (user != null
@@ -73,6 +94,8 @@ public class PaymentServlet extends HttpServlet {
         User user = (User) session.getAttribute("user");
         String bookingHistoryPath = resolveBookingHistoryPath(user);
         String bookingDetailPath = resolveBookingDetailPath(user);
+        String source = request.getParameter("source");
+        boolean supplementarySource = "supplementary".equalsIgnoreCase(source);
 
         String weeklyGroupIdParam = request.getParameter("weeklyGroupId");
         if (weeklyGroupIdParam != null && !weeklyGroupIdParam.isBlank()) {
@@ -105,29 +128,137 @@ public class PaymentServlet extends HttpServlet {
             return;
         }
 
-        // Verify booking belongs to current user
-        if (!booking.getBookerId().equals(user.getUserId())) {
+        // Authorization: customer can access only own booking; staff/manager/admin can access location bookings.
+        if (!canAccessBooking(user, booking)) {
             session.setAttribute("flash_error", "Unauthorized access to booking.");
             response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 
-        // Get payment info
-        PaymentDAO paymentDAO = new PaymentDAO();
-        Payment payment = paymentDAO.getPaymentByBookingId(bookingId);
+        String resetDeadlineParam = request.getParameter("resetDeadline");
+        boolean isPrivileged = false;
+        if (user.getRole() != null && user.getRole().getRoleName() != null) {
+            String role = user.getRole().getRoleName().trim().toLowerCase();
+            isPrivileged = "staff".equals(role) || "manager".equals(role) || "admin".equals(role);
+        }
+        if (isPrivileged && "1".equals(resetDeadlineParam)) {
+            LocalDateTime refreshedDeadline = LocalDateTime.now().plusMinutes(15);
+            bookingDAO.resetPaymentDeadline(bookingId, refreshedDeadline);
+            booking = bookingDAO.getBookingById(bookingId);
+        }
 
-        if (payment == null) {
-            session.setAttribute("flash_error", "Payment information not found.");
-            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
-            return;
+        PaymentDAO paymentDAO = new PaymentDAO();
+        Payment payment;
+        LocalDateTime paymentDeadline;
+        String checkoutUrl = null;
+
+        if (supplementarySource) {
+            // Supplementary equipment payment can be completed at any time in app flow.
+            // Keep payment deadline null to disable local expiration logic.
+            paymentDeadline = null;
+
+            String orderCodeKey = "supp_payment_order_code_" + bookingId;
+            String qrCodeKey = "supp_payment_qr_code_" + bookingId;
+            String checkoutUrlKey = "supp_payment_checkout_url_" + bookingId;
+            String bankCodeKey = "supp_payment_bank_code_" + bookingId;
+            String accountNumberKey = "supp_payment_account_number_" + bookingId;
+
+            Long orderCode = session.getAttribute(orderCodeKey) instanceof Long
+                    ? (Long) session.getAttribute(orderCodeKey)
+                    : null;
+            String storedQrCode = session.getAttribute(qrCodeKey) instanceof String
+                    ? (String) session.getAttribute(qrCodeKey)
+                    : null;
+            checkoutUrl = session.getAttribute(checkoutUrlKey) instanceof String
+                    ? (String) session.getAttribute(checkoutUrlKey)
+                    : null;
+            String storedBankCode = session.getAttribute(bankCodeKey) instanceof String
+                    ? (String) session.getAttribute(bankCodeKey)
+                    : QRCodeGenerator.BANK_CODE;
+            String storedAccountNumber = session.getAttribute(accountNumberKey) instanceof String
+                    ? (String) session.getAttribute(accountNumberKey)
+                    : QRCodeGenerator.ACCOUNT_NUMBER;
+
+            Payment dbPayment = paymentDAO.getPaymentByBookingId(bookingId);
+            if (dbPayment == null) {
+                session.setAttribute("flash_error", "Payment information not found.");
+                response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+                return;
+            }
+
+            BigDecimal supplementaryAmount = dbPayment.getAmount();
+            if (supplementaryAmount == null || supplementaryAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                supplementaryAmount = bookingDAO.getSupplementaryAmountByBookingId(bookingId);
+            }
+
+            if (orderCode == null || storedQrCode == null || storedQrCode.isBlank() || (isPrivileged && "1".equals(resetDeadlineParam))) {
+                PayOSClient payOSClient = new PayOSClient();
+                if (payOSClient.isConfigured()) {
+                    orderCode = generateSupplementaryOrderCode();
+                    String description = buildSupplementaryPayOSDescription(bookingId);
+                    String paymentPageUrl = buildSupplementaryPaymentUrl(request, bookingId);
+
+                        PayOSClient.PaymentLinkResponse payOSLink = payOSClient.createPaymentLink(
+                            orderCode,
+                            supplementaryAmount,
+                            description,
+                            bookingId,
+                            resolveSupplementaryPayOSExpiry(),
+                            paymentPageUrl,
+                            paymentPageUrl
+                        );
+
+                    if (payOSLink.isSuccess()) {
+                        storedQrCode = payOSLink.getQrCode();
+                        checkoutUrl = payOSLink.getCheckoutUrl();
+                        storedBankCode = notBlank(payOSLink.getBankCode()) ? payOSLink.getBankCode() : QRCodeGenerator.BANK_CODE;
+                        storedAccountNumber = notBlank(payOSLink.getAccountNumber()) ? payOSLink.getAccountNumber() : QRCodeGenerator.ACCOUNT_NUMBER;
+
+                        session.setAttribute(orderCodeKey, orderCode);
+                        session.setAttribute(qrCodeKey, storedQrCode);
+                        session.setAttribute(checkoutUrlKey, checkoutUrl);
+                        session.setAttribute(bankCodeKey, storedBankCode);
+                        session.setAttribute(accountNumberKey, storedAccountNumber);
+                    } else {
+                        session.setAttribute("flash_error", "Cannot initialize supplementary payOS payment: " + payOSLink.getMessage());
+                        response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+                        return;
+                    }
+                } else {
+                    session.setAttribute("flash_error", "payOS config is incomplete. Missing: " + payOSClient.getMissingConfigSummary());
+                    response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+                    return;
+                }
+            }
+
+            payment = new Payment();
+            payment.setPaymentId(bookingId);
+            payment.setBookingId(bookingId);
+            payment.setAmount(supplementaryAmount);
+            payment.setPaymentMethod("payOS");
+            String dbStatus = dbPayment == null ? "PENDING" : dbPayment.getPaymentStatus();
+            payment.setPaymentStatus(dbStatus == null ? "PENDING" : dbStatus);
+            payment.setTransactionCode(String.valueOf(orderCode));
+            payment.setQrContent(storedQrCode);
+            payment.setBankCode(storedBankCode);
+            payment.setAccountNumber(storedAccountNumber);
+        } else {
+            payment = paymentDAO.getPaymentByBookingId(bookingId);
+
+            if (payment == null) {
+                session.setAttribute("flash_error", "Payment information not found.");
+                response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+                return;
+            }
+            paymentDeadline = booking.getPaymentDeadline();
+            checkoutUrl = null;
         }
 
         // Check payment status
         String paymentStatus = payment.getPaymentStatus();
 
         String qrContent = payment.getQrContent();
-        String checkoutUrl = null;
-        if ("payOS".equalsIgnoreCase(payment.getPaymentMethod())) {
+        if (!supplementarySource && "payOS".equalsIgnoreCase(payment.getPaymentMethod())) {
             PayOSClient payOSClient = new PayOSClient();
             if (payOSClient.isConfigured()) {
                 Long orderCode = parseOrderCode(payment.getTransactionCode());
@@ -150,6 +281,21 @@ public class PaymentServlet extends HttpServlet {
         }
 
         if ("SUCCESS".equalsIgnoreCase(paymentStatus)) {
+            if (supplementarySource) {
+                if (!finalizeSupplementaryIfNeeded(session, bookingId, bookingDAO)) {
+                    session.setAttribute("flash_error", "Payment succeeded but failed to apply supplementary equipment. Please contact support.");
+                    response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+                    return;
+                }
+                if (!bookingDAO.settlePendingExtraStatus(bookingId)) {
+                    session.setAttribute("flash_error", "Payment succeeded but booking status settlement failed. Please contact support.");
+                    response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+                    return;
+                }
+                session.setAttribute("flash_success", "Supplementary equipment payment completed.");
+                response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+                return;
+            }
             response.sendRedirect(request.getContextPath() + "/booking-success?bookingId=" + bookingId.toString());
             return;
         }
@@ -160,12 +306,9 @@ public class PaymentServlet extends HttpServlet {
             return;
         }
 
-        // Check if payment deadline has passed
-        LocalDateTime paymentDeadline = booking.getPaymentDeadline();
         LocalDateTime now = LocalDateTime.now();
 
-        if (paymentDeadline != null && !now.isBefore(paymentDeadline)) {
-            // Payment expired -> release slot/equipment immediately
+        if (!supplementarySource && paymentDeadline != null && !now.isBefore(paymentDeadline)) {
             bookingDAO.cancelBookingForPayment(bookingId);
             session.setAttribute("flash_error", "Payment deadline has expired.");
             response.sendRedirect(request.getContextPath() + bookingHistoryPath);
@@ -213,6 +356,9 @@ public class PaymentServlet extends HttpServlet {
         request.setAttribute("checkoutUrl", checkoutUrl);
         request.setAttribute("bookingHistoryPath", bookingHistoryPath);
         request.setAttribute("bookingDetailPath", bookingDetailPath);
+        request.setAttribute("paymentSource", supplementarySource ? "supplementary" : "booking");
+        request.setAttribute("supplementaryRentalId", "");
+        request.setAttribute("paymentDescription", supplementarySource ? "Thanh toán equipment bổ sung" : "Thanh toán đặt sân");
 
         request.getRequestDispatcher("/View/Booking/Payment.jsp").forward(request, response);
     }
@@ -398,6 +544,8 @@ public class PaymentServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
+        String source = request.getParameter("source");
+        boolean supplementarySource = "supplementary".equalsIgnoreCase(source);
         String bookingIdParam = request.getParameter("bookingId");
         if (bookingIdParam == null || bookingIdParam.isBlank()) {
             writeStatus(response, "ERROR", false, 0, "Missing bookingId");
@@ -414,8 +562,54 @@ public class PaymentServlet extends HttpServlet {
 
         BookingDAO bookingDAO = new BookingDAO();
         Booking booking = bookingDAO.getBookingById(bookingId);
-        if (booking == null || !booking.getBookerId().equals(user.getUserId())) {
+        if (booking == null || !canAccessBooking(user, booking)) {
             writeStatus(response, "ERROR", false, 0, "Booking not found");
+            return;
+        }
+
+        if (supplementarySource) {
+            String orderCodeKey = "supp_payment_order_code_" + bookingId;
+            long timeRemaining = 0;
+            boolean expired = false;
+
+            PaymentDAO paymentDAO = new PaymentDAO();
+            Payment payment = paymentDAO.getPaymentByBookingId(bookingId);
+            if (payment == null) {
+                writeStatus(response, "ERROR", false, 0, "Payment not found");
+                return;
+            }
+            String paymentStatus = payment.getPaymentStatus() == null ? "PENDING" : payment.getPaymentStatus();
+
+            Long orderCode = session.getAttribute(orderCodeKey) instanceof Long
+                    ? (Long) session.getAttribute(orderCodeKey)
+                    : null;
+
+            if ("PENDING".equalsIgnoreCase(paymentStatus) && orderCode != null) {
+                PayOSClient payOSClient = new PayOSClient();
+                if (payOSClient.isConfigured()) {
+                    PayOSClient.PaymentStatusResponse statusResponse = payOSClient.getPaymentStatus(orderCode);
+                    if (statusResponse.isSuccess()) {
+                        String providerStatus = normalizeProviderStatus(statusResponse.getStatus());
+                        if ("SUCCESS".equalsIgnoreCase(providerStatus)) {
+                            paymentDAO.updatePaymentSuccess(payment.getPaymentId());
+                            if (!finalizeSupplementaryIfNeeded(session, bookingId, bookingDAO)) {
+                                writeStatus(response, "ERROR", false, 0, "Payment succeeded but supplementary equipment finalize failed");
+                                return;
+                            }
+                            if (!bookingDAO.settlePendingExtraStatus(bookingId)) {
+                                writeStatus(response, "ERROR", false, 0, "Payment succeeded but booking status settlement failed");
+                                return;
+                            }
+                            paymentStatus = "SUCCESS";
+                        } else if ("FAILED".equalsIgnoreCase(providerStatus)) {
+                            paymentDAO.updatePaymentFailed(payment.getPaymentId());
+                            paymentStatus = "FAILED";
+                        }
+                    }
+                }
+            }
+
+            writeStatus(response, paymentStatus, expired, timeRemaining, "OK");
             return;
         }
 
@@ -533,5 +727,134 @@ public class PaymentServlet extends HttpServlet {
     private String buildWeeklyPayOSDescription(UUID weeklyGroupId) {
         String compact = weeklyGroupId.toString().replace("-", "").toUpperCase();
         return "WEEK" + compact.substring(0, 8);
+    }
+
+    private long generateSupplementaryOrderCode() {
+        long millis = System.currentTimeMillis();
+        long suffix = Math.abs(ThreadLocalRandom.current().nextInt(100, 999));
+        String raw = String.valueOf(millis) + suffix;
+        if (raw.length() > 18) {
+            raw = raw.substring(raw.length() - 18);
+        }
+        return Long.parseLong(raw);
+    }
+
+    private String buildSupplementaryPayOSDescription(UUID bookingId) {
+        String compactId = bookingId.toString().replace("-", "").toUpperCase();
+        return "SUPP" + compactId.substring(0, Math.min(10, compactId.length()));
+    }
+
+    private LocalDateTime resolveSupplementaryPayOSExpiry() {
+        return LocalDateTime.now().plusYears(1);
+    }
+
+    private boolean finalizeSupplementaryIfNeeded(HttpSession session, UUID bookingId, BookingDAO bookingDAO) {
+        SupplementaryDraft draft = readSupplementaryDraft(session, bookingId);
+        if (draft == null) {
+            return true;
+        }
+        boolean ok = bookingDAO.finalizeSupplementaryEquipment(bookingId, draft.equipments, draft.amount);
+        if (ok) {
+            session.removeAttribute(payloadKey(bookingId));
+            session.removeAttribute(amountKey(bookingId));
+        }
+        return ok;
+    }
+
+    private SupplementaryDraft readSupplementaryDraft(HttpSession session, UUID bookingId) {
+        Object payloadObj = session.getAttribute(payloadKey(bookingId));
+        Object amountObj = session.getAttribute(amountKey(bookingId));
+
+        if (!(payloadObj instanceof String) || !(amountObj instanceof String)) {
+            return null;
+        }
+
+        String payload = ((String) payloadObj).trim();
+        String amountRaw = ((String) amountObj).trim();
+
+        if (payload.isEmpty() || amountRaw.isEmpty()) {
+            return null;
+        }
+
+        BigDecimal amount;
+        try {
+            amount = new BigDecimal(amountRaw);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+
+        List<BookingEquipment> list = new ArrayList<>();
+        String[] items = payload.split(",");
+        for (String item : items) {
+            if (item == null || item.isBlank()) {
+                continue;
+            }
+
+            String[] parts = item.split(":");
+            if (parts.length != 2) {
+                continue;
+            }
+
+            try {
+                UUID equipmentId = UUID.fromString(parts[0].trim());
+                int quantity = Integer.parseInt(parts[1].trim());
+                if (quantity <= 0) {
+                    continue;
+                }
+                BookingEquipment be = new BookingEquipment();
+                be.setBookingId(bookingId);
+                be.setEquipmentId(equipmentId);
+                be.setQuantity(quantity);
+                list.add(be);
+            } catch (Exception ignored) {
+                // Skip malformed row.
+            }
+        }
+
+        if (list.isEmpty() || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
+
+        return new SupplementaryDraft(list, amount);
+    }
+
+    private String buildSupplementaryPaymentUrl(HttpServletRequest request, UUID bookingId) {
+        String scheme = request.getScheme();
+        String host = request.getServerName();
+        int port = request.getServerPort();
+        String contextPath = request.getContextPath();
+
+        boolean defaultPort = ("http".equalsIgnoreCase(scheme) && port == 80)
+                || ("https".equalsIgnoreCase(scheme) && port == 443);
+
+        StringBuilder url = new StringBuilder();
+        url.append(scheme).append("://").append(host);
+        if (!defaultPort) {
+            url.append(":").append(port);
+        }
+        url.append(contextPath)
+            .append("/payment?source=supplementary&bookingId=")
+            .append(java.net.URLEncoder.encode(bookingId.toString(), java.nio.charset.StandardCharsets.UTF_8));
+        return url.toString();
+    }
+
+    private boolean canAccessBooking(User user, Booking booking) {
+        if (user == null || booking == null) {
+            return false;
+        }
+
+        String roleName = null;
+        if (user.getRole() != null) {
+            roleName = user.getRole().getRoleName();
+        }
+
+        if (roleName != null) {
+            String role = roleName.trim().toLowerCase();
+            if ("staff".equals(role) || "manager".equals(role) || "admin".equals(role)) {
+                return true;
+            }
+        }
+
+        return booking.getBookerId() != null && booking.getBookerId().equals(user.getUserId());
     }
 }

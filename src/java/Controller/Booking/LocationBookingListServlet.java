@@ -67,31 +67,38 @@ public class LocationBookingListServlet extends HttpServlet {
             }
 
             BookingService bookingService = new BookingService();
-            List<BookingViewModel> allBookings = bookingService.getLocationBookingHistory(UUID.fromString(staff.getLocationId()), date, status, customerKeyword);
+            List<BookingViewModel> allBookings = bookingService.getLocationBookingHistory(
+                    UUID.fromString(staff.getLocationId()), date, status, customerKeyword);
 
-            // Pagination
             int pageNum = 1;
             String pageParam = request.getParameter("page");
             if (pageParam != null && !pageParam.isBlank()) {
                 try {
                     pageNum = Integer.parseInt(pageParam);
-                    if (pageNum < 1) pageNum = 1;
+                    if (pageNum < 1) {
+                        pageNum = 1;
+                    }
                 } catch (NumberFormatException e) {
                     pageNum = 1;
                 }
             }
-            
+
             int totalItems = allBookings.size();
             int totalPages = (totalItems + PAGE_SIZE - 1) / PAGE_SIZE;
-            if (pageNum > totalPages && totalPages > 0) pageNum = totalPages;
-            
+            if (pageNum > totalPages && totalPages > 0) {
+                pageNum = totalPages;
+            }
+
             int startIdx = (pageNum - 1) * PAGE_SIZE;
             int endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
             List<BookingViewModel> pageBookings = new ArrayList<>(allBookings.subList(startIdx, endIdx));
+
             LocalDateTime now = LocalDateTime.now();
             Map<UUID, Boolean> staffCanCheckInMap = new HashMap<>();
             Map<UUID, Boolean> staffCanRefundMap = new HashMap<>();
             for (BookingViewModel booking : pageBookings) {
+                booking.setEquipmentBookingAllowed(isEquipmentBookingAllowed(booking));
+
                 String normalizedStatus = normalizeStatus(booking.getStatus());
                 boolean canCheckIn = "paid".equals(normalizedStatus)
                         && booking.getBookingDate() != null
@@ -169,6 +176,22 @@ public class LocationBookingListServlet extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
+    }
+
+    private boolean isEquipmentBookingAllowed(BookingViewModel booking) {
+        if (booking == null || booking.getBookingDate() == null || booking.getStartTime() == null || booking.getEndTime() == null) {
+            return false;
+        }
+
+        String status = normalizeStatus(booking.getStatus());
+        if (!"checked in".equals(status)) {
+            return false;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime start = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
+        LocalDateTime end = LocalDateTime.of(booking.getBookingDate(), booking.getEndTime());
+        return !now.isBefore(start) && now.isBefore(end);
     }
 
     private String validateStaffStatusTransition(BookingViewModel booking, String requestedStatus) {
