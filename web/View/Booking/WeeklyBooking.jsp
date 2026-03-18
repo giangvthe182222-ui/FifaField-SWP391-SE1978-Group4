@@ -122,6 +122,7 @@
         <input type="hidden" name="weekCount"  id="hWeekCount"  value="${selectedWeekCount}">
         <%-- fieldType is only for GET filter, not needed in POST --%>
         <div id="autoRecurringSelections" class="hidden"></div>
+        <div id="persistedCarrySelections" class="hidden"></div>
 
         <%-- ═══════════════════════════════════════════════════════════
              LEFT PANEL
@@ -555,6 +556,12 @@
 ]
 </script>
 
+<script id="selectedSchedulePricesData" type="application/json">
+{
+<c:forEach var="entry" items="${selectedSchedulePrices}" varStatus="st">"${entry.key}":${entry.value}<c:if test="${not st.last}">,</c:if></c:forEach>
+}
+</script>
+
 <script id="anchorScheduleIdsData" type="application/json">
 [
 <c:forEach var="sid" items="${anchorScheduleIds}" varStatus="st">"${sid}"<c:if test="${not st.last}">,</c:if></c:forEach>
@@ -581,6 +588,14 @@
     try {
         JSON.parse(rawSelectedIdsJson).forEach(function(id) {
             if (id) persistedSelectedIds[String(id)] = true;
+        });
+    } catch (e) {}
+
+    var rawSelectedPricesJson = (document.getElementById('selectedSchedulePricesData') || {}).textContent || '{}';
+    try {
+        var selectedPrices = JSON.parse(rawSelectedPricesJson);
+        Object.keys(selectedPrices).forEach(function(id) {
+            slotPrices[String(id)] = parseNum(selectedPrices[id]);
         });
     } catch (e) {}
 
@@ -615,6 +630,27 @@
         return Array.from(document.querySelectorAll('#autoRecurringSelections input[name="scheduleIds"]')).map(function(inp){
             return inp.value;
         });
+    }
+    function getCarrySelectedIds() {
+        return Array.from(document.querySelectorAll('#persistedCarrySelections input[name="scheduleIds"]')).map(function(inp){
+            return inp.value;
+        });
+    }
+    function unique(arr) {
+        var out = [];
+        var seen = {};
+        arr.forEach(function(id) {
+            var k = String(id);
+            if (!seen[k]) { seen[k] = true; out.push(k); }
+        });
+        return out;
+    }
+    function getAllSubmittedScheduleIds() {
+        return unique(
+            getChecked().map(function(cb){ return cb.value; })
+                .concat(getAutoSelectedIds())
+                .concat(getCarrySelectedIds())
+        );
     }
     function getVisibleSlotIds() {
         return Array.from(document.querySelectorAll('.slot-cb')).map(function(cb){ return cb.value; });
@@ -713,6 +749,28 @@
         return Object.keys(persistedAnchorIds);
     }
 
+    function rebuildCarrySelections() {
+        var container = document.getElementById('persistedCarrySelections');
+        if (!container) return;
+        container.innerHTML = '';
+
+        var visibleCheckedMap = {};
+        getChecked().forEach(function(cb) { visibleCheckedMap[String(cb.value)] = true; });
+
+        var autoMap = {};
+        getAutoSelectedIds().forEach(function(id) { autoMap[String(id)] = true; });
+
+        buildSelectedIdsForNavigation().forEach(function(id) {
+            var sid = String(id);
+            if (visibleCheckedMap[sid] || autoMap[sid]) return;
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'scheduleIds';
+            input.value = sid;
+            container.appendChild(input);
+        });
+    }
+
     function syncPersistedSelectionSet() {
         var next = {};
         buildSelectedIdsForNavigation().forEach(function(id) { next[id] = true; });
@@ -720,11 +778,9 @@
     }
 
     function updateSummary() {
-        var checked   = getChecked();
-        var autoIds   = getAutoSelectedIds();
-        var count     = checked.length + autoIds.length;
-        var fieldSum  = checked.reduce(function(s, cb){ return s + (slotPrices[cb.value]||0); }, 0);
-        fieldSum += autoIds.reduce(function(s, id){ return s + (slotPrices[id] || 0); }, 0);
+        var selectedIds = getAllSubmittedScheduleIds();
+        var count       = selectedIds.length;
+        var fieldSum    = selectedIds.reduce(function(s, id){ return s + (slotPrices[id] || 0); }, 0);
         var equipSum  = 0;
         document.querySelectorAll('.equipment-qty').forEach(function(inp){
             equipSum += (parseInt(inp.value,10)||0) * parseNum(inp.dataset.unitPrice);
@@ -781,6 +837,7 @@
         setCellVisual(cb, cb.checked);
         rebuildAutoRecurringSelections();
         syncPersistedSelectionSet();
+        rebuildCarrySelections();
         updateSummary();
     };
 
@@ -792,6 +849,7 @@
         });
         rebuildAutoRecurringSelections();
         syncPersistedSelectionSet();
+        rebuildCarrySelections();
         updateSummary();
     };
 
@@ -802,6 +860,7 @@
         });
         rebuildAutoRecurringSelections();
         syncPersistedSelectionSet();
+        rebuildCarrySelections();
         updateSummary();
     };
 
@@ -862,7 +921,7 @@
     });
 
     window.confirmSubmit = function() {
-        var count = getChecked().length + getAutoSelectedIds().length;
+        var count = getAllSubmittedScheduleIds().length;
         if (count === 0) {
             document.getElementById('noSelectMsg').classList.remove('hidden');
             return false;
@@ -885,6 +944,7 @@
 
     rebuildAutoRecurringSelections();
     syncPersistedSelectionSet();
+    rebuildCarrySelections();
     updateSummary();
 })();
 </script>

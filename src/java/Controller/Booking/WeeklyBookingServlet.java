@@ -92,6 +92,22 @@ public class WeeklyBookingServlet extends HttpServlet {
             request.setAttribute("selectedScheduleIds", selectedScheduleIds);
             request.setAttribute("selectedScheduleIdsCsv", String.join(",", selectedScheduleIds));
 
+            Map<String, Object> selectedSchedulePrices = new LinkedHashMap<>();
+            if (!selectedScheduleIds.isEmpty()) {
+                ScheduleDAO selectedScheduleDAO = new ScheduleDAO();
+                for (String sid : selectedScheduleIds) {
+                    try {
+                        Schedule sch = selectedScheduleDAO.getById(UUID.fromString(sid));
+                        if (sch != null && sch.getPrice() != null) {
+                            selectedSchedulePrices.put(sid, sch.getPrice());
+                        }
+                    } catch (Exception ignored) {
+                        // Ignore invalid or missing schedules in persisted query state
+                    }
+                }
+            }
+            request.setAttribute("selectedSchedulePrices", selectedSchedulePrices);
+
             Set<String> anchorScheduleIds = new LinkedHashSet<>();
             String anchorIdsParam = request.getParameter("anchorIds");
             if (anchorIdsParam != null && !anchorIdsParam.isBlank()) {
