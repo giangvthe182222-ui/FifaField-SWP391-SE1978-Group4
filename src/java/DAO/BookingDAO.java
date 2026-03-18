@@ -837,9 +837,11 @@ public class BookingDAO {
                 bookingPs.executeUpdate();
             }
 
+            BigDecimal supplementaryAmount = getSupplementaryAmount(conn, bookingId);
+
             try (PreparedStatement paymentPs = conn.prepareStatement(
-                    "UPDATE Payment SET amount = ISNULL(amount, 0) + ?, payment_time = SYSDATETIME() WHERE booking_id = ?")) {
-                paymentPs.setBigDecimal(1, additionalAmount);
+                    "UPDATE Payment SET amount = ?, payment_status = 'PENDING', payment_time = SYSDATETIME() WHERE booking_id = ?")) {
+                paymentPs.setBigDecimal(1, supplementaryAmount);
                 paymentPs.setString(2, bookingId.toString());
                 paymentPs.executeUpdate();
             }
@@ -853,6 +855,42 @@ public class BookingDAO {
             }
             return false;
         }
+    }
+
+    public BigDecimal getSupplementaryAmountByBookingId(UUID bookingId) {
+        try (Connection conn = DBConnection.getConnection()) {
+            return getSupplementaryAmount(conn, bookingId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return BigDecimal.ZERO;
+        }
+    }
+
+    private BigDecimal getSupplementaryAmount(Connection conn, UUID bookingId) throws SQLException {
+        String sql = "SELECT ISNULL(b.total_price, 0) AS total_price, ISNULL(s.price, 0) AS field_price "
+                + "FROM Booking b "
+                + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
+                + "WHERE b.booking_id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, bookingId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    BigDecimal totalPrice = rs.getBigDecimal("total_price");
+                    BigDecimal fieldPrice = rs.getBigDecimal("field_price");
+                    if (totalPrice == null) {
+                        totalPrice = BigDecimal.ZERO;
+                    }
+                    if (fieldPrice == null) {
+                        fieldPrice = BigDecimal.ZERO;
+                    }
+                    BigDecimal supplementary = totalPrice.subtract(fieldPrice);
+                    return supplementary.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : supplementary;
+                }
+            }
+        }
+
+        return BigDecimal.ZERO;
     }
 
     public List<BookingViewModel> getByLocation(UUID locationId) {

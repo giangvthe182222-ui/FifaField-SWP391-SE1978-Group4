@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.time.LocalDateTime;
 import java.time.Duration;
@@ -121,36 +122,11 @@ public class PaymentServlet extends HttpServlet {
 
         PaymentDAO paymentDAO = new PaymentDAO();
         Payment payment;
-        SupplementaryEquipmentRental rental = null;
         LocalDateTime paymentDeadline;
         String checkoutUrl = null;
 
         if (supplementarySource) {
-            String rentalIdParam = request.getParameter("rentalId");
-            if (rentalIdParam == null || rentalIdParam.isBlank()) {
-                session.setAttribute("flash_error", "Supplementary rental ID is required.");
-                response.sendRedirect(request.getContextPath() + bookingHistoryPath);
-                return;
-            }
-
-            UUID rentalId;
-            try {
-                rentalId = UUID.fromString(rentalIdParam);
-            } catch (IllegalArgumentException ex) {
-                session.setAttribute("flash_error", "Invalid supplementary rental ID.");
-                response.sendRedirect(request.getContextPath() + bookingHistoryPath);
-                return;
-            }
-
-            SupplementaryEquipmentRentalDAO rentalDAO = new SupplementaryEquipmentRentalDAO();
-            rental = rentalDAO.getRentalById(rentalId);
-            if (rental == null) {
-                session.setAttribute("flash_error", "Supplementary rental not found.");
-                response.sendRedirect(request.getContextPath() + bookingHistoryPath);
-                return;
-            }
-
-            String deadlineKey = "supp_payment_deadline_" + rentalId;
+            String deadlineKey = "supp_payment_deadline_" + bookingId;
             Object storedDeadline = session.getAttribute(deadlineKey);
             paymentDeadline = storedDeadline instanceof LocalDateTime ? (LocalDateTime) storedDeadline : null;
             if (paymentDeadline == null || (isPrivileged && "1".equals(resetDeadlineParam))) {
@@ -158,11 +134,11 @@ public class PaymentServlet extends HttpServlet {
                 session.setAttribute(deadlineKey, paymentDeadline);
             }
 
-            String orderCodeKey = "supp_payment_order_code_" + rentalId;
-            String qrCodeKey = "supp_payment_qr_code_" + rentalId;
-            String checkoutUrlKey = "supp_payment_checkout_url_" + rentalId;
-            String bankCodeKey = "supp_payment_bank_code_" + rentalId;
-            String accountNumberKey = "supp_payment_account_number_" + rentalId;
+            String orderCodeKey = "supp_payment_order_code_" + bookingId;
+            String qrCodeKey = "supp_payment_qr_code_" + bookingId;
+            String checkoutUrlKey = "supp_payment_checkout_url_" + bookingId;
+            String bankCodeKey = "supp_payment_bank_code_" + bookingId;
+            String accountNumberKey = "supp_payment_account_number_" + bookingId;
 
             Long orderCode = session.getAttribute(orderCodeKey) instanceof Long
                     ? (Long) session.getAttribute(orderCodeKey)
@@ -180,16 +156,18 @@ public class PaymentServlet extends HttpServlet {
                     ? (String) session.getAttribute(accountNumberKey)
                     : QRCodeGenerator.ACCOUNT_NUMBER;
 
+                BigDecimal supplementaryAmount = bookingDAO.getSupplementaryAmountByBookingId(bookingId);
+
             if (orderCode == null || storedQrCode == null || storedQrCode.isBlank() || (isPrivileged && "1".equals(resetDeadlineParam))) {
                 PayOSClient payOSClient = new PayOSClient();
                 if (payOSClient.isConfigured()) {
                     orderCode = generateSupplementaryOrderCode();
-                    String description = buildSupplementaryPayOSDescription(rental.getRentalId());
-                    String paymentPageUrl = buildSupplementaryPaymentUrl(request, rental.getRentalId());
+                    String description = buildSupplementaryPayOSDescription(bookingId);
+                    String paymentPageUrl = buildSupplementaryPaymentUrl(request, bookingId);
 
                     PayOSClient.PaymentLinkResponse payOSLink = payOSClient.createPaymentLink(
                             orderCode,
-                            rental.getTotalPrice(),
+                        supplementaryAmount,
                             description,
                             bookingId,
                             paymentDeadline,
@@ -221,18 +199,13 @@ public class PaymentServlet extends HttpServlet {
             }
 
             payment = new Payment();
-            payment.setPaymentId(rental.getRentalId());
+            payment.setPaymentId(bookingId);
             payment.setBookingId(bookingId);
-            payment.setAmount(rental.getTotalPrice());
+            payment.setAmount(supplementaryAmount);
             payment.setPaymentMethod("payOS");
-            String rentalStatus = rental.getStatus() == null ? "pending" : rental.getStatus().trim().toLowerCase();
-            if ("paid".equals(rentalStatus) || "completed".equals(rentalStatus)) {
-                payment.setPaymentStatus("SUCCESS");
-            } else if ("cancelled".equals(rentalStatus)) {
-                payment.setPaymentStatus("FAILED");
-            } else {
-                payment.setPaymentStatus("PENDING");
-            }
+            Payment dbPayment = paymentDAO.getPaymentByBookingId(bookingId);
+            String dbStatus = dbPayment == null ? "PENDING" : dbPayment.getPaymentStatus();
+            payment.setPaymentStatus(dbStatus == null ? "PENDING" : dbStatus);
             payment.setTransactionCode(String.valueOf(orderCode));
             payment.setQrContent(storedQrCode);
             payment.setBankCode(storedBankCode);
@@ -295,7 +268,10 @@ public class PaymentServlet extends HttpServlet {
 
         if (paymentDeadline != null && !now.isBefore(paymentDeadline)) {
             if (supplementarySource) {
-                new SupplementaryEquipmentRentalDAO().updateStatus(rental.getRentalId(), "cancelled");
+                Payment dbPayment = paymentDAO.getPaymentByBookingId(bookingId);
+                if (dbPayment != null) {
+                    paymentDAO.updatePaymentFailed(dbPayment.getPaymentId());
+                }
             } else {
                 bookingDAO.cancelBookingForPayment(bookingId);
             }
@@ -346,7 +322,7 @@ public class PaymentServlet extends HttpServlet {
         request.setAttribute("bookingHistoryPath", bookingHistoryPath);
         request.setAttribute("bookingDetailPath", bookingDetailPath);
         request.setAttribute("paymentSource", supplementarySource ? "supplementary" : "booking");
-        request.setAttribute("supplementaryRentalId", rental != null ? rental.getRentalId().toString() : "");
+        request.setAttribute("supplementaryRentalId", "");
         request.setAttribute("paymentDescription", supplementarySource ? "Thanh toán equipment bổ sung" : "Thanh toán đặt sân");
 
         request.getRequestDispatcher("/View/Booking/Payment.jsp").forward(request, response);
@@ -396,29 +372,8 @@ public class PaymentServlet extends HttpServlet {
         }
 
         if (supplementarySource) {
-            String rentalIdParam = request.getParameter("rentalId");
-            if (rentalIdParam == null || rentalIdParam.isBlank()) {
-                writeStatus(response, "ERROR", false, 0, "Missing rentalId");
-                return;
-            }
-
-            UUID rentalId;
-            try {
-                rentalId = UUID.fromString(rentalIdParam);
-            } catch (IllegalArgumentException e) {
-                writeStatus(response, "ERROR", false, 0, "Invalid rentalId");
-                return;
-            }
-
-            SupplementaryEquipmentRentalDAO rentalDAO = new SupplementaryEquipmentRentalDAO();
-            SupplementaryEquipmentRental rental = rentalDAO.getRentalById(rentalId);
-            if (rental == null) {
-                writeStatus(response, "ERROR", false, 0, "Rental not found");
-                return;
-            }
-
-            String deadlineKey = "supp_payment_deadline_" + rentalId;
-            String orderCodeKey = "supp_payment_order_code_" + rentalId;
+            String deadlineKey = "supp_payment_deadline_" + bookingId;
+            String orderCodeKey = "supp_payment_order_code_" + bookingId;
             Object storedDeadline = session.getAttribute(deadlineKey);
             LocalDateTime deadline = storedDeadline instanceof LocalDateTime ? (LocalDateTime) storedDeadline : LocalDateTime.now();
             LocalDateTime now = LocalDateTime.now();
@@ -429,15 +384,13 @@ public class PaymentServlet extends HttpServlet {
                 expired = true;
             }
 
-            String rentalStatus = rental.getStatus() == null ? "pending" : rental.getStatus().trim().toLowerCase();
-            String paymentStatus;
-            if ("paid".equals(rentalStatus) || "completed".equals(rentalStatus)) {
-                paymentStatus = "SUCCESS";
-            } else if ("cancelled".equals(rentalStatus)) {
-                paymentStatus = "FAILED";
-            } else {
-                paymentStatus = "PENDING";
+            PaymentDAO paymentDAO = new PaymentDAO();
+            Payment payment = paymentDAO.getPaymentByBookingId(bookingId);
+            if (payment == null) {
+                writeStatus(response, "ERROR", false, 0, "Payment not found");
+                return;
             }
+            String paymentStatus = payment.getPaymentStatus() == null ? "PENDING" : payment.getPaymentStatus();
 
             Long orderCode = session.getAttribute(orderCodeKey) instanceof Long
                     ? (Long) session.getAttribute(orderCodeKey)
@@ -450,10 +403,10 @@ public class PaymentServlet extends HttpServlet {
                     if (statusResponse.isSuccess()) {
                         String providerStatus = normalizeProviderStatus(statusResponse.getStatus());
                         if ("SUCCESS".equalsIgnoreCase(providerStatus)) {
-                            rentalDAO.updateStatus(rentalId, "paid");
+                            paymentDAO.updatePaymentSuccess(payment.getPaymentId());
                             paymentStatus = "SUCCESS";
                         } else if ("FAILED".equalsIgnoreCase(providerStatus)) {
-                            rentalDAO.updateStatus(rentalId, "cancelled");
+                            paymentDAO.updatePaymentFailed(payment.getPaymentId());
                             paymentStatus = "FAILED";
                         }
                     }
@@ -461,7 +414,7 @@ public class PaymentServlet extends HttpServlet {
             }
 
             if (expired && "PENDING".equalsIgnoreCase(paymentStatus)) {
-                rentalDAO.updateStatus(rentalId, "cancelled");
+                paymentDAO.updatePaymentFailed(payment.getPaymentId());
                 paymentStatus = "FAILED";
             }
 
@@ -574,12 +527,12 @@ public class PaymentServlet extends HttpServlet {
         return Long.parseLong(raw);
     }
 
-    private String buildSupplementaryPayOSDescription(UUID rentalId) {
-        String compactId = rentalId.toString().replace("-", "").toUpperCase();
+    private String buildSupplementaryPayOSDescription(UUID bookingId) {
+        String compactId = bookingId.toString().replace("-", "").toUpperCase();
         return "SUPP" + compactId.substring(0, Math.min(10, compactId.length()));
     }
 
-    private String buildSupplementaryPaymentUrl(HttpServletRequest request, UUID rentalId) {
+    private String buildSupplementaryPaymentUrl(HttpServletRequest request, UUID bookingId) {
         String scheme = request.getScheme();
         String host = request.getServerName();
         int port = request.getServerPort();
@@ -594,8 +547,8 @@ public class PaymentServlet extends HttpServlet {
             url.append(":").append(port);
         }
         url.append(contextPath)
-                .append("/payment?source=supplementary&rentalId=")
-                .append(java.net.URLEncoder.encode(rentalId.toString(), java.nio.charset.StandardCharsets.UTF_8));
+            .append("/payment?source=supplementary&bookingId=")
+            .append(java.net.URLEncoder.encode(bookingId.toString(), java.nio.charset.StandardCharsets.UTF_8));
         return url.toString();
     }
 

@@ -2,11 +2,9 @@ package Controller.Booking;
 
 import DAO.BookingDAO;
 import DAO.LocationEquipmentDAO;
-import DAO.SupplementaryEquipmentRentalDAO;
 import Models.BookingViewModel;
 import Models.LocationEquipmentViewModel;
-import Models.SupplementaryEquipmentRental;
-import Models.SupplementaryEquipment;
+import Models.BookingEquipment;
 import Utils.DBConnection;
 
 import jakarta.servlet.ServletException;
@@ -100,7 +98,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
 
         LocationEquipmentDAO locationEquipmentDAO = new LocationEquipmentDAO(new DBConnection());
         List<LocationEquipmentViewModel> locationEquipments = locationEquipmentDAO.getByLocation(booking.getLocationId());
-        List<SupplementaryEquipment> selectedEquipments = new ArrayList<>();
+        List<BookingEquipment> selectedEquipments = new ArrayList<>();
         BigDecimal totalPrice = BigDecimal.ZERO;
 
         for (LocationEquipmentViewModel equipment : locationEquipments) {
@@ -132,7 +130,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
                 return;
             }
 
-            SupplementaryEquipment suppEquip = new SupplementaryEquipment();
+            BookingEquipment suppEquip = new BookingEquipment();
             suppEquip.setEquipmentId(equipment.getEquipmentId());
             suppEquip.setQuantity(quantity);
             selectedEquipments.add(suppEquip);
@@ -148,22 +146,12 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
             return;
         }
 
-        SupplementaryEquipmentRental rental = new SupplementaryEquipmentRental(
-            bookingId,
-            booking.getBookerId(),
-            booking.getFieldId(),
-            booking.getLocationId()
-        );
-        rental.setTotalPrice(totalPrice);
-
-        SupplementaryEquipmentRentalDAO dao = new SupplementaryEquipmentRentalDAO();
-        boolean ok = dao.createSupplementaryRental(rental, selectedEquipments);
+        boolean ok = bookingDAO.addEquipmentToBooking(bookingId, selectedEquipments, totalPrice);
 
         if (ok) {
-            // Redirect to payment page for the new supplementary equipment rental
-            response.sendRedirect(request.getContextPath() + "/staff/supplementaryEquipmentPayment?rentalId=" + rental.getRentalId());
+            response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + bookingId + "&resetDeadline=1&source=supplementary");
         } else {
-            String error = dao.getLastInsertError();
+            String error = bookingDAO.getLastInsertError();
             session.setAttribute("flash_error", (error == null || error.isBlank())
                     ? "Failed to add equipment."
                     : error);
