@@ -30,6 +30,21 @@ import java.util.UUID;
 @WebServlet(name = "WeeklyBookingConfirmServlet", urlPatterns = {"/booking/weekly-confirm"})
 public class WeeklyBookingConfirmServlet extends HttpServlet {
 
+    private boolean isStaffUser(User user) {
+        return user != null
+                && user.getRole() != null
+                && user.getRole().getRoleName() != null
+                && "STAFF".equalsIgnoreCase(user.getRole().getRoleName());
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -42,6 +57,23 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
 
         User user    = (User) session.getAttribute("user");
         UUID bookerId = user.getUserId();
+        boolean staffUser = isStaffUser(user);
+        String bookingPhone;
+        if (staffUser) {
+            bookingPhone = trimToNull(request.getParameter("bookingPhone"));
+            if (bookingPhone == null) {
+                session.setAttribute("flash_error", "Staff booking requires phone number.");
+                response.sendRedirect(buildReturnUrl(request, request.getParameter("locationId"), request.getParameter("fieldId"), request.getParameter("weekStart")));
+                return;
+            }
+        } else {
+            bookingPhone = trimToNull(user.getPhone());
+            if (bookingPhone == null) {
+                session.setAttribute("flash_error", "Your profile is missing a phone number. Please update it before booking.");
+                response.sendRedirect(buildReturnUrl(request, request.getParameter("locationId"), request.getParameter("fieldId"), request.getParameter("weekStart")));
+                return;
+            }
+        }
 
         String fieldIdParam    = request.getParameter("fieldId");
         String locationIdParam = request.getParameter("locationId");
@@ -144,7 +176,7 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
         BookingDAO bookingDAO = new BookingDAO();
         try {
             List<Booking> created = bookingDAO.insertWeekly(
-                    bookerId, fieldId, scheduleIds, equipmentList, voucherId, discountPercent, paymentDeadline, weeklyGroupId);
+                    bookerId, fieldId, scheduleIds, equipmentList, voucherId, discountPercent, paymentDeadline, weeklyGroupId, bookingPhone);
 
             BigDecimal total = BigDecimal.ZERO;
             for (Booking b : created) {

@@ -134,55 +134,76 @@ public class BookingDAO {
     }
 
     private boolean insertBookingRow(Connection conn, Booking booking) throws SQLException {
-        String sqlWithDeadline = "INSERT INTO Booking (booking_id, booker_id, field_id, schedule_id, voucher_id, status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        String sqlWithoutDeadline = "INSERT INTO Booking (booking_id, booker_id, field_id, schedule_id, voucher_id, status, total_price) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sqlWithDeadlineAndPhone = "INSERT INTO Booking (booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sqlWithDeadlineNoPhone = "INSERT INTO Booking (booking_id, booker_id, field_id, schedule_id, voucher_id, status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sqlWithoutDeadlineAndPhone = "INSERT INTO Booking (booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, status, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        String sqlWithoutDeadlineNoPhone = "INSERT INTO Booking (booking_id, booker_id, field_id, schedule_id, voucher_id, status, total_price) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        try (PreparedStatement ps = conn.prepareStatement(sqlWithDeadline)) {
-            bindBookingParams(ps, booking, true);
-            ps.executeUpdate();
-            return true;
-        } catch (SQLException ex) {
-            String message = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
-            boolean deadlineColumnMissing = message.contains("payment_deadline")
-                    && (message.contains("invalid column") || message.contains("column name") || message.contains("does not exist"));
+        String[] sqlAttempts = new String[]{
+            sqlWithDeadlineAndPhone,
+            sqlWithDeadlineNoPhone,
+            sqlWithoutDeadlineAndPhone,
+            sqlWithoutDeadlineNoPhone
+        };
 
-            if (!deadlineColumnMissing) {
-                lastInsertError = "Cannot insert booking record: " + ex.getMessage();
-                return false;
-            }
+        boolean[] includeDeadlineAttempts = new boolean[]{true, true, false, false};
+        boolean[] includePhoneAttempts = new boolean[]{true, false, true, false};
 
-            // Backward compatibility for DBs that have not applied payment migration yet.
-            try (PreparedStatement fallback = conn.prepareStatement(sqlWithoutDeadline)) {
-                bindBookingParams(fallback, booking, false);
-                fallback.executeUpdate();
+        SQLException lastException = null;
+        for (int i = 0; i < sqlAttempts.length; i++) {
+            try (PreparedStatement ps = conn.prepareStatement(sqlAttempts[i])) {
+                bindBookingParams(ps, booking, includeDeadlineAttempts[i], includePhoneAttempts[i]);
+                ps.executeUpdate();
                 return true;
-            } catch (SQLException fallbackEx) {
-                lastInsertError = "Cannot insert booking record: " + fallbackEx.getMessage();
-                return false;
+            } catch (SQLException ex) {
+                lastException = ex;
+                if (!isMissingColumnError(ex)) {
+                    lastInsertError = "Cannot insert booking record: " + ex.getMessage();
+                    return false;
+                }
             }
         }
+
+        lastInsertError = "Cannot insert booking record: "
+                + (lastException != null ? lastException.getMessage() : "unsupported database schema");
+        return false;
     }
 
-    private void bindBookingParams(PreparedStatement ps, Booking booking, boolean includeDeadline) throws SQLException {
+    private boolean isMissingColumnError(SQLException ex) {
+        String message = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
+        return message.contains("invalid column") || message.contains("column name") || message.contains("does not exist");
+    }
+
+    private void bindBookingParams(PreparedStatement ps, Booking booking, boolean includeDeadline, boolean includePhone) throws SQLException {
         ps.setString(1, booking.getBookingId().toString());
         ps.setString(2, booking.getBookerId().toString());
-        ps.setString(3, booking.getFieldId().toString());
-        ps.setString(4, booking.getScheduleId().toString());
 
-        if (booking.getVoucherId() != null) {
-            ps.setString(5, booking.getVoucherId().toString());
-        } else {
-            ps.setNull(5, Types.VARCHAR);
+        int idx = 3;
+        if (includePhone) {
+            if (booking.getPhoneNumber() != null && !booking.getPhoneNumber().trim().isEmpty()) {
+                ps.setString(idx++, booking.getPhoneNumber().trim());
+            } else {
+                ps.setNull(idx++, Types.NVARCHAR);
+            }
         }
 
-        ps.setString(6, booking.getStatus());
-        ps.setBigDecimal(7, booking.getTotalPrice());
+        ps.setString(idx++, booking.getFieldId().toString());
+        ps.setString(idx++, booking.getScheduleId().toString());
+
+        if (booking.getVoucherId() != null) {
+            ps.setString(idx++, booking.getVoucherId().toString());
+        } else {
+            ps.setNull(idx++, Types.VARCHAR);
+        }
+
+        ps.setString(idx++, booking.getStatus());
+        ps.setBigDecimal(idx++, booking.getTotalPrice());
 
         if (includeDeadline) {
             if (booking.getPaymentDeadline() != null) {
-                ps.setTimestamp(8, Timestamp.valueOf(booking.getPaymentDeadline()));
+                ps.setTimestamp(idx, Timestamp.valueOf(booking.getPaymentDeadline()));
             } else {
-                ps.setNull(8, Types.TIMESTAMP);
+                ps.setNull(idx, Types.TIMESTAMP);
             }
         }
     }
@@ -190,7 +211,7 @@ public class BookingDAO {
     public List<BookingViewModel> getByBooker(UUID bookerId) {
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, u.phone AS customer_phone " +
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone " +
             "FROM Booking b " +
             "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
             "LEFT JOIN Field f ON b.field_id = f.field_id " +
@@ -516,7 +537,7 @@ public class BookingDAO {
 
     public BookingViewModel getByScheduleId(UUID scheduleId) {
         synchronizeBookingStates();
-        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, u.phone AS customer_phone " +
+        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone " +
             "FROM Booking b " +
             "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
             "LEFT JOIN Field f ON b.field_id = f.field_id " +
@@ -556,7 +577,7 @@ public class BookingDAO {
 
     public BookingViewModel getByScheduleIdForCalendar(UUID scheduleId) {
         synchronizeBookingStates();
-        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, u.phone AS customer_phone " +
+        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone " +
             "FROM Booking b " +
             "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
             "LEFT JOIN Field f ON b.field_id = f.field_id " +
@@ -841,7 +862,7 @@ public class BookingDAO {
     public List<BookingViewModel> getByLocation(UUID locationId) {
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name " +
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, b.phone_number AS customer_phone " +
                 "FROM Booking b " +
                 "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
                 "LEFT JOIN Field f ON b.field_id = f.field_id " +
@@ -865,6 +886,7 @@ public class BookingDAO {
                 if (et != null) vm.setEndTime(et.toLocalTime());
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
+                vm.setCustomerPhone(rs.getString("customer_phone"));
                 vm.setStatus(rs.getString("status"));
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 list.add(vm);
@@ -879,7 +901,7 @@ public class BookingDAO {
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, u.phone AS customer_phone ");
+        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, b.phone_number AS customer_phone ");
         sql.append("FROM Booking b ");
         sql.append("LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id ");
         sql.append("LEFT JOIN Field f ON b.field_id = f.field_id ");
@@ -893,7 +915,7 @@ public class BookingDAO {
             sql.append(" AND LOWER(b.status) = LOWER(?) ");
         }
         if (customerKeyword != null && !customerKeyword.isBlank()) {
-            sql.append(" AND (LOWER(u.full_name) LIKE LOWER(?) OR u.phone LIKE ?) ");
+            sql.append(" AND (LOWER(u.full_name) LIKE LOWER(?) OR b.phone_number LIKE ?) ");
         }
 
         sql.append(" ORDER BY s.booking_date DESC, s.start_time");
@@ -969,6 +991,7 @@ public class BookingDAO {
                 }
                 
                 booking.setStatus(rs.getString("status"));
+                booking.setPhoneNumber(rs.getString("phone_number"));
                 booking.setTotalPrice(rs.getBigDecimal("total_price"));
                 
                 Timestamp paymentDeadline = rs.getTimestamp("payment_deadline");
@@ -1126,7 +1149,8 @@ public class BookingDAO {
                                       List<BookingEquipment> equipmentList,
                                       UUID voucherId, java.math.BigDecimal discountPercent,
                                       java.time.LocalDateTime paymentDeadline,
-                                      UUID weeklyGroupId) throws Exception {
+                                      UUID weeklyGroupId,
+                                      String bookingPhone) throws Exception {
 
         List<Booking> created = new ArrayList<>();
         int sessionCount = scheduleIds.size();
@@ -1207,6 +1231,7 @@ public class BookingDAO {
                     Booking b = new Booking();
                     b.setBookingId(UUID.randomUUID());
                     b.setBookerId(bookerId);
+                    b.setPhoneNumber(bookingPhone);
                     b.setFieldId(fieldId);
                     b.setScheduleId(sid);
                     b.setVoucherId(voucherId);
@@ -1245,30 +1270,35 @@ public class BookingDAO {
 
                 // ── Phase 3: insert all booking rows ─────────────────────────────────────
                 String insertSql = "INSERT INTO Booking "
-                        + "(booking_id, booker_id, field_id, schedule_id, voucher_id, weekly_group_id, "
+                        + "(booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, weekly_group_id, "
                         + " status, total_price, payment_deadline) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)";
+                        + "VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)";
                 try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
                     for (Booking b : created) {
                         ps.setString(1, b.getBookingId().toString());
                         ps.setString(2, b.getBookerId().toString());
-                        ps.setString(3, b.getFieldId().toString());
-                        ps.setString(4, b.getScheduleId().toString());
-                        if (b.getVoucherId() != null) {
-                            ps.setString(5, b.getVoucherId().toString());
+                        if (b.getPhoneNumber() != null && !b.getPhoneNumber().trim().isEmpty()) {
+                            ps.setString(3, b.getPhoneNumber().trim());
                         } else {
-                            ps.setNull(5, Types.VARCHAR);
+                            ps.setNull(3, Types.NVARCHAR);
                         }
-                        if (b.getWeeklyGroupId() != null) {
-                            ps.setString(6, b.getWeeklyGroupId().toString());
+                        ps.setString(4, b.getFieldId().toString());
+                        ps.setString(5, b.getScheduleId().toString());
+                        if (b.getVoucherId() != null) {
+                            ps.setString(6, b.getVoucherId().toString());
                         } else {
                             ps.setNull(6, Types.VARCHAR);
                         }
-                        ps.setBigDecimal(7, b.getTotalPrice());
-                        if (b.getPaymentDeadline() != null) {
-                            ps.setTimestamp(8, Timestamp.valueOf(b.getPaymentDeadline()));
+                        if (b.getWeeklyGroupId() != null) {
+                            ps.setString(7, b.getWeeklyGroupId().toString());
                         } else {
-                            ps.setNull(8, Types.TIMESTAMP);
+                            ps.setNull(7, Types.VARCHAR);
+                        }
+                        ps.setBigDecimal(8, b.getTotalPrice());
+                        if (b.getPaymentDeadline() != null) {
+                            ps.setTimestamp(9, Timestamp.valueOf(b.getPaymentDeadline()));
+                        } else {
+                            ps.setNull(9, Types.TIMESTAMP);
                         }
                         ps.addBatch();
                     }

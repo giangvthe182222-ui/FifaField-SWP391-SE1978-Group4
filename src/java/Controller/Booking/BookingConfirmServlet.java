@@ -23,6 +23,21 @@ import java.util.concurrent.ThreadLocalRandom;
 @WebServlet(name = "BookingConfirmServlet", urlPatterns = {"/booking-confirm"})
 public class BookingConfirmServlet extends HttpServlet {
 
+    private boolean isStaffUser(User user) {
+        return user != null
+                && user.getRole() != null
+                && user.getRole().getRoleName() != null
+                && "STAFF".equalsIgnoreCase(user.getRole().getRoleName());
+    }
+
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     private String resolveBookingHistoryPath(User user) {
         if (user != null
                 && user.getRole() != null
@@ -43,6 +58,7 @@ public class BookingConfirmServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
+        boolean staffUser = isStaffUser(user);
         UUID bookerId = user.getUserId();
         String bookingHistoryPath = resolveBookingHistoryPath(user);
         if (bookerId == null) {
@@ -124,11 +140,36 @@ public class BookingConfirmServlet extends HttpServlet {
 
         BigDecimal total = subtotal.multiply(BigDecimal.ONE.subtract(discountPercent.divide(BigDecimal.valueOf(100))));
 
+        String bookingPhone;
+        if (staffUser) {
+            bookingPhone = trimToNull(request.getParameter("bookingPhone"));
+            if (bookingPhone == null) {
+                session.setAttribute("flash_error", "Staff booking requires phone number.");
+                StringBuilder redirect = new StringBuilder(request.getContextPath()).append("/booking");
+                if (locationIdParam != null && !locationIdParam.isBlank()) {
+                    redirect.append("?locationId=").append(locationIdParam);
+                    if (fieldIdParam != null && !fieldIdParam.isBlank()) {
+                        redirect.append("&fieldId=").append(fieldIdParam);
+                    }
+                }
+                response.sendRedirect(redirect.toString());
+                return;
+            }
+        } else {
+            bookingPhone = trimToNull(user.getPhone());
+            if (bookingPhone == null) {
+                session.setAttribute("flash_error", "Your profile is missing a phone number. Please update it before booking.");
+                response.sendRedirect(request.getContextPath() + "/booking");
+                return;
+            }
+        }
+
         LocalDateTime paymentDeadline = LocalDateTime.now().plusMinutes(15);
 
         Booking booking = new Booking();
         booking.setBookingId(UUID.randomUUID());
         booking.setBookerId(bookerId);
+        booking.setPhoneNumber(bookingPhone);
         booking.setFieldId(fieldId);
         booking.setScheduleId(scheduleId);
         booking.setVoucherId(voucherId);
