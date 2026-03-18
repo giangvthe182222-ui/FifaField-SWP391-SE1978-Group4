@@ -246,7 +246,7 @@
                                 class="w-full pl-12 pr-10 py-4 bg-emerald-50/30 border border-emerald-100 rounded-2xl appearance-none font-black text-[#008751] text-xs uppercase tracking-widest input-focus cursor-pointer">
                             <option value="" data-discount="0">-- KHÔNG SỬ DỤNG VOUCHER --</option>
                             <c:forEach var="v" items="${vouchers}">
-                                <option value="${v.voucherId}" data-discount="${v.discountValue}">${v.code} - GIẢM ${v.discountValue}%</option>
+                                <option value="${v.voucherId}" data-discount="${v.discountValue}" ${param.voucherId == v.voucherId.toString() ? 'selected' : ''}>${v.code} - GIẢM ${v.discountValue}%</option>
                             </c:forEach>
                         </select>
                     </div>

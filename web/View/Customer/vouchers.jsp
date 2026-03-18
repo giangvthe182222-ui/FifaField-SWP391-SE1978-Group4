@@ -119,7 +119,7 @@
                             <i data-lucide="calendar" class="w-3 h-3"></i>
                             <p class="text-[9px] font-black uppercase tracking-widest">Từ: ${v.startDate}</p>
                         </div>
-                        <a href="${pageContext.request.contextPath}/booking?locationId=${v.locationId}"
+                        <a href="${pageContext.request.contextPath}/booking?locationId=${v.locationId}&voucherId=${v.voucherId}"
                            class="px-8 py-4 rounded-2xl bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-all shadow-lg shadow-gray-200">
                             Sử dụng ngay
                         </a>
