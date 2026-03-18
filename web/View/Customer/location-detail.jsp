@@ -11,13 +11,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
-        .map-frame { filter: saturate(1.05) contrast(1.02); }
     </style>
 </head>
 <body class="min-h-screen text-slate-900">
 <jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
 
 <main class="max-w-5xl mx-auto px-6 py-12 space-y-8">
+    <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
+
     <div class="flex items-center justify-between gap-4">
         <div>
             <p class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">FIFAFIELD LOCATION</p>
@@ -27,8 +28,6 @@
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
     </div>
-
-    <jsp:include page="/View/Layout/CustomerQuickPanel.jsp"/>
 
     <section class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-8 md:p-10">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -70,30 +69,11 @@
                     <a href="${pageContext.request.contextPath}/booking?locationId=${location.locationId}" class="px-8 py-4 rounded-2xl bg-[#008751] text-white font-black text-xs uppercase tracking-widest text-center hover:bg-emerald-500 transition-colors">
                         Đặt sân tại cơ sở này
                     </a>
-                    <a href="https://www.google.com/maps/search/?api=1&query=${location.address}" target="_blank" rel="noopener noreferrer" class="px-8 py-4 rounded-2xl border border-blue-100 bg-blue-50 text-blue-700 font-black text-xs uppercase tracking-widest text-center hover:border-blue-500 hover:text-blue-600 transition-colors">
-                        Mở Google Maps
-                    </a>
                     <a href="${pageContext.request.contextPath}/customer/vouchers?locationId=${location.locationId}" class="px-8 py-4 rounded-2xl border border-slate-200 text-slate-700 font-black text-xs uppercase tracking-widest text-center hover:border-[#008751] hover:text-[#008751] transition-colors">
                         Xem voucher cơ sở
                     </a>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <section class="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl shadow-slate-200/40 p-8 md:p-10 space-y-6">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
-            <h2 class="text-[11px] font-black uppercase tracking-[0.24em] text-slate-500">Bản đồ cơ sở</h2>
-        </div>
-
-        <div class="rounded-[2rem] overflow-hidden border border-slate-100 bg-slate-50">
-            <iframe
-                title="Bản đồ ${location.locationName}"
-                src="https://maps.google.com/maps?hl=vi&q=${location.address}&t=&z=16&ie=UTF8&iwloc=B&output=embed"
-                class="map-frame w-full h-[420px] border-0"
-                loading="lazy"
-                referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
     </section>
 
@@ -143,6 +123,47 @@
                         </article>
                     </c:forEach>
                 </div>
+
+                <c:if test="${totalPages > 1}">
+                    <div class="flex items-center justify-center gap-2 py-6">
+                        <c:if test="${currentPage > 1}">
+                            <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${location.locationId}&page=1" 
+                               class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
+                                ⟨⟨ First
+                            </a>
+                            <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${location.locationId}&page=${currentPage - 1}" 
+                               class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
+                                ⟨ Prev
+                            </a>
+                        </c:if>
+
+                        <c:forEach begin="1" end="${totalPages}" var="i">
+                            <c:choose>
+                                <c:when test="${i == currentPage}">
+                                    <span class="px-3 py-2 rounded-lg bg-[#008751] text-white font-bold text-sm">${i}</span>
+                                </c:when>
+                                <c:otherwise>
+                                    <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${location.locationId}&page=${i}" 
+                                       class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
+                                        ${i}
+                                    </a>
+                                </c:otherwise>
+                            </c:choose>
+                        </c:forEach>
+
+                        <c:if test="${currentPage < totalPages}">
+                            <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${location.locationId}&page=${currentPage + 1}" 
+                               class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
+                                Next ⟩
+                            </a>
+                            <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${location.locationId}&page=${totalPages}" 
+                               class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
+                                Last ⟩⟩
+                            </a>
+                        </c:if>
+                    </div>
+                    <p class="text-center text-sm font-semibold text-slate-500">Trang <span class="text-[#008751] font-bold">${currentPage}</span> / ${totalPages} (Tổng: ${totalFields} sân)</p>
+                </c:if>
             </c:otherwise>
         </c:choose>
     </section>

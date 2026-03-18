@@ -15,6 +15,7 @@ public class BookingViewModel {
     private LocalTime startTime;
     private LocalTime endTime;
     private String fieldName;
+    private String locationName;
     private String customerName;
     private String customerPhone;
     private String status;
@@ -49,6 +50,9 @@ public class BookingViewModel {
 
     public String getFieldName() { return fieldName; }
     public void setFieldName(String fieldName) { this.fieldName = fieldName; }
+
+    public String getLocationName() { return locationName; }
+    public void setLocationName(String locationName) { this.locationName = locationName; }
 
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }

@@ -2,6 +2,7 @@ package Controller.Booking;
 
 import DAO.BookingDAO;
 import DAO.PaymentDAO;
+import DAO.WeeklyBookingGroupDAO;
 import Models.Payment;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -140,7 +141,13 @@ public class PaymentWebhookServlet extends HttpServlet {
         }
 
         boolean paymentUpdated = paymentDAO.updatePaymentSuccess(payment.getPaymentId());
-        boolean bookingUpdated = new BookingDAO().markBookingPaid(payment.getBookingId());
+        boolean bookingUpdated;
+        if (payment.getWeeklyGroupId() != null) {
+            bookingUpdated = new BookingDAO().markWeeklyGroupPaid(payment.getWeeklyGroupId());
+            new WeeklyBookingGroupDAO().updateStatus(payment.getWeeklyGroupId(), "paid");
+        } else {
+            bookingUpdated = new BookingDAO().markBookingPaid(payment.getBookingId());
+        }
 
         if (!paymentUpdated || !bookingUpdated) {
             response.setStatus(HttpServletResponse.SC_CONFLICT);

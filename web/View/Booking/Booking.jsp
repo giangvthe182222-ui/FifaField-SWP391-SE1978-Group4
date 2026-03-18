@@ -51,9 +51,10 @@
                     </div>
                 </div>
             </button>
-            <button type="button" data-mode="weekly" class="booking-mode-btn mode-card elite-card p-6 border-2 transition-all cursor-pointer group ${param.bookingMode == 'weekly' ? 'selected border-[#008751] bg-emerald-50' : 'border-gray-100 bg-white hover:border-[#008751]/30'}">
+            <a href="${pageContext.request.contextPath}/booking/weekly<c:if test="${not empty param.locationId}">?locationId=${param.locationId}<c:if test="${not empty param.fieldId}">&amp;fieldId=${param.fieldId}</c:if></c:if>"
+               class="booking-mode-btn mode-card elite-card p-6 border-2 transition-all cursor-pointer group border-gray-100 bg-white hover:border-[#008751]/30 no-underline">
                 <div class="flex items-center gap-4">
-                    <div class="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400">
+                    <div class="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-[#008751]">
                         <i data-lucide="calendar-range" class="w-6 h-6"></i>
                     </div>
                     <div class="text-left">
@@ -61,7 +62,7 @@
                         <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Cố định theo chu kỳ hằng tuần</p>
                     </div>
                 </div>
-            </button>
+            </a>
         </div>
     </div>
 
@@ -232,6 +233,25 @@
                 </c:choose>
             </section>
 
+            <c:if test="${isStaffUser}">
+                <section class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-10 space-y-8">
+                    <div class="flex items-center gap-4">
+                        <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
+                        <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">4. Thông tin khách vãng lai</h2>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Số điện thoại khách <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"></i>
+                            <input type="text" name="bookingPhone" maxlength="20" required
+                                   placeholder="Nhập số điện thoại khách"
+                                   value="${param.bookingPhone}"
+                                   class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 input-focus" />
+                        </div>
+                    </div>
+                </section>
+            </c:if>
+
             <!-- 4. Voucher Section -->
             <c:if test="${not empty vouchers}">
                 <section class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-10 space-y-8">
@@ -245,7 +265,7 @@
                                 class="w-full pl-12 pr-10 py-4 bg-emerald-50/30 border border-emerald-100 rounded-2xl appearance-none font-black text-[#008751] text-xs uppercase tracking-widest input-focus cursor-pointer">
                             <option value="" data-discount="0">-- KHÔNG SỬ DỤNG VOUCHER --</option>
                             <c:forEach var="v" items="${vouchers}">
-                                <option value="${v.voucherId}" data-discount="${v.discountValue}">${v.code} - GIẢM ${v.discountValue}%</option>
+                                <option value="${v.voucherId}" data-discount="${v.discountValue}" ${param.voucherId == v.voucherId.toString() ? 'selected' : ''}>${v.code} - GIẢM ${v.discountValue}%</option>
                             </c:forEach>
                         </select>
                     </div>
@@ -462,7 +482,7 @@
                     ? 'bg-emerald-50 text-[#008751]'
                     : 'bg-amber-50 text-amber-500';
                 var statusText = isAvailable ? 'available' : 'unavailable';
-                var selectedClass = isSelected ? ' border-[#008751] bg-emerald-50/40' : '';
+                var selectedClass = isSelected ? ' border-[#065f46] bg-emerald-100 shadow-2xl shadow-emerald-200/60 ring-2 ring-[#047857]/35 -translate-y-0.5' : '';
 
                 slotsHtml += '<div class="' + cardClass + selectedClass + ' group border-2 rounded-[1.5rem] p-4 transition-all" data-id="' + s.id + '" data-date="' + d + '" data-available="' + isAvailable + '">' +
                     '<div class="flex justify-between items-start mb-3">' +

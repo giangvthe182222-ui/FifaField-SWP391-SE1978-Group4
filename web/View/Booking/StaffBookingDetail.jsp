@@ -199,19 +199,19 @@
                             
                             <div class="space-y-2">
                                 <label for="status" class="text-[9px] font-black uppercase tracking-widest opacity-60">Chọn trạng thái mới</label>
-                                <select name="status" id="status" class="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:ring-2 focus:ring-emerald-400/50 appearance-none cursor-pointer">
-                                    <option value="pending" ${booking.status=='pending' ? 'selected' : ''} class="text-gray-900">pending</option>
-                                    <option value="paid" ${booking.status=='paid' ? 'selected' : ''} class="text-gray-900">paid</option>
-                                    <option value="checked in" ${booking.status=='checked in' ? 'selected' : ''} class="text-gray-900">checked in</option>
-                                    <option value="pending extra" ${booking.status=='pending extra' ? 'selected' : ''} class="text-gray-900">pending extra</option>
-                                    <option value="completed" ${booking.status=='completed' ? 'selected' : ''} class="text-gray-900">completed</option>
-                                    <option value="pending refund" ${booking.status=='pending refund' ? 'selected' : ''} class="text-gray-900">pending refund</option>
-                                    <option value="cancelled" ${booking.status=='cancelled' ? 'selected' : ''} class="text-gray-900">cancelled</option>
-                                    <option value="refunded" ${booking.status=='refunded' ? 'selected' : ''} class="text-gray-900">refunded</option>
+                                <c:set var="canUpdate" value="${canCheckIn || canRefund}"/>
+                                <select name="status" id="status" ${!canUpdate ? 'disabled' : ''} class="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:ring-2 focus:ring-emerald-400/50 appearance-none cursor-pointer ${!canUpdate ? 'opacity-60 cursor-not-allowed' : ''}">
+                                    <option value="${booking.status}" selected class="text-gray-900">${booking.status}</option>
+                                    <c:if test="${canCheckIn && booking.status != 'checked in'}">
+                                        <option value="checked in" class="text-gray-900">checked in</option>
+                                    </c:if>
+                                    <c:if test="${canRefund && booking.status != 'refunded'}">
+                                        <option value="refunded" class="text-gray-900">refunded</option>
+                                    </c:if>
                                 </select>
                             </div>
 
-                            <button type="submit" class="w-full bg-[#008751] hover:bg-emerald-400 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-black/20">
+                            <button type="submit" ${!canUpdate ? 'disabled' : ''} class="w-full bg-[#008751] hover:bg-emerald-400 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-black/20 ${!canUpdate ? 'opacity-60 cursor-not-allowed hover:bg-[#008751] hover:translate-y-0 active:scale-100' : ''}">
                                 <i data-lucide="save" class="w-4 h-4"></i>
                                 LƯU THAY ĐỔI
                             </button>

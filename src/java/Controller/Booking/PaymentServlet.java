@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * PaymentServlet - Display QR Code and countdown for payment
@@ -95,6 +96,12 @@ public class PaymentServlet extends HttpServlet {
         String bookingDetailPath = resolveBookingDetailPath(user);
         String source = request.getParameter("source");
         boolean supplementarySource = "supplementary".equalsIgnoreCase(source);
+
+        String weeklyGroupIdParam = request.getParameter("weeklyGroupId");
+        if (weeklyGroupIdParam != null && !weeklyGroupIdParam.isBlank()) {
+            handleWeeklyGroupPayment(request, response, user, bookingHistoryPath, bookingDetailPath, weeklyGroupIdParam);
+            return;
+        }
 
         String bookingIdParam = request.getParameter("bookingId");
         if (bookingIdParam == null || bookingIdParam.isBlank()) {
@@ -356,6 +363,167 @@ public class PaymentServlet extends HttpServlet {
         request.getRequestDispatcher("/View/Booking/Payment.jsp").forward(request, response);
     }
 
+    private void handleWeeklyGroupPayment(HttpServletRequest request,
+                                          HttpServletResponse response,
+                                          User user,
+                                          String bookingHistoryPath,
+                                          String bookingDetailPath,
+                                          String weeklyGroupIdParam) throws IOException, ServletException {
+        UUID weeklyGroupId;
+        try {
+            weeklyGroupId = UUID.fromString(weeklyGroupIdParam);
+        } catch (IllegalArgumentException ex) {
+            request.getSession().setAttribute("flash_error", "Mã nhóm đặt tuần không hợp lệ.");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+            return;
+        }
+
+        WeeklyBookingGroupDAO groupDAO = new WeeklyBookingGroupDAO();
+        WeeklyBookingGroup group = groupDAO.getById(weeklyGroupId);
+        if (group == null || user == null || !group.getBookerId().equals(user.getUserId())) {
+            request.getSession().setAttribute("flash_error", "Không tìm thấy nhóm đặt tuần.");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+            return;
+        }
+
+        BookingDAO bookingDAO = new BookingDAO();
+        java.util.List<BookingViewModel> weeklyBookings = bookingDAO.getByWeeklyGroupId(weeklyGroupId);
+        if (weeklyBookings == null || weeklyBookings.isEmpty()) {
+            request.getSession().setAttribute("flash_error", "Nhóm đặt tuần không có booking hợp lệ.");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+            return;
+        }
+
+        UUID representativeBookingId = weeklyBookings.get(0).getBookingId();
+        Booking representativeBooking = bookingDAO.getBookingById(representativeBookingId);
+        BookingViewModel representativeVm = bookingDAO.getById(representativeBookingId);
+
+        PaymentDAO paymentDAO = new PaymentDAO();
+        Payment payment = paymentDAO.getPaymentByWeeklyGroupId(weeklyGroupId);
+
+        if (payment == null) {
+            long orderCode = generateOrderCode();
+            String description = buildWeeklyPayOSDescription(weeklyGroupId);
+            PayOSClient payOSClient = new PayOSClient();
+            PayOSClient.PaymentLinkResponse link = payOSClient.createPaymentLink(
+                    orderCode,
+                    group.getTotalAmount(),
+                    description,
+                    representativeBookingId,
+                    group.getPaymentDeadline());
+
+            if (!link.isSuccess()) {
+                request.getSession().setAttribute("flash_error", "Không thể tạo link thanh toán tuần: " + link.getMessage());
+                response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+                return;
+            }
+
+            Payment newPayment = new Payment();
+            newPayment.setPaymentId(UUID.randomUUID());
+            newPayment.setBookingId(representativeBookingId);
+            newPayment.setWeeklyGroupId(weeklyGroupId);
+            newPayment.setAmount(group.getTotalAmount());
+            newPayment.setPaymentMethod("payOS");
+            newPayment.setPaymentStatus("PENDING");
+            newPayment.setTransactionCode(String.valueOf(link.getOrderCode()));
+            newPayment.setQrContent(link.getQrCode());
+            newPayment.setBankCode(link.getBankCode());
+            newPayment.setAccountNumber(link.getAccountNumber());
+
+            if (!paymentDAO.createPayment(newPayment)) {
+                request.getSession().setAttribute("flash_error", "Không thể lưu thông tin thanh toán tuần.");
+                response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+                return;
+            }
+            payment = paymentDAO.getPaymentByWeeklyGroupId(weeklyGroupId);
+        }
+
+        String paymentStatus = payment.getPaymentStatus();
+        String qrContent = payment.getQrContent();
+        String checkoutUrl = null;
+
+        if ("payOS".equalsIgnoreCase(payment.getPaymentMethod())) {
+            PayOSClient payOSClient = new PayOSClient();
+            if (payOSClient.isConfigured()) {
+                Long orderCode = parseOrderCode(payment.getTransactionCode());
+                if (orderCode != null) {
+                    PayOSClient.PaymentStatusResponse statusResponse = payOSClient.getPaymentStatus(orderCode);
+                    if (statusResponse.isSuccess()) {
+                        if (notBlank(statusResponse.getQrCode())) {
+                            qrContent = statusResponse.getQrCode();
+                        }
+                        checkoutUrl = statusResponse.getCheckoutUrl();
+                        String providerStatus = normalizeProviderStatus(statusResponse.getStatus());
+                        if ("SUCCESS".equalsIgnoreCase(providerStatus) && !"SUCCESS".equalsIgnoreCase(paymentStatus)) {
+                            paymentDAO.updatePaymentSuccess(payment.getPaymentId());
+                            bookingDAO.markWeeklyGroupPaid(weeklyGroupId);
+                            groupDAO.updateStatus(weeklyGroupId, "paid");
+                            request.getSession().setAttribute("flash_success", "Thanh toán lịch tuần thành công.");
+                            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        if ("SUCCESS".equalsIgnoreCase(paymentStatus)) {
+            request.getSession().setAttribute("flash_success", "Thanh toán lịch tuần thành công.");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+            return;
+        }
+
+        LocalDateTime deadline = group.getPaymentDeadline();
+        LocalDateTime now = LocalDateTime.now();
+        if (deadline != null && !now.isBefore(deadline)) {
+            bookingDAO.cancelWeeklyGroupForPayment(weeklyGroupId);
+            paymentDAO.updatePaymentFailed(payment.getPaymentId());
+            groupDAO.updateStatus(weeklyGroupId, "cancelled");
+            request.getSession().setAttribute("flash_error", "Đã hết hạn thanh toán lịch tuần.");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
+            return;
+        }
+
+        long remainingSeconds = 0;
+        if (deadline != null) {
+            remainingSeconds = Duration.between(now, deadline).getSeconds();
+            if (remainingSeconds < 0) remainingSeconds = 0;
+        }
+
+        String qrCodeURL = buildQrCodeUrl(payment, qrContent);
+        String paymentDeadlineText = "";
+        if (deadline != null) {
+            paymentDeadlineText = deadline.format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
+        }
+
+        String bookingDateText = "";
+        if (representativeVm != null && representativeVm.getBookingDate() != null) {
+            bookingDateText = representativeVm.getBookingDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        }
+
+        request.setAttribute("booking", representativeBooking);
+        request.setAttribute("bookingVM", representativeVm);
+        request.setAttribute("payment", payment);
+        request.setAttribute("qrCodeURL", qrCodeURL);
+        request.setAttribute("qrContent", qrContent);
+        request.setAttribute("timeRemaining", remainingSeconds);
+        request.setAttribute("remainingSeconds", remainingSeconds);
+        request.setAttribute("paymentDeadline", deadline);
+        request.setAttribute("paymentDeadlineText", paymentDeadlineText);
+        request.setAttribute("bookingDateText", bookingDateText);
+        request.setAttribute("bankCode", payment.getBankCode());
+        request.setAttribute("accountNumber", payment.getAccountNumber());
+        request.setAttribute("accountName", QRCodeGenerator.ACCOUNT_NAME);
+        request.setAttribute("checkoutUrl", checkoutUrl);
+        request.setAttribute("bookingHistoryPath", bookingHistoryPath);
+        request.setAttribute("bookingDetailPath", bookingDetailPath);
+        request.setAttribute("isWeeklyGroupPayment", true);
+        request.setAttribute("weeklySessionCount", weeklyBookings.size());
+        request.setAttribute("weeklyGroupId", weeklyGroupId.toString());
+
+        request.getRequestDispatcher("/View/Booking/Payment.jsp").forward(request, response);
+    }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -476,7 +644,12 @@ public class PaymentServlet extends HttpServlet {
                     String providerStatus = normalizeProviderStatus(statusResponse.getStatus());
                     if ("SUCCESS".equalsIgnoreCase(providerStatus)) {
                         paymentDAO.updatePaymentSuccess(payment.getPaymentId());
-                        bookingDAO.markBookingPaid(bookingId);
+                        if (payment.getWeeklyGroupId() != null) {
+                            bookingDAO.markWeeklyGroupPaid(payment.getWeeklyGroupId());
+                            new WeeklyBookingGroupDAO().updateStatus(payment.getWeeklyGroupId(), "paid");
+                        } else {
+                            bookingDAO.markBookingPaid(bookingId);
+                        }
                         paymentStatus = "SUCCESS";
                     } else if ("FAILED".equalsIgnoreCase(providerStatus)) {
                         paymentDAO.updatePaymentFailed(payment.getPaymentId());
@@ -487,7 +660,12 @@ public class PaymentServlet extends HttpServlet {
         }
 
         if (expired && "PENDING".equalsIgnoreCase(paymentStatus)) {
-            bookingDAO.cancelBookingForPayment(bookingId);
+            if (payment.getWeeklyGroupId() != null) {
+                bookingDAO.cancelWeeklyGroupForPayment(payment.getWeeklyGroupId());
+                new WeeklyBookingGroupDAO().updateStatus(payment.getWeeklyGroupId(), "cancelled");
+            } else {
+                bookingDAO.cancelBookingForPayment(bookingId);
+            }
             paymentStatus = "FAILED";
         }
 
@@ -540,9 +718,20 @@ public class PaymentServlet extends HttpServlet {
         return value != null && !value.trim().isEmpty();
     }
 
+    private long generateOrderCode() {
+        long millis = System.currentTimeMillis();
+        int randomSuffix = ThreadLocalRandom.current().nextInt(100, 1000);
+        return Long.parseLong(String.valueOf(millis) + randomSuffix);
+    }
+
+    private String buildWeeklyPayOSDescription(UUID weeklyGroupId) {
+        String compact = weeklyGroupId.toString().replace("-", "").toUpperCase();
+        return "WEEK" + compact.substring(0, 8);
+    }
+
     private long generateSupplementaryOrderCode() {
         long millis = System.currentTimeMillis();
-        long suffix = Math.abs(java.util.concurrent.ThreadLocalRandom.current().nextInt(100, 999));
+        long suffix = Math.abs(ThreadLocalRandom.current().nextInt(100, 999));
         String raw = String.valueOf(millis) + suffix;
         if (raw.length() > 18) {
             raw = raw.substring(raw.length() - 18);
