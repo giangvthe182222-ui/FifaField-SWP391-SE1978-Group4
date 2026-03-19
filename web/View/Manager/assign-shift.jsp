@@ -105,7 +105,7 @@
                             <option value="${loc.locationId}" ${locationId == loc.locationId.toString() ? 'selected' : ''}>${loc.locationName}</option>
                         </c:forEach>
                     </select>
-                    <input type="hidden" name="locationId" id="locationHidden" value="${locationId}" />
+                    <input type="hidden" name="locationHidden" id="locationHidden" value="${locationId}" />
                 </div>
 
                 <div>
@@ -196,9 +196,12 @@
     lucide.createIcons();
 
     // Filter fields by location
+    const staffSelect = document.getElementById('staffSelect');
     const locationSelect = document.getElementById('locationSelect');
+    const locationHidden = document.getElementById('locationHidden');
     const fieldSelect = document.getElementById('fieldSelect');
     const fieldOptions = Array.from(fieldSelect.options).slice(1); // Exclude default option
+    const selectedFieldId = '${fieldId}';
 
     staffSelect.addEventListener('change', function() {
         const selectedOption = this.options[this.selectedIndex];
@@ -229,6 +232,9 @@
                 newOption.value = opt.value;
                 newOption.textContent = opt.textContent;
                 newOption.setAttribute('data-location', opt.getAttribute('data-location'));
+                if (selectedFieldId && selectedFieldId === opt.value) {
+                    newOption.selected = true;
+                }
                 fieldSelect.appendChild(newOption);
             });
         }
@@ -290,6 +296,14 @@
     // if staff already selected on page load, lock location
     if (staffSelect.value) {
         staffSelect.dispatchEvent(new Event('change'));
+    } else if (locationSelect.value) {
+        locationHidden.value = locationSelect.value;
+        locationSelect.dispatchEvent(new Event('change'));
+    } else if (locationSelect.options.length === 2) {
+        // Manager page usually has 1 real location option besides default.
+        locationSelect.selectedIndex = 1;
+        locationHidden.value = locationSelect.value;
+        locationSelect.dispatchEvent(new Event('change'));
     }
 </script>
 
