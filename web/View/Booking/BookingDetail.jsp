@@ -2,31 +2,6 @@
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
 
-<%
-    // This part is preserved from user's original logic
-    Object bookingAttr = request.getAttribute("booking");
-    boolean canCancel = false;
-    if (bookingAttr != null) {
-        try {
-            // Using reflection or assuming the class is available in the environment
-            // In a real JSP environment, this would be:
-            // Models.BookingViewModel b = (Models.BookingViewModel) bookingAttr;
-            // For the sake of this template, we'll keep the logic block but wrap it safely
-            java.lang.reflect.Method getDate = bookingAttr.getClass().getMethod("getBookingDate");
-            java.lang.reflect.Method getStart = bookingAttr.getClass().getMethod("getStartTime");
-            java.time.LocalDate bDate = (java.time.LocalDate) getDate.invoke(bookingAttr);
-            java.time.LocalTime bStart = (java.time.LocalTime) getStart.invoke(bookingAttr);
-            
-            if (bDate != null && bStart != null) {
-                java.time.LocalDateTime schedule = java.time.LocalDateTime.of(bDate, bStart);
-                canCancel = schedule.isAfter(java.time.LocalDateTime.now().plusDays(2));
-            }
-        } catch (Exception e) {
-            // Fallback or ignore if model is not exactly as expected in this sandbox
-        }
-    }
-%>
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -185,20 +160,26 @@
                             </a>
                         </c:if>
 
-                        <c:if test="<%= canCancel %>">
-                            <c:if test="${booking.status == 'paid'}">
-                                <form method="post" action="${pageContext.request.contextPath}/customer/bookingDetail">
-                                    <input type="hidden" name="id" value="${booking.bookingId}" />
-                                    <input type="hidden" name="action" value="cancel" />
-                                    <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
-                                        <i data-lucide="x-circle" class="w-4 h-4"></i>
-                                        YÊU CẦU HOÀN TIỀN
-                                    </button>
-                                </form>
-                                <p class="text-[8px] text-center font-bold text-emerald-200/50 uppercase tracking-widest leading-relaxed">
-                                    * Hủy trước 48h để chuyển đơn sang pending refund theo chính sách FIFAFIELD
+                        <c:if test="${booking.status == 'paid' && canRequestRefund}">
+                            <form method="post" action="${pageContext.request.contextPath}/customer/bookingDetail">
+                                <input type="hidden" name="id" value="${booking.bookingId}" />
+                                <input type="hidden" name="action" value="cancel" />
+                                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                                    <i data-lucide="x-circle" class="w-4 h-4"></i>
+                                    YÊU CẦU HOÀN TIỀN
+                                </button>
+                            </form>
+                            <p class="text-[8px] text-center font-bold text-emerald-200/50 uppercase tracking-widest leading-relaxed">
+                                * Hủy trước 48h để chuyển đơn sang pending refund theo chính sách FIFAFIELD
+                            </p>
+                        </c:if>
+
+                        <c:if test="${refundBlockedByPolicy}">
+                            <div class="w-full bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                                <p class="text-[10px] font-black text-amber-700 uppercase tracking-widest leading-relaxed">
+                                    Đơn không được refund vì lịch đấu còn 2 ngày hoặc ít hơn.
                                 </p>
-                            </c:if>
+                            </div>
                         </c:if>
                     </div>
                 </div>
