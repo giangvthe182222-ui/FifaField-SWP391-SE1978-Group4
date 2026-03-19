@@ -51,7 +51,7 @@
                     <i data-lucide="zap" class="w-4 h-4"></i>
                     Đặt sân thường
                 </a>
-                <a href="${pageContext.request.contextPath}/booking?bookingMode=weekly" class="px-8 py-5 rounded-[1.8rem] border-2 border-[#008751] text-[#008751] bg-white font-black uppercase text-xs tracking-[0.2em] hover:bg-emerald-50 transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
+                <a href="${pageContext.request.contextPath}/booking/weekly" class="px-8 py-5 rounded-[1.8rem] border-2 border-[#008751] text-[#008751] bg-white font-black uppercase text-xs tracking-[0.2em] hover:bg-emerald-50 transition-all hover:-translate-y-1 flex items-center justify-center gap-3">
                     <i data-lucide="calendar-range" class="w-4 h-4"></i>
                     Đặt sân theo tuần
                 </a>
@@ -241,3 +241,5 @@
 </script>
 </body>
 </html>
+
+
