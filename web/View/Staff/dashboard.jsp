@@ -44,6 +44,54 @@
             </div>
         </div>
 
+        <!-- REFUND ALERTS -->
+        <div class="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-gray-200/50 border border-amber-100">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center">
+                        <i data-lucide="bell-ring" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Refund queue</p>
+                        <h2 class="text-2xl font-black text-gray-900 uppercase tracking-tight leading-none">Thông báo hoàn tiền</h2>
+                    </div>
+                </div>
+                <div class="px-5 py-3 rounded-2xl bg-amber-50 border border-amber-100 text-amber-700 font-black text-[11px] uppercase tracking-widest">
+                    Còn ${refundPendingCount} đơn cần refund
+                </div>
+            </div>
+
+            <c:choose>
+                <c:when test="${refundPendingCount > 0}">
+                    <div class="space-y-3 max-h-72 overflow-y-auto pr-2">
+                        <c:forEach var="refundBooking" items="${refundPendingBookings}">
+                            <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${refundBooking.bookingId}" class="block p-4 rounded-2xl border border-amber-100 bg-amber-50/50 hover:bg-amber-50 transition-colors">
+                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                    <div>
+                                        <p class="text-sm font-black text-gray-900 uppercase tracking-tight">${refundBooking.fieldName}</p>
+                                        <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                                            ${refundBooking.bookingDate} | ${refundBooking.startTime} - ${refundBooking.endTime}
+                                        </p>
+                                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+                                            KH: ${refundBooking.customerName}
+                                        </p>
+                                    </div>
+                                    <span class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white border border-amber-200 text-amber-700 text-[10px] font-black uppercase tracking-widest">
+                                        Xem chi tiết
+                                    </span>
+                                </div>
+                            </a>
+                        </c:forEach>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="p-5 rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700 text-sm font-bold">
+                        Hiện chưa có đơn nào đang chờ refund tại cơ sở của bạn.
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </div>
+
         <!-- MAIN ACTIONS GRID -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <!-- Đặt sân thường -->

@@ -102,6 +102,46 @@
         </div>
     </c:if>
 
+    <c:if test="${viewMode == 'staff'}">
+        <div class="bg-white elite-card border border-amber-100 shadow-sm p-6 md:p-8 space-y-5">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em]">Refund alerts</p>
+                    <h2 class="text-2xl font-black text-gray-900 uppercase tracking-tight">Thông báo đơn cần refund</h2>
+                </div>
+                <div class="px-4 py-2 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 text-[11px] font-black uppercase tracking-widest">
+                    Còn ${refundPendingCount} đơn chưa refund
+                </div>
+            </div>
+
+            <c:choose>
+                <c:when test="${refundPendingCount > 0}">
+                    <div class="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                        <c:forEach var="refundBooking" items="${refundPendingBookings}">
+                            <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${refundBooking.bookingId}" class="block p-4 rounded-2xl border border-amber-100 bg-amber-50/40 hover:bg-amber-50 transition-colors">
+                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                    <div>
+                                        <p class="text-sm font-black text-gray-900 uppercase tracking-tight">${refundBooking.fieldName}</p>
+                                        <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">${refundBooking.bookingDate} | ${refundBooking.startTime} - ${refundBooking.endTime}</p>
+                                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">KH: ${refundBooking.customerName} - ${refundBooking.customerPhone}</p>
+                                    </div>
+                                    <span class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white border border-amber-200 text-amber-700 text-[10px] font-black uppercase tracking-widest">
+                                        Chi tiết đơn
+                                    </span>
+                                </div>
+                            </a>
+                        </c:forEach>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="p-4 rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700 text-sm font-bold">
+                        Hiện chưa có đơn pending refund tại location bạn phụ trách.
+                    </div>
+                </c:otherwise>
+            </c:choose>
+        </div>
+    </c:if>
+
     <!-- Vertical List of Horizontal Bars -->
     <div class="space-y-6">
         <div class="flex items-center gap-4">
