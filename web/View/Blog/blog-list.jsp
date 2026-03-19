@@ -60,7 +60,8 @@
         <c:forEach var="blog" items="${blogs}">
             <article class="bg-white rounded-3xl border border-slate-100 overflow-hidden shadow-sm flex flex-col">
                 <c:if test="${not empty blog.imageUrl}">
-                    <img src="${blog.imageUrl}" alt="${blog.title}" class="w-full h-48 object-cover">
+                    <c:set var="isExternalImage" value="${fn:startsWith(blog.imageUrl, 'http://') or fn:startsWith(blog.imageUrl, 'https://') or fn:startsWith(blog.imageUrl, '//')}"/>
+                    <img src="${isExternalImage ? blog.imageUrl : pageContext.request.contextPath.concat('/').concat(blog.imageUrl)}" alt="${blog.title}" class="w-full h-48 object-cover">
                 </c:if>
                 <div class="p-5 space-y-3 flex-grow flex flex-col">
                     <div class="flex items-center justify-between gap-2">

@@ -4,18 +4,29 @@ import DAO.BlogDAO;
 import Models.Blog;
 import Models.User;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.Part;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @WebServlet(name = "BlogFormServlet", urlPatterns = {"/blog/create", "/blog/edit"})
+@MultipartConfig(
+        fileSizeThreshold = 1024 * 1024,
+        maxFileSize = 5 * 1024 * 1024,
+        maxRequestSize = 6 * 1024 * 1024
+)
 public class BlogFormServlet extends HttpServlet {
+
+    private static final long MAX_IMAGE_SIZE = 5L * 1024L * 1024L;
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -91,13 +102,24 @@ public class BlogFormServlet extends HttpServlet {
         String title = safeTrim(request.getParameter("title"));
         String summary = safeTrim(request.getParameter("summary"));
         String content = safeTrim(request.getParameter("content"));
-        String imageUrl = safeTrim(request.getParameter("imageUrl"));
+        String existingImageUrl = safeTrim(request.getParameter("existingImageUrl"));
         String submitType = safeTrim(request.getParameter("submitType"));
 
         if (title == null || content == null) {
             request.setAttribute("error", "Tiêu đề và nội dung là bắt buộc.");
             request.setAttribute("mode", isEdit ? "edit" : "create");
             request.setAttribute("roleName", role);
+            request.setAttribute("blog", createFormBlog(request, title, summary, content, existingImageUrl));
+            request.getRequestDispatcher("/View/Blog/blog-form.jsp").forward(request, response);
+            return;
+        }
+
+        UploadResult uploadResult = processImageUpload(request);
+        if (uploadResult.getError() != null) {
+            request.setAttribute("error", uploadResult.getError());
+            request.setAttribute("mode", isEdit ? "edit" : "create");
+            request.setAttribute("roleName", role);
+            request.setAttribute("blog", createFormBlog(request, title, summary, content, existingImageUrl));
             request.getRequestDispatcher("/View/Blog/blog-form.jsp").forward(request, response);
             return;
         }
@@ -110,7 +132,7 @@ public class BlogFormServlet extends HttpServlet {
                 blog.setTitle(title);
                 blog.setSummary(summary);
                 blog.setContent(content);
-                blog.setImageUrl(imageUrl);
+                blog.setImageUrl(uploadResult.getSavedPath());
                 blog.setCreatedBy(user.getUserId());
 
                 String status = resolveStatusForCreate(role, submitType);
@@ -146,7 +168,7 @@ public class BlogFormServlet extends HttpServlet {
             current.setTitle(title);
             current.setSummary(summary);
             current.setContent(content);
-            current.setImageUrl(imageUrl);
+            current.setImageUrl(uploadResult.getSavedPath() != null ? uploadResult.getSavedPath() : current.getImageUrl());
 
             String status = resolveStatusForEdit(role, submitType);
             current.setStatus(status);
@@ -238,5 +260,97 @@ public class BlogFormServlet extends HttpServlet {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private UploadResult processImageUpload(HttpServletRequest request) throws IOException, ServletException {
+        Part imagePart = request.getPart("imageFile");
+        if (imagePart == null || imagePart.getSize() <= 0) {
+            return UploadResult.success(null);
+        }
+
+        if (imagePart.getSize() > MAX_IMAGE_SIZE) {
+            return UploadResult.error("Ảnh vượt quá dung lượng tối đa 5MB.");
+        }
+
+        String contentType = imagePart.getContentType();
+        if (contentType == null || !contentType.toLowerCase().startsWith("image/")) {
+            return UploadResult.error("File tải lên phải là ảnh hợp lệ.");
+        }
+
+        String submittedName = imagePart.getSubmittedFileName();
+        if (submittedName == null || submittedName.trim().isEmpty()) {
+            return UploadResult.error("Không đọc được tên file ảnh.");
+        }
+
+        String originalName = Paths.get(submittedName).getFileName().toString();
+        int dotIndex = originalName.lastIndexOf('.');
+        String extension = dotIndex >= 0 ? originalName.substring(dotIndex + 1).toLowerCase() : "";
+
+        if (!("jpg".equals(extension)
+                || "jpeg".equals(extension)
+                || "png".equals(extension)
+                || "gif".equals(extension)
+                || "webp".equals(extension))) {
+            return UploadResult.error("Định dạng ảnh không được hỗ trợ. Chỉ chấp nhận jpg, jpeg, png, gif, webp.");
+        }
+
+        String relativeFolder = "assets/img/blog";
+        String absoluteFolder = getServletContext().getRealPath("/" + relativeFolder);
+        if (absoluteFolder == null) {
+            return UploadResult.error("Không thể xác định thư mục lưu ảnh trên máy chủ.");
+        }
+
+        File uploadDir = new File(absoluteFolder);
+        if (!uploadDir.exists() && !uploadDir.mkdirs()) {
+            return UploadResult.error("Không thể tạo thư mục lưu ảnh.");
+        }
+
+        String safeBaseName = dotIndex >= 0 ? originalName.substring(0, dotIndex) : originalName;
+        safeBaseName = safeBaseName.replaceAll("[^a-zA-Z0-9-_]", "_");
+        if (safeBaseName.length() > 60) {
+            safeBaseName = safeBaseName.substring(0, 60);
+        }
+
+        String storedFileName = UUID.randomUUID() + "_" + safeBaseName + "." + extension;
+        String relativePath = relativeFolder + "/" + storedFileName;
+        imagePart.write(getServletContext().getRealPath("/") + relativePath);
+        return UploadResult.success(relativePath);
+    }
+
+    private Blog createFormBlog(HttpServletRequest request, String title, String summary, String content, String imageUrl) {
+        Blog blog = new Blog();
+        blog.setTitle(title);
+        blog.setSummary(summary);
+        blog.setContent(content);
+        blog.setImageUrl(imageUrl);
+        blog.setBlogId(toUuid(request.getParameter("blogId")));
+        return blog;
+    }
+
+    private static class UploadResult {
+
+        private final String savedPath;
+        private final String error;
+
+        private UploadResult(String savedPath, String error) {
+            this.savedPath = savedPath;
+            this.error = error;
+        }
+
+        public static UploadResult success(String savedPath) {
+            return new UploadResult(savedPath, null);
+        }
+
+        public static UploadResult error(String error) {
+            return new UploadResult(null, error);
+        }
+
+        public String getSavedPath() {
+            return savedPath;
+        }
+
+        public String getError() {
+            return error;
+        }
     }
 }

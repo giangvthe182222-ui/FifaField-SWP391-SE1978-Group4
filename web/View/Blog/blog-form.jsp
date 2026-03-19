@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -36,10 +37,11 @@
             <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm font-bold text-red-600">${error}</div>
         </c:if>
 
-        <form method="post" action="${formAction}" class="space-y-4">
+        <form method="post" action="${formAction}" enctype="multipart/form-data" class="space-y-4">
             <c:if test="${mode == 'edit'}">
                 <input type="hidden" name="blogId" value="${blog.blogId}">
             </c:if>
+            <input type="hidden" name="existingImageUrl" value="${blog.imageUrl}">
 
             <div>
                 <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Tiêu đề</label>
@@ -52,8 +54,19 @@
             </div>
 
             <div>
-                <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Ảnh đại diện (URL)</label>
-                <input type="text" name="imageUrl" value="${blog.imageUrl}" maxlength="500" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#008751]">
+                <label class="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Ảnh đại diện (Tải từ máy)</label>
+                <input type="file" name="imageFile" accept="image/*" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-2 file:text-xs file:font-black file:uppercase file:tracking-wider">
+                <p class="mt-2 text-xs text-slate-400 font-semibold">Định dạng hỗ trợ: jpg, jpeg, png, gif, webp. Dung lượng tối đa 5MB.</p>
+
+                <c:if test="${not empty blog.imageUrl}">
+                    <c:set var="isExternalImage" value="${fn:startsWith(blog.imageUrl, 'http://') or fn:startsWith(blog.imageUrl, 'https://') or fn:startsWith(blog.imageUrl, '//')}"/>
+                    <c:set var="imageSrc" value="${isExternalImage ? blog.imageUrl : pageContext.request.contextPath.concat('/').concat(blog.imageUrl)}"/>
+                    <div class="mt-3">
+                        <p class="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Ảnh hiện tại</p>
+                        <img src="${imageSrc}" alt="Ảnh blog hiện tại" class="w-full max-w-sm h-48 object-cover rounded-xl border border-slate-200">
+                        <p class="mt-2 text-xs text-slate-400 font-semibold">Không chọn ảnh mới sẽ giữ ảnh hiện tại.</p>
+                    </div>
+                </c:if>
             </div>
 
             <div>

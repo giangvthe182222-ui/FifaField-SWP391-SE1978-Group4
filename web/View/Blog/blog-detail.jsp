@@ -33,7 +33,8 @@
 
     <article class="bg-white rounded-3xl border border-slate-200 overflow-hidden">
         <c:if test="${not empty blog.imageUrl}">
-            <img src="${blog.imageUrl}" alt="${blog.title}" class="w-full h-80 object-cover">
+            <c:set var="isExternalImage" value="${fn:startsWith(blog.imageUrl, 'http://') or fn:startsWith(blog.imageUrl, 'https://') or fn:startsWith(blog.imageUrl, '//')}"/>
+            <img src="${isExternalImage ? blog.imageUrl : pageContext.request.contextPath.concat('/').concat(blog.imageUrl)}" alt="${blog.title}" class="w-full h-80 object-cover">
         </c:if>
         <div class="p-7 space-y-4">
             <div class="flex items-center justify-between gap-3 flex-wrap">
