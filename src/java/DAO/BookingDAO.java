@@ -1814,9 +1814,30 @@ public class BookingDAO {
                             int needed = be.getQuantity() * sessionCount;
                             if (stock < needed) {
                                 conn.rollback();
-                                throw new Exception("KhÃƒÂ´ng Ã„â€˜Ã¡Â»Â§ sÃ¡Â»â€˜ lÃ†Â°Ã¡Â»Â£ng dÃ¡Â»Â¥ng cÃ¡Â»Â¥ cho tÃ¡ÂºÂ¥t cÃ¡ÂºÂ£ "
-                                        + sessionCount + " phiÃƒÂªn trong tuÃ¡ÂºÂ§n. "
-                                        + "TÃ¡Â»â€œn kho hiÃ¡Â»â€¡n tÃ¡ÂºÂ¡i: " + stock + ", cÃ¡ÂºÂ§n: " + needed + ".");
+                                throw new Exception("Khong du so luong dung cu cho tat ca "
+                                        + sessionCount + " phien trong tuan. "
+                                        + "Ton kho hien tai: " + stock + ", can: " + needed + ".");
+                            }
+                        }
+                    }
+                }
+
+                BigDecimal equipmentTotalPerSession = BigDecimal.ZERO;
+                if (equipmentList != null && !equipmentList.isEmpty()) {
+                    String equipPriceSql = "SELECT rental_price FROM Equipment WHERE equipment_id = ?";
+                    try (PreparedStatement ps = conn.prepareStatement(equipPriceSql)) {
+                        for (BookingEquipment be : equipmentList) {
+                            ps.setString(1, be.getEquipmentId().toString());
+                            ResultSet rs = ps.executeQuery();
+                            if (!rs.next()) {
+                                conn.rollback();
+                                throw new Exception("Equipment not found: " + be.getEquipmentId());
+                            }
+                            BigDecimal rentalPrice = rs.getBigDecimal(1);
+                            if (rentalPrice != null && be.getQuantity() > 0) {
+                                equipmentTotalPerSession = equipmentTotalPerSession.add(
+                                        rentalPrice.multiply(BigDecimal.valueOf(be.getQuantity()))
+                                );
                             }
                         }
                     }
@@ -1838,7 +1859,7 @@ public class BookingDAO {
                             if (p != null) rawPrice = p;
                         } else {
                             conn.rollback();
-                            throw new Exception("Khung giÃ¡Â»Â khÃƒÂ´ng hÃ¡Â»Â£p lÃ¡Â»â€¡ hoÃ¡ÂºÂ·c khÃƒÂ´ng thuÃ¡Â»â„¢c sÃƒÂ¢n Ã„â€˜ÃƒÂ£ chÃ¡Â»Ân.");
+                            throw new Exception("Khung gio khong hop le hoac khong thuoc san da chon.");
                         }
                     }
 
@@ -1848,25 +1869,15 @@ public class BookingDAO {
                         int affected = ps.executeUpdate();
                         if (affected == 0) {
                             conn.rollback();
-                            throw new Exception("MÃ¡Â»â„¢t hoÃ¡ÂºÂ·c nhiÃ¡Â»Âu khung giÃ¡Â»Â Ã„â€˜ÃƒÂ£ Ã„â€˜Ã†Â°Ã¡Â»Â£c Ã„â€˜Ã¡ÂºÂ·t bÃ¡Â»Å¸i ngÃ†Â°Ã¡Â»Âi khÃƒÂ¡c. "
-                                    + "Vui lÃƒÂ²ng kiÃ¡Â»Æ’m tra lÃ¡ÂºÂ¡i lÃ¡Â»â€¹ch trÃ¡Â»â€˜ng vÃƒÂ  thÃ¡Â»Â­ chÃ¡Â»Ân lÃ¡ÂºÂ¡i.");
+                            throw new Exception("Mot hoac nhieu khung gio da duoc dat boi nguoi khac. "
+                                    + "Vui long kiem tra lai lich trong va thu chon lai.");
                         }
                     }
 
-                    // Equipment cost per session
-                    java.math.BigDecimal equipCost = java.math.BigDecimal.ZERO;
-                    if (equipmentList != null) {
-                        for (BookingEquipment be : equipmentList) {
-                            // We don't have rental price here; it was already factored in by the servlet
-                            // totalPrice is passed in via discountPercent on schedule price only Ã¢â‚¬â€œ
-                            // the servlet computes the full per-session total and passes it; so we
-                            // store just the field-price-based total and the equipment total is embedded.
-                        }
-                    }
-
+                    java.math.BigDecimal subtotal = rawPrice.add(equipmentTotalPerSession);
                     java.math.BigDecimal factor = java.math.BigDecimal.ONE.subtract(
                             discountPercent.divide(java.math.BigDecimal.valueOf(100)));
-                    java.math.BigDecimal totalPrice = rawPrice.multiply(factor);
+                    java.math.BigDecimal totalPrice = subtotal.multiply(factor);
 
                     Booking b = new Booking();
                     b.setBookingId(UUID.randomUUID());
@@ -1902,7 +1913,7 @@ public class BookingDAO {
                             int affected = ps.executeUpdate();
                             if (affected == 0) {
                                 conn.rollback();
-                                throw new Exception("DÃ¡Â»Â¥ng cÃ¡Â»Â¥ khÃƒÂ´ng Ã„â€˜Ã¡Â»Â§ sÃ¡Â»â€˜ lÃ†Â°Ã¡Â»Â£ng. Vui lÃƒÂ²ng giÃ¡ÂºÂ£m sÃ¡Â»â€˜ lÃ†Â°Ã¡Â»Â£ng hoÃ¡ÂºÂ·c bÃ¡Â»Â chÃ¡Â»Ân.");
+                                throw new Exception("Dung cu khong du so luong. Vui long giam so luong hoac bo chon.");
                             }
                         }
                     }
