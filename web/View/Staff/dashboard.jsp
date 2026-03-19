@@ -64,7 +64,7 @@
             </a>
 
             <!-- Đặt sân tuần -->
-            <a href="${pageContext.request.contextPath}/booking?bookingMode=weekly" 
+                <a href="${pageContext.request.contextPath}/booking/weekly" 
                class="action-card bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 border border-gray-100 relative overflow-hidden group transition-all hover:-translate-y-1">
                 <div class="absolute -top-4 -right-4 text-blue-500/5 icon-bg transition-transform duration-500">
                     <i data-lucide="layers" class="w-32 h-32"></i>

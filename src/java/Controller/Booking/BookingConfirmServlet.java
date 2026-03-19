@@ -14,6 +14,8 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +62,7 @@ public class BookingConfirmServlet extends HttpServlet {
         User user = (User) session.getAttribute("user");
         boolean staffUser = isStaffUser(user);
         UUID bookerId = user.getUserId();
+        String requestedPhone = trimToNull(request.getParameter("bookingPhone"));
         String bookingHistoryPath = resolveBookingHistoryPath(user);
         if (bookerId == null) {
             session.setAttribute("flash_error", "Invalid user session.");
@@ -71,7 +74,7 @@ public class BookingConfirmServlet extends HttpServlet {
         String fieldIdParam = request.getParameter("fieldId");
         if (scheduleIdParam == null || scheduleIdParam.isBlank() || fieldIdParam == null || fieldIdParam.isBlank()) {
             request.getSession().setAttribute("flash_error", "Please select a location, field and schedule.");
-            response.sendRedirect(request.getContextPath() + "/booking");
+            response.sendRedirect(buildBookingReturnUrl(request, request.getParameter("locationId"), fieldIdParam, requestedPhone));
             return;
         }
 
@@ -88,7 +91,7 @@ public class BookingConfirmServlet extends HttpServlet {
         }
         if (schedule == null) {
             request.getSession().setAttribute("flash_error", "Selected schedule is not valid.");
-            response.sendRedirect(request.getContextPath() + "/booking?" + request.getQueryString());
+            response.sendRedirect(buildBookingReturnUrl(request, request.getParameter("locationId"), fieldIdParam, requestedPhone));
             return;
         }
 
@@ -142,24 +145,17 @@ public class BookingConfirmServlet extends HttpServlet {
 
         String bookingPhone;
         if (staffUser) {
-            bookingPhone = trimToNull(request.getParameter("bookingPhone"));
+            bookingPhone = requestedPhone;
             if (bookingPhone == null) {
                 session.setAttribute("flash_error", "Staff booking requires phone number.");
-                StringBuilder redirect = new StringBuilder(request.getContextPath()).append("/booking");
-                if (locationIdParam != null && !locationIdParam.isBlank()) {
-                    redirect.append("?locationId=").append(locationIdParam);
-                    if (fieldIdParam != null && !fieldIdParam.isBlank()) {
-                        redirect.append("&fieldId=").append(fieldIdParam);
-                    }
-                }
-                response.sendRedirect(redirect.toString());
+                response.sendRedirect(buildBookingReturnUrl(request, locationIdParam, fieldIdParam, requestedPhone));
                 return;
             }
         } else {
-            bookingPhone = trimToNull(user.getPhone());
+            bookingPhone = requestedPhone != null ? requestedPhone : trimToNull(user.getPhone());
             if (bookingPhone == null) {
-                session.setAttribute("flash_error", "Your profile is missing a phone number. Please update it before booking.");
-                response.sendRedirect(request.getContextPath() + "/booking");
+                session.setAttribute("flash_error", "Please enter a contact phone number before booking.");
+                response.sendRedirect(buildBookingReturnUrl(request, locationIdParam, fieldIdParam, requestedPhone));
                 return;
             }
         }
@@ -191,14 +187,7 @@ public class BookingConfirmServlet extends HttpServlet {
                 insertError = "Failed to create booking. Please try again.";
             }
             session.setAttribute("flash_error", insertError);
-            StringBuilder redirect = new StringBuilder(request.getContextPath()).append("/booking");
-            if (locationIdParam != null && !locationIdParam.isBlank()) {
-                redirect.append("?locationId=").append(locationIdParam);
-                if (fieldIdParam != null && !fieldIdParam.isBlank()) {
-                    redirect.append("&fieldId=").append(fieldIdParam);
-                }
-            }
-            response.sendRedirect(redirect.toString());
+            response.sendRedirect(buildBookingReturnUrl(request, locationIdParam, fieldIdParam, requestedPhone));
             return;
         }
 
@@ -257,6 +246,30 @@ public class BookingConfirmServlet extends HttpServlet {
 
         // Redirect to payment page to complete the booking.
         response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + booking.getBookingId().toString());
+    }
+
+    private String buildBookingReturnUrl(HttpServletRequest request, String locationId, String fieldId, String bookingPhone) {
+        StringBuilder sb = new StringBuilder(request.getContextPath()).append("/booking?");
+        boolean hasAny = false;
+
+        if (locationId != null && !locationId.isBlank()) {
+            sb.append("locationId=").append(locationId);
+            hasAny = true;
+        }
+        if (fieldId != null && !fieldId.isBlank()) {
+            if (hasAny) sb.append("&");
+            sb.append("fieldId=").append(fieldId);
+            hasAny = true;
+        }
+        if (bookingPhone != null && !bookingPhone.isBlank()) {
+            if (hasAny) sb.append("&");
+            sb.append("bookingPhone=").append(URLEncoder.encode(bookingPhone, StandardCharsets.UTF_8));
+            hasAny = true;
+        }
+        if (!hasAny) {
+            return request.getContextPath() + "/booking";
+        }
+        return sb.toString();
     }
 
     private String buildCurrentAppPaymentUrl(HttpServletRequest request) {

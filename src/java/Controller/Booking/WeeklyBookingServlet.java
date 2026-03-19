@@ -245,14 +245,15 @@ public class WeeklyBookingServlet extends HttpServlet {
                         } else {
                             boolean isPast = date.isBefore(today) ||
                                     (date.equals(today) && slot.isBefore(java.time.LocalTime.now()));
+                            boolean isAvailable = "available".equalsIgnoreCase(found.getStatus());
                             cell.put("exists",      true);
                             cell.put("scheduleId",  found.getScheduleId().toString());
                             cell.put("bookingDate", found.getBookingDate().toString());
                             cell.put("startTime",   found.getStartTime().toString().substring(0, 5));
                             cell.put("price",       found.getPrice());
-                            cell.put("available",   "available".equalsIgnoreCase(found.getStatus()) && !isPast);
+                            cell.put("available",   isAvailable && !isPast);
                             cell.put("past",        isPast);
-                            cell.put("status",      found.getStatus());
+                            cell.put("status",      isAvailable ? "available" : "unavailable");
                             cell.put("selected",    selectedScheduleIds.contains(found.getScheduleId().toString()));
                         }
                         cells.add(cell);

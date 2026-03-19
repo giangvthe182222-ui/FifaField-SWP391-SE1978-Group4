@@ -20,6 +20,8 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -58,19 +60,20 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
         User user    = (User) session.getAttribute("user");
         UUID bookerId = user.getUserId();
         boolean staffUser = isStaffUser(user);
+        String requestedPhone = trimToNull(request.getParameter("bookingPhone"));
         String bookingPhone;
         if (staffUser) {
-            bookingPhone = trimToNull(request.getParameter("bookingPhone"));
+            bookingPhone = requestedPhone;
             if (bookingPhone == null) {
                 session.setAttribute("flash_error", "Staff booking requires phone number.");
-                response.sendRedirect(buildReturnUrl(request, request.getParameter("locationId"), request.getParameter("fieldId"), request.getParameter("weekStart")));
+                response.sendRedirect(buildReturnUrl(request, request.getParameter("locationId"), request.getParameter("fieldId"), request.getParameter("weekStart"), requestedPhone));
                 return;
             }
         } else {
-            bookingPhone = trimToNull(user.getPhone());
+            bookingPhone = requestedPhone != null ? requestedPhone : trimToNull(user.getPhone());
             if (bookingPhone == null) {
-                session.setAttribute("flash_error", "Your profile is missing a phone number. Please update it before booking.");
-                response.sendRedirect(buildReturnUrl(request, request.getParameter("locationId"), request.getParameter("fieldId"), request.getParameter("weekStart")));
+                session.setAttribute("flash_error", "Vui lòng nhập số điện thoại liên hệ trước khi đặt sân.");
+                response.sendRedirect(buildReturnUrl(request, request.getParameter("locationId"), request.getParameter("fieldId"), request.getParameter("weekStart"), requestedPhone));
                 return;
             }
         }
@@ -89,7 +92,7 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
 
         if (scheduleIdParams == null || scheduleIdParams.length == 0) {
             session.setAttribute("flash_error", "Vui lòng chọn ít nhất một khung giờ trong tuần.");
-            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam));
+            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone));
             return;
         }
 
@@ -110,7 +113,7 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
 
         if (scheduleIds.isEmpty()) {
             session.setAttribute("flash_error", "Dữ liệu khung giờ không hợp lệ.");
-            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam));
+            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone));
             return;
         }
 
@@ -168,7 +171,7 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
 
         if (!weeklyGroupDAO.create(group)) {
             session.setAttribute("flash_error", "Không thể tạo nhóm đặt sân theo tuần.");
-            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam));
+            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone));
             return;
         }
 
@@ -199,12 +202,12 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
             String msg = e.getMessage();
             if (msg == null || msg.isBlank()) msg = "Đặt sân theo tuần thất bại. Vui lòng thử lại.";
             session.setAttribute("flash_error", msg);
-            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam));
+            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone));
         }
     }
 
     private String buildReturnUrl(HttpServletRequest req,
-                                  String locationId, String fieldId, String weekStart) {
+                                  String locationId, String fieldId, String weekStart, String bookingPhone) {
         StringBuilder sb = new StringBuilder(req.getContextPath() + "/booking/weekly?");
         if (locationId != null && !locationId.isBlank()) sb.append("locationId=").append(locationId).append("&");
         if (fieldId    != null && !fieldId.isBlank())    sb.append("fieldId=").append(fieldId).append("&");
@@ -216,6 +219,9 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
             } catch (Exception ignored) {
                 sb.append("weekStart=").append(weekStart);
             }
+        }
+        if (bookingPhone != null && !bookingPhone.isBlank()) {
+            sb.append("&bookingPhone=").append(URLEncoder.encode(bookingPhone, StandardCharsets.UTF_8));
         }
         return sb.toString();
     }

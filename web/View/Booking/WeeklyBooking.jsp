@@ -340,10 +340,10 @@
                                                     <div class="border-2 border-rose-200 bg-rose-50 rounded-[1.4rem] p-4 opacity-85">
                                                         <div class="flex justify-between items-start mb-3">
                                                             <div class="text-sm font-black text-rose-700 tracking-tight">${row.startTime} - ${row.endTime}</div>
-                                                            <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-rose-100 text-rose-600">booked</span>
+                                                            <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-rose-100 text-rose-600">unavailable</span>
                                                         </div>
                                                         <div class="flex items-center justify-between">
-                                                            <span class="text-[10px] font-black text-rose-600 uppercase tracking-widest">Đã đặt</span>
+                                                            <span class="text-[10px] font-black text-rose-600 uppercase tracking-widest">Không khả dụng</span>
                                                             <i data-lucide="x" class="w-4 h-4 text-rose-400"></i>
                                                         </div>
                                                     </div>
@@ -426,24 +426,22 @@
             </section>
             </c:if>
 
-            <c:if test="${sessionScope.user.role.roleName eq 'STAFF' or sessionScope.user.role.roleName eq 'staff'}">
             <section class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-10 space-y-8">
                 <div class="flex items-center gap-4">
                     <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
-                    <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">4. Thông tin khách vãng lai</h2>
+                    <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">4. Thông tin liên hệ đặt sân</h2>
                 </div>
                 <div class="space-y-3">
-                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Số điện thoại khách <span class="text-rose-500">*</span></label>
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Số điện thoại liên hệ <span class="text-rose-500">*</span></label>
                     <div class="relative">
                         <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300 pointer-events-none"></i>
                         <input type="text" name="bookingPhone" maxlength="20" required
-                               value="${param.bookingPhone}"
-                               placeholder="Nhập số điện thoại khách"
+                               value="${not empty param.bookingPhone ? param.bookingPhone : sessionScope.user.phone}"
+                               placeholder="Nhập số điện thoại liên hệ"
                                class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 input-focus" />
                     </div>
                 </div>
             </section>
-            </c:if>
 
             <%-- ── STEP 4: Voucher (optional) ─────────────────────────────── --%>
             <c:if test="${not empty vouchers}">
@@ -564,7 +562,7 @@
 <script id="allRangeSchedulesData" type="application/json">
 [
 <c:forEach var="s" items="${allRangeSchedules}" varStatus="st">
-{"id":"${s.scheduleId}","date":"${s.bookingDate}","start":"${s.startTime}","status":"${s.status}","price":${s.price}}<c:if test="${not st.last}">,</c:if>
+{"id":"${s.scheduleId}","date":"${s.bookingDate}","start":"${s.startTime}","status":"${fn:toLowerCase(s.status) eq 'available' ? 'available' : 'unavailable'}","price":${s.price}}<c:if test="${not st.last}">,</c:if>
 </c:forEach>
 ]
 </script>
@@ -677,6 +675,46 @@
     function fmt(v) { return Math.round(v).toLocaleString('vi-VN') + ' đ'; }
     function parseNum(v) { var n = parseFloat(String(v).replace(/[^0-9.-]/g,'')); return isNaN(n)?0:n; }
     function pad2(n) { return n < 10 ? '0' + n : String(n); }
+    function parseIsoDate(dateStr) {
+        var p = String(dateStr || '').split('-');
+        if (p.length !== 3) return null;
+        var d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+        return isNaN(d.getTime()) ? null : d;
+    }
+    function recurringKey(dateStr, startTimeStr) {
+        var d = parseIsoDate(dateStr);
+        var start = normalizeTime(startTimeStr);
+        if (!d || !start) return '';
+        var dow = d.getDay(); // 0=Sun..6=Sat
+        return String(dow) + '|' + start;
+    }
+    function scheduleMeta(scheduleId, fallbackDate, fallbackStart) {
+        var meta = scheduleById[String(scheduleId)] || {};
+        var date = String(meta.date || fallbackDate || '');
+        var start = normalizeTime(meta.start || fallbackStart || '');
+        return {
+            date: date,
+            start: start,
+            key: recurringKey(date, start)
+        };
+    }
+    function clearSeriesByKey(seriesKey) {
+        if (!seriesKey) return;
+
+        Object.keys(persistedAnchorIds).forEach(function(anchorId) {
+            var meta = scheduleMeta(anchorId);
+            if (meta.key === seriesKey) {
+                delete persistedAnchorIds[String(anchorId)];
+            }
+        });
+
+        Object.keys(persistedSelectedIds).forEach(function(selectedId) {
+            var meta = scheduleMeta(selectedId);
+            if (meta.key === seriesKey) {
+                delete persistedSelectedIds[String(selectedId)];
+            }
+        });
+    }
     function addDays(dateStr, days) {
         var p = String(dateStr || '').split('-');
         if (p.length !== 3) return '';
@@ -843,15 +881,21 @@
             if (icon) { icon.setAttribute('data-lucide','check-square'); }
         } else {
             label.classList.remove('picked');
-            if (icon) { icon.setAttribute('data-lucide','check'); }
+            if (icon) { icon.setAttribute('data-lucide','clock'); }
         }
         lucide.createIcons({ nodes: icon ? [icon] : [] });
     }
 
     window.onCellChange = function(cb) {
         var sid = String(cb.value);
-        if (cb.checked) persistedAnchorIds[sid] = true;
-        else delete persistedAnchorIds[sid];
+        var meta = scheduleMeta(sid, cb.getAttribute('data-date'), cb.getAttribute('data-start'));
+        if (cb.checked) {
+            persistedAnchorIds[sid] = true;
+        } else {
+            clearSeriesByKey(meta.key);
+            delete persistedAnchorIds[sid];
+            delete persistedSelectedIds[sid];
+        }
 
         setCellVisual(cb, cb.checked);
         rebuildAutoRecurringSelections();
@@ -875,8 +919,9 @@
     window.clearAll = function() {
         document.querySelectorAll('.slot-cb').forEach(function(cb){
             cb.checked = false; setCellVisual(cb, false);
-            delete persistedAnchorIds[String(cb.value)];
         });
+        persistedAnchorIds = {};
+        persistedSelectedIds = {};
         rebuildAutoRecurringSelections();
         syncPersistedSelectionSet();
         rebuildCarrySelections();
