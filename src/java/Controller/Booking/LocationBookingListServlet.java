@@ -69,6 +69,8 @@ public class LocationBookingListServlet extends HttpServlet {
             BookingService bookingService = new BookingService();
             List<BookingViewModel> allBookings = bookingService.getLocationBookingHistory(
                     UUID.fromString(staff.getLocationId()), date, status, customerKeyword);
+                List<BookingViewModel> pendingRefundBookings = bookingService.getLocationBookingHistory(
+                    UUID.fromString(staff.getLocationId()), null, "pending refund", null);
 
             int pageNum = 1;
             String pageParam = request.getParameter("page");
@@ -117,6 +119,8 @@ public class LocationBookingListServlet extends HttpServlet {
             request.setAttribute("totalPages", totalPages);
             request.setAttribute("totalItems", totalItems);
             request.setAttribute("locationName", staff.getLocationName());
+            request.setAttribute("refundPendingBookings", pendingRefundBookings);
+            request.setAttribute("refundPendingCount", pendingRefundBookings.size());
             request.setAttribute("viewMode", "staff");
             request.getRequestDispatcher("/View/Booking/BookingHistory.jsp").forward(request, response);
         } catch (Exception e) {
