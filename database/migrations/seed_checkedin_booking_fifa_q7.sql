@@ -9,7 +9,7 @@ GO
     - More stable when re-run
 */
 
-SET NOCOUNT ON;
+SET NOCOUNT ON; 
 SET XACT_ABORT ON;
 
 DECLARE @LocationName NVARCHAR(255) = N'Fifafield Ocean Park';

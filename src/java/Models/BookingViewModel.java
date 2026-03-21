@@ -19,6 +19,8 @@ public class BookingViewModel {
     private String customerName;
     private String customerPhone;
     private String status;
+    private BigDecimal fieldPrice;
+    private BigDecimal equipmentPrice;
     private BigDecimal totalPrice;
     private boolean equipmentBookingAllowed;
 
@@ -62,6 +64,12 @@ public class BookingViewModel {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public BigDecimal getFieldPrice() { return fieldPrice; }
+    public void setFieldPrice(BigDecimal fieldPrice) { this.fieldPrice = fieldPrice; }
+
+    public BigDecimal getEquipmentPrice() { return equipmentPrice; }
+    public void setEquipmentPrice(BigDecimal equipmentPrice) { this.equipmentPrice = equipmentPrice; }
 
     public BigDecimal getTotalPrice() { return totalPrice; }
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }

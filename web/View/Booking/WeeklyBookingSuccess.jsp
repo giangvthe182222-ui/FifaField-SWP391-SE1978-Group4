@@ -84,7 +84,9 @@
                     <th class="text-left px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Sân</th>
                     <th class="text-left px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ngày</th>
                     <th class="text-left px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Giờ</th>
-                    <th class="text-right px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Giá</th>
+                    <th class="text-right px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Giá sân</th>
+                    <th class="text-right px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Giá dụng cụ</th>
+                    <th class="text-right px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Tổng</th>
                     <th class="text-center px-6 py-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">Trạng thái</th>
                 </tr>
             </thead>
@@ -100,6 +102,12 @@
                     <td class="px-6 py-4 font-semibold text-gray-700">
                         ${b.startTime} – ${b.endTime}
                     </td>
+                    <td class="px-6 py-4 text-right font-extrabold text-slate-700">
+                        <fmt:formatNumber value="${b.fieldPrice}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
+                    </td>
+                    <td class="px-6 py-4 text-right font-extrabold text-indigo-700">
+                        <fmt:formatNumber value="${b.equipmentPrice}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
+                    </td>
                     <td class="px-6 py-4 text-right font-black text-[#008751]">
                         <fmt:formatNumber value="${b.totalPrice}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
                     </td>
@@ -109,7 +117,7 @@
             </tbody>
             <tfoot class="bg-emerald-50/50">
                 <tr>
-                    <td colspan="4" class="px-6 py-4 font-black text-gray-700 uppercase tracking-wide text-sm">Tổng cộng</td>
+                    <td colspan="6" class="px-6 py-4 font-black text-gray-700 uppercase tracking-wide text-sm">Tổng cộng</td>
                     <td class="px-6 py-4 text-right font-black text-2xl text-[#008751]">
                         <fmt:formatNumber value="${grandTotal}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
                     </td>

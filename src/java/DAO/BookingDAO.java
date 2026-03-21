@@ -366,6 +366,11 @@ public class BookingDAO {
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
         String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, "
+            + "ISNULL(s.price, 0) AS field_price, "
+            + "ISNULL((SELECT SUM(ISNULL(be.quantity, 0) * ISNULL(e.rental_price, 0)) "
+            + "       FROM Booking_Equipment be "
+            + "       LEFT JOIN Equipment e ON be.equipment_id = e.equipment_id "
+            + "       WHERE be.booking_id = b.booking_id), 0) AS equipment_price, "
                 + "s.booking_date, s.start_time, s.end_time, f.field_name, l.location_name "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
@@ -393,6 +398,8 @@ public class BookingDAO {
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setLocationName(rs.getString("location_name"));
                 vm.setStatus(rs.getString("status"));
+                vm.setFieldPrice(rs.getBigDecimal("field_price"));
+                vm.setEquipmentPrice(rs.getBigDecimal("equipment_price"));
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 list.add(vm);
             }
