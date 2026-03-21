@@ -1,10 +1,10 @@
 package Controller.Booking;
 
+import DAO.BookingDAO;
 import DAO.StaffDAO;
 import Models.BookingViewModel;
 import Models.StaffViewModel;
 import Models.User;
-import Service.BookingService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -66,10 +66,10 @@ public class LocationBookingListServlet extends HttpServlet {
                 customerKeyword = request.getParameter("customerName");
             }
 
-            BookingService bookingService = new BookingService();
-            List<BookingViewModel> allBookings = bookingService.getLocationBookingHistory(
+            BookingDAO bookingDAO = new BookingDAO();
+            List<BookingViewModel> allBookings = bookingDAO.getByLocationFiltered(
                     UUID.fromString(staff.getLocationId()), date, status, customerKeyword);
-                List<BookingViewModel> pendingRefundBookings = bookingService.getLocationBookingHistory(
+                List<BookingViewModel> pendingRefundBookings = bookingDAO.getByLocationFiltered(
                     UUID.fromString(staff.getLocationId()), null, "pending refund", null);
 
             int pageNum = 1;
@@ -156,7 +156,7 @@ public class LocationBookingListServlet extends HttpServlet {
             return;
         }
 
-        DAO.BookingDAO bookingDAO = new DAO.BookingDAO();
+        BookingDAO bookingDAO = new BookingDAO();
         BookingViewModel booking = bookingDAO.getById(bookingId);
         if (booking == null) {
             session.setAttribute("flash_error", "Booking not found.");
@@ -171,8 +171,7 @@ public class LocationBookingListServlet extends HttpServlet {
             return;
         }
 
-        BookingService bookingService = new BookingService();
-        boolean ok = bookingService.updateBookingStatus(bookingId, normalizeStatus(status));
+        boolean ok = bookingDAO.updateStatus(bookingId, normalizeStatus(status));
         if (ok) {
             session.setAttribute("flash_success", "Updated booking status.");
         } else {
