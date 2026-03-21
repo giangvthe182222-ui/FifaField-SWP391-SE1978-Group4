@@ -2,8 +2,8 @@ package Controller.Booking;
 
 import Models.BookingViewModel;
 import Models.User;
+import DAO.BookingDAO;
 import DAO.FeedbackDAO;
-import Service.BookingService;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -53,8 +53,8 @@ public class BookingHistoryServlet extends HttpServlet {
         String time = request.getParameter("time");
         String status = request.getParameter("status");
 
-        BookingService bookingService = new BookingService();
-        List<BookingViewModel> allBookings = bookingService.getCustomerBookingHistory(userId, date, time, status);
+        BookingDAO bookingDAO = new BookingDAO();
+        List<BookingViewModel> allBookings = bookingDAO.getByBookerFiltered(userId, date, time, status);
 
         // Pagination
         int pageNum = 1;

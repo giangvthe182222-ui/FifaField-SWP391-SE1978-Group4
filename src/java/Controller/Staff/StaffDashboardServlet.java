@@ -1,9 +1,9 @@
 package Controller.Staff;
 
+import DAO.BookingDAO;
 import DAO.StaffDAO;
 import Models.StaffViewModel;
 import Models.User;
-import Service.BookingService;
 import Models.BookingViewModel;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -38,8 +38,8 @@ public class StaffDashboardServlet extends HttpServlet {
                 return;
             }
 
-            BookingService bookingService = new BookingService();
-            List<BookingViewModel> pendingRefundBookings = bookingService.getLocationBookingHistory(
+                BookingDAO bookingDAO = new BookingDAO();
+                List<BookingViewModel> pendingRefundBookings = bookingDAO.getByLocationFiltered(
                     UUID.fromString(staff.getLocationId()), null, "pending refund", null);
 
             request.setAttribute("staff", staff);
