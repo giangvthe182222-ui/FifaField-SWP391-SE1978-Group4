@@ -256,6 +256,9 @@
                                             </c:choose>
                                         </div>
                                         <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                            <c:if test="${b.status == 'pending extra'}">
+                                                <a href="${pageContext.request.contextPath}/payment?bookingId=${b.bookingId}&source=supplementary" class="bg-[#008751] hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors">Tiếp tục thanh toán</a>
+                                            </c:if>
                                             <c:if test="${viewMode == 'staff' && (b.status == 'paid' || b.status == 'checked in')}">
                                                 <a href="${pageContext.request.contextPath}/staff/addSupplementaryEquipment?bookingId=${b.bookingId}" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-blue-200">
                                                     <i data-lucide="plus-circle" class="w-4 h-4"></i>
@@ -305,6 +308,9 @@
 
                                         <div class="flex flex-wrap items-center gap-2">
                                             <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="bg-gray-900 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-colors">Chi tiết</a>
+                                            <c:if test="${b.status == 'pending extra'}">
+                                                <a href="${pageContext.request.contextPath}/payment?bookingId=${b.bookingId}&source=supplementary" class="bg-[#008751] text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 transition-colors">Tiếp tục thanh toán</a>
+                                            </c:if>
                                             <c:if test="${reviewableBookingMap[b.bookingId]}">
                                                 <c:choose>
                                                     <c:when test="${feedbackBookingMap[b.bookingId]}">
