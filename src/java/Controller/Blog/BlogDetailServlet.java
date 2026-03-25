@@ -37,6 +37,7 @@ public class BlogDetailServlet extends HttpServlet {
         BlogDAO dao = new BlogDAO();
 
         try {
+            // Trang chi tiet blog duoc mo tu link /blog/detail?id=... trong blog-list.jsp.
             Blog blog = dao.getBlogDetailForRole(blogId, user.getUserId(), role);
             if (blog == null) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND, "Blog not found or inaccessible.");

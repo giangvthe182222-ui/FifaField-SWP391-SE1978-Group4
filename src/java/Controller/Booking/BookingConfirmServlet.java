@@ -105,6 +105,7 @@ public class BookingConfirmServlet extends HttpServlet {
             LocationEquipmentDAO locEquipDAO = new LocationEquipmentDAO(new DBConnection());
             List<LocationEquipmentViewModel> equipments = locEquipDAO.getByLocation(locationId);
 
+            // Doc so luong equipment bo sung tu cac field equipment_<equipmentId>.
             for (LocationEquipmentViewModel e : equipments) {
                 String paramName = "equipment_" + e.getEquipmentId();
                 String qtyStr = request.getParameter(paramName);
@@ -191,7 +192,7 @@ public class BookingConfirmServlet extends HttpServlet {
             return;
         }
 
-        // Create Payment record using payOS
+        // Khoi tao thanh toan payOS sau khi da tao booking va danh sach equipment.
         long orderCode = generateOrderCode();
         String description = buildPayOSDescription(booking.getBookingId());
 
@@ -244,7 +245,7 @@ public class BookingConfirmServlet extends HttpServlet {
             return;
         }
 
-        // Redirect to payment page to complete the booking.
+        // Chuyen den trang payment de hien thi QR/link va hoan tat thanh toan.
         response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + booking.getBookingId().toString());
     }
 

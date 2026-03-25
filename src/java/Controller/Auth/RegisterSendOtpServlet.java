@@ -27,7 +27,8 @@ public class RegisterSendOtpServlet extends HttpServlet {
         }
 
         try {
-            // Neu email da ton tai -> ko cho dky (tranh bi trung)
+            // Endpoint nay duoc goi tu nut "Gui" trong register.jsp.
+            // Khong gui OTP neu email da ton tai.
             PasswordResetDAO dao = new PasswordResetDAO();
             if (dao.emailExists(email)) {
                 resp.getWriter().write("{\"ok\":false,\"msg\":\"Email đã tồn tại.\"}");
