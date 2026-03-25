@@ -47,6 +47,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // GET /staff/addSupplementaryEquipment: hien thi form chon equipment bo sung cho 1 booking.
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
             response.sendRedirect(request.getContextPath() + "/login?redirect=staff/locationBookings");
@@ -100,6 +101,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        // POST /staff/addSupplementaryEquipment: kiem tra so luong va mo luong thanh toan bo sung.
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
             response.sendRedirect(request.getContextPath() + "/login?redirect=staff/locationBookings");
@@ -173,6 +175,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
             return;
         }
 
+        // Danh dau tien bo sung o trang thai pending truoc khi chuyen sang /payment.
         PaymentDAO paymentDAO = new PaymentDAO();
         boolean pendingMarked = paymentDAO.markSupplementaryPending(bookingId, totalPrice);
         if (!pendingMarked) {

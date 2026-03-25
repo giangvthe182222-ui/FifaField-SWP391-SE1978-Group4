@@ -38,6 +38,7 @@
                 <div class="alert"><%=error%></div>
                 <% } %>
 
+                <!-- Gui form tao tai khoan den /register -> RegisterServlet.doPost(action=create). -->
                 <form class="form" action="<%=request.getContextPath()%>/register" method="post">
                     <input type="hidden" id="verifyKey" name="verifyKey" value="">
                     <input type="hidden" name="action" value="create">
@@ -84,7 +85,6 @@
                         <div class="label">Số điện thoại</div>
                         <div class="input-wrap">
                             <span class="icon">
-                                <!-- phone icon -->
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                 <path d="M22 16.92v3a2 2 0 0 1-2.18 2
                                       19.79 19.79 0 0 1-8.63-3.07
@@ -112,7 +112,6 @@
                         <div class="label">Địa chỉ</div>
                         <div class="input-wrap">
                             <span class="icon">
-                                <!-- home icon -->
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                 <path d="M3 9.5L12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4
                                       a1 1 0 0 1-1-1V9.5Z"
@@ -143,7 +142,6 @@
                         <div class="label">Nhập lại mật khẩu</div>
                         <div class="input-wrap">
                             <span class="icon">
-                                <!-- lock icon -->
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                 <path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="2"/>
                                 <path d="M6 11h12v10H6V11Z" stroke="currentColor" stroke-width="2"/>
@@ -226,7 +224,7 @@
                     return;
                 }
 
-                // mỗi lần gửi lại -> khóa phần mật khẩu cho chắc
+                // Bam nut "Gui" se goi /register/send-otp -> RegisterSendOtpServlet.doPost.
                 lockRegister();
 
                 btnSend.disabled = true;
@@ -247,10 +245,7 @@
                     setHint(data.msg, data.ok);
 
                     if (data.ok) {
-                        // bắt đầu countdown 60s
                         startCooldown(60);
-
-                        // focus vào ô OTP
                         otpEl.value = "";
                         otpEl.focus();
                     } else {
@@ -265,18 +260,15 @@
                 }
             }
 
-            // auto verify khi otp đủ 6 số
             let verifyDebounce = null;
 
             async function verifyOtpAuto() {
                 const email = emailEl.value.trim();
                 const code = otpEl.value.trim();
 
-                // chỉ verify khi đủ 6 ký tự số (OTP)
                 if (!/^\d{6}$/.test(code))
                     return;
 
-                // debounce để tránh spam request
                 if (verifyDebounce)
                     clearTimeout(verifyDebounce);
                 verifyDebounce = setTimeout(async () => {
@@ -295,23 +287,15 @@
                         setHint(data.msg, data.ok);
 
                         if (data.ok) {
-                            // ✅ set verifyKey để RegisterServlet check
+                            // /register/verify-otp tra ve verifyKey; RegisterServlet se kiem tra khi tao tai khoan.
                             document.getElementById("verifyKey").value = data.verifyKey || "";
-
-                            // ✅ khóa email + OTP
                             emailEl.readOnly = true;
                             otpEl.readOnly = true;
-
-                            // ✅ mở khóa password + submit
                             passEl.disabled = false;
                             cpassEl.disabled = false;
                             btnSubmit.disabled = false;
-
-                            // ✅ KHÓA NÚT GỬI để không gửi thêm
                             btnSend.disabled = true;
                             btnSend.textContent = "Đã xác minh";
-
-                            // ✅ nếu đang countdown thì stop luôn
                             if (cooldownTimer) {
                                 clearInterval(cooldownTimer);
                                 cooldownTimer = null;
@@ -325,18 +309,14 @@
                 }, 250);
             }
 
-            // ===== events =====
             btnSend.addEventListener("click", sendOtp);
 
             otpEl.addEventListener("input", () => {
-                // chỉ cho nhập số, tự xóa ký tự khác
                 otpEl.value = otpEl.value.replace(/[^\d]/g, "");
                 verifyOtpAuto();
             });
 
-            // khi đổi email -> reset trạng thái
             emailEl.addEventListener("input", () => {
-                // nếu user sửa email thì mở lại readOnly (nếu đang bị khóa)
                 document.getElementById("verifyKey").value = "";
 
                 if (emailEl.readOnly)
@@ -347,14 +327,12 @@
                 lockRegister();
                 setHint("", true);
 
-                // reset nút gửi nếu đang không countdown
                 if (!cooldownTimer) {
                     btnSend.textContent = "Gửi";
                     btnSend.disabled = false;
                 }
             });
 
-            // initial
             lockRegister();
         </script>
 

@@ -49,6 +49,7 @@ public class BlogCommentServlet extends HttpServlet {
                 return;
             }
 
+            // /blog/comment/add duoc goi tu form binh luan va reply trong blog-detail.jsp.
             if (uri.endsWith("/add")) {
                 String content = safeTrim(request.getParameter("content"));
                 if (content != null) {
@@ -61,6 +62,7 @@ public class BlogCommentServlet extends HttpServlet {
                     }
                     dao.addComment(blogId, user.getUserId(), parentCommentId, content);
                 }
+            // /blog/comment/delete duoc goi tu nut xoa binh luan trong blog-detail.jsp.
             } else if (uri.endsWith("/delete")) {
                 UUID commentId = toUuid(request.getParameter("commentId"));
                 if (commentId != null) {

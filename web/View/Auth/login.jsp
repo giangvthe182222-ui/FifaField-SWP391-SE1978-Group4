@@ -22,7 +22,6 @@ if (emailValue == null) emailValue = "";
             <div class="card">
                 <div class="brand">
                     <div class="logo">
-                        <!-- trophy icon -->
                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                         <path d="M7 4h10v2H7V4Zm-2 4h14v5a7 7 0 0 1-14 0V8Zm4 12h6v2H9v-2Z"
                               stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -40,12 +39,12 @@ if (emailValue == null) emailValue = "";
                 <div class="alert"><%= error %></div>
                 <% } %>
 
+                <!-- Gui form den /login -> LoginServlet.doPost de kiem tra tai khoan va dieu huong theo role. -->
                 <form class="form" action="<%=request.getContextPath()%>/login" method="post">
                     <div>
                         <div class="label">Địa chỉ Email</div>
                         <div class="input-wrap">
                             <span class="icon">
-                                <!-- mail icon -->
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                 <path d="M4 6h16v12H4V6Z" stroke="currentColor" stroke-width="2" />
                                 <path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="2"/>
@@ -60,7 +59,6 @@ if (emailValue == null) emailValue = "";
                         <div class="label">Mật khẩu</div>
                         <div class="input-wrap">
                             <span class="icon">
-                                <!-- lock icon -->
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                                 <path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="currentColor" stroke-width="2"/>
                                 <path d="M6 11h12v10H6V11Z" stroke="currentColor" stroke-width="2"/>
@@ -77,7 +75,8 @@ if (emailValue == null) emailValue = "";
                     <button class="btn btn-login" type="submit">ĐĂNG NHẬP</button>
 
                     <div class="divider">HOẶC</div>
-                    <button class="btn-google" type="button"
+                        <!-- Nut Google chuyen den /google-login -> GoogleLoginServlet.doGet. -->
+                        <button class="btn-google" type="button"
                             onclick="location.href = '<%=request.getContextPath()%>/google-login'">
                         <img src="<%=request.getContextPath()%>/assets/img/google.svg" alt="Google">
                         <span>Đăng nhập bằng Google</span>
