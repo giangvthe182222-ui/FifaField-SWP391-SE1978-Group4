@@ -93,7 +93,7 @@
         </div>
 
         <!-- MAIN ACTIONS GRID -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-8">
             <!-- Đặt sân thường -->
             <a href="${pageContext.request.contextPath}/booking?bookingMode=normal" 
                class="action-card bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 border border-gray-100 relative overflow-hidden group transition-all hover:-translate-y-1">
@@ -158,6 +158,23 @@
                     <div>
                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Quản lý</p>
                         <p class="text-2xl font-black text-gray-900 mt-1 leading-none tracking-tight">CƠ SỞ TRỰC</p>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Blog -->
+            <a href="${pageContext.request.contextPath}/staff/blogs"
+               class="action-card bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 border border-gray-100 relative overflow-hidden group transition-all hover:-translate-y-1">
+                <div class="absolute -top-4 -right-4 text-violet-500/5 icon-bg transition-transform duration-500">
+                    <i data-lucide="book-open" class="w-32 h-32"></i>
+                </div>
+                <div class="relative z-10 space-y-4">
+                    <div class="w-14 h-14 bg-violet-50 text-violet-600 rounded-2xl flex items-center justify-center border border-violet-100 group-hover:bg-violet-600 group-hover:text-white transition-colors">
+                        <i data-lucide="book-open" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Noi dung</p>
+                        <p class="text-2xl font-black text-gray-900 mt-1 leading-none tracking-tight">BLOG</p>
                     </div>
                 </div>
             </a>
