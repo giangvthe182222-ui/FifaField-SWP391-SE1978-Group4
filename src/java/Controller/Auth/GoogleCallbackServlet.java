@@ -63,7 +63,7 @@ public class GoogleCallbackServlet extends HttpServlet {
             User user = authDAO.getUserById(userId);
 
             req.getSession(true).setAttribute("user", user);
-            resp.sendRedirect(req.getContextPath() + "/View/Customer/home.jsp");
+            resp.sendRedirect(req.getContextPath() + "/customer/dashboard");
 
         } catch (Exception e) {
             e.printStackTrace();

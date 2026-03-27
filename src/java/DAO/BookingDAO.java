@@ -914,9 +914,7 @@ public class BookingDAO {
      * Marks booking as pending extra (checked in -> pending extra) when staff creates extra-equipment payment.
      */
     
-    //Description: Executes the markBookingPendingExtra write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean markBookingPendingExtra(UUID bookingId) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
 
@@ -954,9 +952,7 @@ public class BookingDAO {
      * - pending extra -> checked in if schedule has not ended yet
      */
     
-    //Description: Implements the settlePendingExtraStatus business routine with validation, database interaction, exception handling, and predictable outputs for upstream controllers/services.
     public boolean settlePendingExtraStatus(UUID bookingId) {
-        // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
 
@@ -1162,9 +1158,7 @@ public class BookingDAO {
      * Kept for compatibility; current payment-first flow should use finalizeSupplementaryEquipment after payment success.
      */
     
-    //Description: Implements the addEquipmentToBooking business routine with validation, database interaction, exception handling, and predictable outputs for upstream controllers/services.
     public boolean addEquipmentToBooking(UUID bookingId, List<BookingEquipment> equipmentList, BigDecimal additionalAmount) {
-        // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         lastInsertError = null;
 
         if (equipmentList == null || equipmentList.isEmpty()) {
@@ -1253,7 +1247,6 @@ public class BookingDAO {
 
             try (PreparedStatement paymentPs = conn.prepareStatement(
                     "UPDATE Payment SET amount = ?, payment_status = 'PENDING', payment_time = SYSDATETIME() WHERE booking_id = ?")) {
-                // Charge only the newly added supplementary equipment in this operation.
                 paymentPs.setBigDecimal(1, additionalAmount);
                 paymentPs.setString(2, bookingId.toString());
                 paymentPs.executeUpdate();
@@ -1278,9 +1271,7 @@ public class BookingDAO {
      * then resolves status from pending extra to checked in/completed.
      */
     
-    //Description: Implements the finalizeSupplementaryEquipment business routine with validation, database interaction, exception handling, and predictable outputs for upstream controllers/services.
     public boolean finalizeSupplementaryEquipment(UUID bookingId, List<BookingEquipment> equipmentList, BigDecimal additionalAmount) {
-        // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         lastInsertError = null;
 
         if (bookingId == null) {
@@ -1326,6 +1317,7 @@ public class BookingDAO {
                     + "INNER JOIN Booking b ON b.field_id = f.field_id "
                     + "WHERE b.booking_id = ? AND le.equipment_id = ? AND le.quantity >= ?";
 
+            // Reserve stock first. If any row fails, rollback whole supplementary finalize.
             try (PreparedStatement ps = conn.prepareStatement(updateEquip)) {
                 for (BookingEquipment be : equipmentList) {
                     ps.setInt(1, be.getQuantity());
@@ -1346,6 +1338,7 @@ public class BookingDAO {
             String updateExistingEquipment = "UPDATE Booking_Equipment SET quantity = quantity + ? WHERE booking_id = ? AND equipment_id = ?";
             String insertNewEquipment = "INSERT INTO Booking_Equipment (booking_id, equipment_id, quantity) VALUES (?, ?, ?)";
 
+            // Merge supplementary items into Booking_Equipment: update existing rows, insert missing rows.
             try (PreparedStatement updatePs = conn.prepareStatement(updateExistingEquipment);
                  PreparedStatement insertPs = conn.prepareStatement(insertNewEquipment)) {
                 for (BookingEquipment be : equipmentList) {
@@ -1370,6 +1363,7 @@ public class BookingDAO {
                 bookingPs.executeUpdate();
             }
 
+            // After payment success, move status from pending extra to checked in/completed by slot time.
             String postPaymentStatus = resolvePostSupplementaryStatus(snapshot, LocalDateTime.now());
             if (!postPaymentStatus.equals(snapshot.status)) {
                 if (!updateBookingStatus(conn, bookingId, postPaymentStatus, snapshot.status)) {
@@ -1394,9 +1388,7 @@ public class BookingDAO {
      * Returns supplementary amount currently represented by booking total - schedule field price.
      */
     
-    //Description: Retrieves and prepares data for getSupplementaryAmountByBookingId by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public BigDecimal getSupplementaryAmountByBookingId(UUID bookingId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         try (Connection conn = DBConnection.getConnection()) {
             return getSupplementaryAmount(conn, bookingId);
         } catch (Exception e) {
@@ -1409,9 +1401,7 @@ public class BookingDAO {
      * Calculates supplementary amount using one open connection.
      */
     
-    //Description: Retrieves and prepares data for getSupplementaryAmount by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     private BigDecimal getSupplementaryAmount(Connection conn, UUID bookingId) throws SQLException {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         String sql = "SELECT ISNULL(b.total_price, 0) AS total_price, ISNULL(s.price, 0) AS field_price "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "

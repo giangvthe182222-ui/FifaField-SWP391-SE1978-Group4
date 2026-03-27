@@ -17,6 +17,7 @@
         <nav class="hidden lg:flex items-center gap-3">
             <a href="${pageContext.request.contextPath}/booking" class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all">Book sân</a>
             <a href="${pageContext.request.contextPath}/staff/my-shifts" class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all">Ca làm việc</a>
+            <a href="${pageContext.request.contextPath}/staff/blogs" class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all">Blog</a>
             <a href="${pageContext.request.contextPath}/staff/location" class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all">Location</a>
             <a href="${pageContext.request.contextPath}/staff/fields" class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all">Sân & lịch</a>
             <a href="${pageContext.request.contextPath}/staff/locationBookings" class="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all">Location bookings</a>

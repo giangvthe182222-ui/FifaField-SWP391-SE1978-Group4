@@ -5,17 +5,15 @@ import Models.Blog;
 import Models.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
 @WebServlet(name = "BlogListServlet", urlPatterns = {"/blogs", "/staff/blogs", "/manager/blogs"})
-public class BlogListServlet extends HttpServlet {
+public class BlogListServlet extends BaseBlogServlet {
 
     private static final int PAGE_SIZE = 9;
 
@@ -31,12 +29,12 @@ public class BlogListServlet extends HttpServlet {
         String role = getRole(user);
         String uri = request.getRequestURI();
 
-        if (uri.contains("/manager/") && !"manager".equals(role)) {
+        if (uri.contains("/manager/") && !ROLE_MANAGER.equals(role)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Manager role required.");
             return;
         }
 
-        if (uri.contains("/staff/") && !"staff".equals(role)) {
+        if (uri.contains("/staff/") && !ROLE_STAFF.equals(role)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Staff role required.");
             return;
         }
@@ -46,8 +44,8 @@ public class BlogListServlet extends HttpServlet {
             page = 1;
         }
 
-        String status = trimToNull(request.getParameter("status"));
-        String keyword = trimToNull(request.getParameter("q"));
+        String status = safeTrim(request.getParameter("status"));
+        String keyword = safeTrim(request.getParameter("q"));
 
         BlogDAO dao = new BlogDAO();
         try {
@@ -67,8 +65,8 @@ public class BlogListServlet extends HttpServlet {
             request.setAttribute("keyword", keyword == null ? "" : keyword);
             request.setAttribute("listPath", request.getContextPath() + request.getServletPath());
             request.setAttribute("roleName", role);
-            request.setAttribute("canCreate", "staff".equals(role) || "manager".equals(role));
-            request.setAttribute("canManage", "manager".equals(role));
+            request.setAttribute("canCreate", ROLE_STAFF.equals(role) || ROLE_MANAGER.equals(role));
+            request.setAttribute("canManage", ROLE_MANAGER.equals(role));
 
             request.getRequestDispatcher("/View/Blog/blog-list.jsp").forward(request, response);
         } catch (SQLException ex) {
@@ -86,12 +84,12 @@ public class BlogListServlet extends HttpServlet {
         }
 
         String role = getRole(user);
-        if (!"manager".equals(role)) {
+        if (!ROLE_MANAGER.equals(role)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Manager role required.");
             return;
         }
 
-        String action = trimToNull(request.getParameter("action"));
+        String action = safeTrim(request.getParameter("action"));
         UUID blogId = toUuid(request.getParameter("blogId"));
         if (action == null || blogId == null) {
             response.sendRedirect(request.getContextPath() + "/manager/blogs");
@@ -100,29 +98,28 @@ public class BlogListServlet extends HttpServlet {
 
         BlogDAO dao = new BlogDAO();
         try {
-            if ("approve".equalsIgnoreCase(action)) {
-                dao.approveBlog(blogId, user.getUserId());
-            } else if ("reject".equalsIgnoreCase(action)) {
-                dao.rejectBlog(blogId, user.getUserId());
-            } else if ("delete".equalsIgnoreCase(action)) {
-                dao.deleteBlog(blogId);
-            }
+            // Luong manager: xu ly action tren bai viet roi quay ve danh sach.
+            handleManagerAction(dao, action, blogId, user.getUserId());
             response.sendRedirect(request.getContextPath() + "/manager/blogs");
         } catch (SQLException ex) {
             throw new ServletException("Cannot process manager blog action", ex);
         }
     }
 
-    private User getSessionUser(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        return session == null ? null : (User) session.getAttribute("user");
-    }
-
-    private String getRole(User user) {
-        if (user == null || user.getRole() == null || user.getRole().getRoleName() == null) {
-            return "";
+    private void handleManagerAction(BlogDAO dao, String action, UUID blogId, UUID managerId) throws SQLException {
+        if ("approve".equalsIgnoreCase(action)) {
+            dao.approveBlog(blogId, managerId);
+            return;
         }
-        return user.getRole().getRoleName().trim().toLowerCase();
+
+        if ("reject".equalsIgnoreCase(action)) {
+            dao.rejectBlog(blogId, managerId);
+            return;
+        }
+
+        if ("delete".equalsIgnoreCase(action)) {
+            dao.deleteBlog(blogId);
+        }
     }
 
     private int parseInt(String value, int fallback) {
@@ -134,24 +131,5 @@ public class BlogListServlet extends HttpServlet {
         } catch (NumberFormatException ex) {
             return fallback;
         }
-    }
-
-    private UUID toUuid(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return UUID.fromString(value.trim());
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
-    }
-
-    private String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 }
