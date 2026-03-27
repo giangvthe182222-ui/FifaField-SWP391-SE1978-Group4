@@ -183,56 +183,13 @@ public class BlogDAO {
             ps.setString(1, blogId.toString());
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    BlogComment comment = new BlogComment();
-                    comment.setCommentId(toUuid(rs.getString("comment_id")));
-                    comment.setBlogId(toUuid(rs.getString("blog_id")));
-                    comment.setUserId(toUuid(rs.getString("user_id")));
-                    comment.setParentCommentId(toUuid(rs.getString("parent_comment_id")));
-                    comment.setContent(rs.getString("content"));
-                    comment.setStatus(rs.getString("status"));
-                    comment.setCommenterName(rs.getString("full_name"));
-                    comment.setReplyToName(rs.getString("reply_to_name"));
-                    comment.setOwnedByCurrentUser(currentUserId != null && currentUserId.equals(comment.getUserId()));
-
-                    Timestamp createdAt = rs.getTimestamp("created_at");
-                    if (createdAt != null) {
-                        comment.setCreatedAt(createdAt.toLocalDateTime());
-                    }
-                    Timestamp updatedAt = rs.getTimestamp("updated_at");
-                    if (updatedAt != null) {
-                        comment.setUpdatedAt(updatedAt.toLocalDateTime());
-                    }
-
-                    flatComments.add(comment);
+                    flatComments.add(mapComment(rs, currentUserId));
                 }
             }
         }
 
-        Map<UUID, List<BlogComment>> childrenByParent = new HashMap<>();
-        List<BlogComment> roots = new ArrayList<>();
-
-        for (BlogComment c : flatComments) {
-            UUID parentId = c.getParentCommentId();
-            if (parentId == null) {
-                roots.add(c);
-            } else {
-                childrenByParent.computeIfAbsent(parentId, k -> new ArrayList<>()).add(c);
-            }
-        }
-
-        List<BlogComment> threaded = new ArrayList<>();
-        for (BlogComment root : roots) {
-            appendThread(root, childrenByParent, threaded, 0);
-        }
-
-        // Handle orphan replies if parent was deleted or filtered.
-        for (BlogComment c : flatComments) {
-            if (!threaded.contains(c)) {
-                appendThread(c, childrenByParent, threaded, 0);
-            }
-        }
-
-        return threaded;
+        // Chuyen danh sach phang thanh thu tu hien thi co depth de render thread.
+        return buildCommentThread(flatComments);
     }
 
     public boolean isCommentOwner(UUID commentId, UUID userId) throws SQLException {
@@ -263,6 +220,59 @@ public class BlogDAO {
         for (BlogComment child : children) {
             appendThread(child, childrenByParent, output, depth + 1);
         }
+    }
+
+    private BlogComment mapComment(ResultSet rs, UUID currentUserId) throws SQLException {
+        BlogComment comment = new BlogComment();
+        comment.setCommentId(toUuid(rs.getString("comment_id")));
+        comment.setBlogId(toUuid(rs.getString("blog_id")));
+        comment.setUserId(toUuid(rs.getString("user_id")));
+        comment.setParentCommentId(toUuid(rs.getString("parent_comment_id")));
+        comment.setContent(rs.getString("content"));
+        comment.setStatus(rs.getString("status"));
+        comment.setCommenterName(rs.getString("full_name"));
+        comment.setReplyToName(rs.getString("reply_to_name"));
+        comment.setOwnedByCurrentUser(currentUserId != null && currentUserId.equals(comment.getUserId()));
+
+        Timestamp createdAt = rs.getTimestamp("created_at");
+        if (createdAt != null) {
+            comment.setCreatedAt(createdAt.toLocalDateTime());
+        }
+
+        Timestamp updatedAt = rs.getTimestamp("updated_at");
+        if (updatedAt != null) {
+            comment.setUpdatedAt(updatedAt.toLocalDateTime());
+        }
+
+        return comment;
+    }
+
+    private List<BlogComment> buildCommentThread(List<BlogComment> flatComments) {
+        Map<UUID, List<BlogComment>> childrenByParent = new HashMap<>();
+        List<BlogComment> roots = new ArrayList<>();
+
+        for (BlogComment comment : flatComments) {
+            UUID parentId = comment.getParentCommentId();
+            if (parentId == null) {
+                roots.add(comment);
+            } else {
+                childrenByParent.computeIfAbsent(parentId, k -> new ArrayList<>()).add(comment);
+            }
+        }
+
+        List<BlogComment> threaded = new ArrayList<>();
+        for (BlogComment root : roots) {
+            appendThread(root, childrenByParent, threaded, 0);
+        }
+
+        // Van hien thi reply bi mo coi neu parent khong con ton tai.
+        for (BlogComment comment : flatComments) {
+            if (!threaded.contains(comment)) {
+                appendThread(comment, childrenByParent, threaded, 0);
+            }
+        }
+
+        return threaded;
     }
 
     public UUID createBlog(Blog blog) throws SQLException {

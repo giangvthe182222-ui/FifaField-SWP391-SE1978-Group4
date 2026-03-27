@@ -5,16 +5,14 @@ import Models.Blog;
 import Models.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.UUID;
 
 @WebServlet(name = "BlogCommentServlet", urlPatterns = {"/blog/comment/add", "/blog/comment/delete"})
-public class BlogCommentServlet extends HttpServlet {
+public class BlogCommentServlet extends BaseBlogServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -26,7 +24,7 @@ public class BlogCommentServlet extends HttpServlet {
         }
 
         String role = getRole(user);
-        if (!"customer".equals(role) && !"staff".equals(role) && !"manager".equals(role)) {
+        if (!isRoleAllowed(role, ROLE_CUSTOMER, ROLE_STAFF, ROLE_MANAGER)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Role not allowed.");
             return;
         }
@@ -43,13 +41,18 @@ public class BlogCommentServlet extends HttpServlet {
         BlogDAO dao = new BlogDAO();
 
         try {
+            // Luong xu ly: kiem tra quyen xem blog truoc, sau do moi add/delete comment.
             Blog visibleBlog = dao.getBlogDetailForRole(blogId, user.getUserId(), role);
             if (visibleBlog == null) {
                 response.sendError(HttpServletResponse.SC_FORBIDDEN, "Blog not accessible.");
                 return;
             }
 
-            // /blog/comment/add duoc goi tu form binh luan va reply trong blog-detail.jsp.
+            if (!"approved".equalsIgnoreCase(visibleBlog.getStatus())) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chi blog da duyet moi duoc comment.");
+                return;
+            }
+
             if (uri.endsWith("/add")) {
                 String content = safeTrim(request.getParameter("content"));
                 if (content != null) {
@@ -62,11 +65,10 @@ public class BlogCommentServlet extends HttpServlet {
                     }
                     dao.addComment(blogId, user.getUserId(), parentCommentId, content);
                 }
-            // /blog/comment/delete duoc goi tu nut xoa binh luan trong blog-detail.jsp.
             } else if (uri.endsWith("/delete")) {
                 UUID commentId = toUuid(request.getParameter("commentId"));
                 if (commentId != null) {
-                    boolean isManager = "manager".equals(role);
+                    boolean isManager = ROLE_MANAGER.equals(role);
                     boolean isOwner = dao.isCommentOwner(commentId, user.getUserId());
                     if (!isManager && !isOwner) {
                         response.sendError(HttpServletResponse.SC_FORBIDDEN, "Only manager or comment owner can delete this comment.");
@@ -80,36 +82,5 @@ public class BlogCommentServlet extends HttpServlet {
         } catch (SQLException ex) {
             throw new ServletException("Cannot handle blog comment action", ex);
         }
-    }
-
-    private User getSessionUser(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        return session == null ? null : (User) session.getAttribute("user");
-    }
-
-    private String getRole(User user) {
-        if (user == null || user.getRole() == null || user.getRole().getRoleName() == null) {
-            return "";
-        }
-        return user.getRole().getRoleName().trim().toLowerCase();
-    }
-
-    private UUID toUuid(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return UUID.fromString(value.trim());
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
-    }
-
-    private String safeTrim(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 }
