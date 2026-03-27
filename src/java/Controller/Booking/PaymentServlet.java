@@ -748,6 +748,7 @@ public class PaymentServlet extends HttpServlet {
         return LocalDateTime.now().plusYears(1);
     }
 
+    // Applies supplementary draft only after payment callback confirms success.
     private boolean finalizeSupplementaryIfNeeded(HttpSession session, UUID bookingId, BookingDAO bookingDAO) {
         SupplementaryDraft draft = readSupplementaryDraft(session, bookingId);
         if (draft == null) {
@@ -761,6 +762,7 @@ public class PaymentServlet extends HttpServlet {
         return ok;
     }
 
+    // Reads draft payload created by StaffAddSupplementaryEquipmentServlet.doPost.
     private SupplementaryDraft readSupplementaryDraft(HttpSession session, UUID bookingId) {
         Object payloadObj = session.getAttribute(payloadKey(bookingId));
         Object amountObj = session.getAttribute(amountKey(bookingId));
@@ -807,7 +809,7 @@ public class PaymentServlet extends HttpServlet {
                 be.setQuantity(quantity);
                 list.add(be);
             } catch (Exception ignored) {
-                // Skip malformed row.
+                // Ignore malformed draft row and continue parsing remaining rows.
             }
         }
 

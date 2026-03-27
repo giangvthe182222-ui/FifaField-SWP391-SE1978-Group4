@@ -39,6 +39,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
             if (sb.length() > 0) {
                 sb.append(',');
             }
+            // Format: equipmentId:quantity,equipmentId:quantity
             sb.append(be.getEquipmentId()).append(':').append(be.getQuantity());
         }
         return sb.toString();
@@ -47,7 +48,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // GET /staff/addSupplementaryEquipment: hien thi form chon equipment bo sung cho 1 booking.
+        // Show equipment selection form for one checked-in booking in active slot.
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
             response.sendRedirect(request.getContextPath() + "/login?redirect=staff/locationBookings");
@@ -101,7 +102,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        // POST /staff/addSupplementaryEquipment: kiem tra so luong va mo luong thanh toan bo sung.
+        // Validate selected quantities and open supplementary payment flow.
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
             response.sendRedirect(request.getContextPath() + "/login?redirect=staff/locationBookings");
@@ -175,7 +176,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
             return;
         }
 
-        // Danh dau tien bo sung o trang thai pending truoc khi chuyen sang /payment.
+        // Step 1: create/update supplementary payment record as PENDING.
         PaymentDAO paymentDAO = new PaymentDAO();
         boolean pendingMarked = paymentDAO.markSupplementaryPending(bookingId, totalPrice);
         if (!pendingMarked) {
@@ -184,6 +185,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
             return;
         }
 
+        // Step 2: lock booking into PENDING EXTRA so normal state transitions are blocked.
         if (!bookingDAO.markBookingPendingExtra(bookingId)) {
             Payment payment = paymentDAO.getPaymentByBookingId(bookingId);
             if (payment != null && payment.getPaymentId() != null) {
@@ -194,6 +196,7 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
             return;
         }
 
+        // Step 3: store draft in session; PaymentServlet finalizes stock + booking equipment on payment success.
         session.setAttribute(payloadKey(bookingId), serializeEquipmentPayload(selectedEquipments));
         session.setAttribute(amountKey(bookingId), totalPrice.toPlainString());
         response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + bookingId + "&source=supplementary");
