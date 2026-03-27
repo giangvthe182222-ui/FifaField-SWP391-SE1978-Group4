@@ -21,8 +21,10 @@ import java.math.BigDecimal;
 
 public class BookingDAO {
 
+    // last insert error: to inform user to view error of the last booking 
     private String lastInsertError;
 
+    // All booking statuses
     private static final String STATUS_PENDING = "pending";
     private static final String STATUS_PAID = "paid";
     private static final String STATUS_CANCELLED = "cancelled";
@@ -42,23 +44,22 @@ public class BookingDAO {
             STATUS_PENDING_EXTRA,
             STATUS_COMPLETED
     ));
-
+    
     /**
+     * giangvthe182222
      * Creates a new booking in a single transaction:
      * locks schedule, reserves equipment stock, inserts booking and booking-equipment rows.
      */
     
-    //Description: Executes the insert write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean insert(Booking booking, List<BookingEquipment> equipmentList) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
 
     lastInsertError = null;
 
     try (Connection conn = DBConnection.getConnection()) {
-
+        //set auto commit to false to heandle transaction properly
         conn.setAutoCommit(false);
 
-        // 1Ã¯Â¸ÂÃ¢Æ’Â£ Lock schedule
+        // Locking the slot so that double booking cannot happen
         String updateSchedule = "UPDATE Schedule SET status = 'unavailable' WHERE schedule_id = ? AND status = 'available'";
 
         try (PreparedStatement ps = conn.prepareStatement(updateSchedule)) {
@@ -68,11 +69,11 @@ public class BookingDAO {
             if (affected == 0) {
                 conn.rollback();
                 lastInsertError = "Selected schedule is no longer available.";
-                return false; // already booked
+                return false; // slot haven taken
             }
         }
 
-        // 2Ã¯Â¸ÂÃ¢Æ’Â£ Check & subtract equipment
+        // Minus the equipment amount chosed in the bookings
         if (equipmentList != null && !equipmentList.isEmpty()) {
 
             String updateEquip = "UPDATE le "
@@ -86,6 +87,8 @@ public class BookingDAO {
 
                 for (BookingEquipment be : equipmentList) {
 
+                    // minus equipment quantity
+                    // equipment amout <= 0, then change status to unavailable
                     ps.setInt(1, be.getQuantity());
                     ps.setInt(2, be.getQuantity());
                     ps.setString(3, booking.getFieldId().toString());
@@ -97,19 +100,19 @@ public class BookingDAO {
                     if (affected == 0) {
                         conn.rollback();
                         lastInsertError = "Equipment stock changed. Please review selected quantities.";
-                        return false; // not enough stock
+                        return false; // equipment amount not enough in db when trying to insert
                     }
                 }
             }
         }
 
-        // 3Ã¯Â¸ÂÃ¢Æ’Â£ Insert booking
+        // insert the booking (migration handled)
         if (!insertBookingRow(conn, booking)) {
             conn.rollback();
             return false;
         }
 
-        // 4Ã¯Â¸ÂÃ¢Æ’Â£ Insert booking_equipment
+        // insert the info of equipments chosen for a booking
         if (equipmentList != null && !equipmentList.isEmpty()) {
 
             String insertEquip = "INSERT INTO Booking_Equipment (booking_id, equipment_id, quantity) VALUES (?, ?, ?)";
@@ -126,7 +129,7 @@ public class BookingDAO {
                 ps.executeBatch();
             }
         }
-
+        //final commit
         conn.commit();
         return true;
 
@@ -139,8 +142,11 @@ public class BookingDAO {
     }
 }
 
+    
+    
+    
     /**
-     * Returns the last business/database error captured by write operations in this DAO.
+     * Returns the last error captured by write operations in this DAO.
      */
     
     //Description: Retrieves and prepares data for getLastInsertError by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
@@ -157,6 +163,10 @@ public class BookingDAO {
     //Description: Executes the insertBookingRow write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     private boolean insertBookingRow(Connection conn, Booking booking) throws SQLException {
         // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
+        // He thong ho tro nhieu bien the schema:
+        // - Co/khong payment_deadline
+        // - Co/khong phone_number
+        // Thu lan luot de tuong thich CSDL chua migrate day du.
         String sqlWithDeadlineAndPhone = "INSERT INTO Booking (booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String sqlWithDeadlineNoPhone = "INSERT INTO Booking (booking_id, booker_id, field_id, schedule_id, voucher_id, status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         String sqlWithoutDeadlineAndPhone = "INSERT INTO Booking (booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, status, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -175,15 +185,18 @@ public class BookingDAO {
         SQLException lastException = null;
         for (int i = 0; i < sqlAttempts.length; i++) {
             try (PreparedStatement ps = conn.prepareStatement(sqlAttempts[i])) {
+                // includeDeadline/includePhone cho biet lan thu nay can bind them cot nao.
                 bindBookingParams(ps, booking, includeDeadlineAttempts[i], includePhoneAttempts[i]);
                 ps.executeUpdate();
                 return true;
             } catch (SQLException ex) {
                 lastException = ex;
+                // Neu khong phai loi thieu cot thi dung ngay (vi la loi nghiem trong khac).
                 if (!isMissingColumnError(ex)) {
                     lastInsertError = "Cannot insert booking record: " + ex.getMessage();
                     return false;
                 }
+                // Neu la loi thieu cot thi tiep tuc fallback SQL tiep theo.
             }
         }
 
@@ -210,11 +223,13 @@ public class BookingDAO {
         ps.setString(1, booking.getBookingId().toString());
         ps.setString(2, booking.getBookerId().toString());
 
+        // idx la con tro vi tri parameter, dich chuyen dong theo co/khong phone, deadline.
         int idx = 3;
         if (includePhone) {
             if (booking.getPhoneNumber() != null && !booking.getPhoneNumber().trim().isEmpty()) {
                 ps.setString(idx++, booking.getPhoneNumber().trim());
             } else {
+                // Luu NULL thay vi chuoi rong de tranh du lieu rac.
                 ps.setNull(idx++, Types.NVARCHAR);
             }
         }
@@ -240,6 +255,12 @@ public class BookingDAO {
         }
     }
 
+    
+    
+    //=====================================================================GET BOOKINGs INFO================================================================//
+    
+    
+    
     /**
      * Gets booking history for one customer.
      */
@@ -359,6 +380,11 @@ public class BookingDAO {
         return list;
     }
 
+    
+    
+    //=================================================GROUP WEEKLY BOOKING==================================================================//
+    
+    
     
     //Description: Retrieves and prepares data for getByWeeklyGroupId by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<BookingViewModel> getByWeeklyGroupId(UUID weeklyGroupId) {
@@ -743,6 +769,12 @@ public class BookingDAO {
         return list;
     }
 
+    
+    
+    
+    
+    //===========================================================CANCEL BOOKING STATUS HANDLE===========================================================================//
+    
     /**
      * Cancels booking by policy:
      * pending bookings use payment-cancel flow; paid bookings may move to pending refund when eligible.
@@ -754,33 +786,39 @@ public class BookingDAO {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
 
+            // snapshot gom status hien tai + cua so thoi gian cua khung gio dat.
             BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
             if (snapshot == null) {
                 conn.rollback();
                 return false;
             }
 
+            // pending = chua thanh toan. Luong huy cho pending can release tai nguyen ngay lap tuc.
             if (STATUS_PENDING.equals(snapshot.status)) {
                 conn.rollback();
                 return cancelBookingForPayment(bookingId);
             }
 
+            // Luong refund chi cho phep voi booking da paid va co thong tin thoi gian san.
             if (!STATUS_PAID.equals(snapshot.status) || snapshot.scheduleStart == null) {
                 conn.rollback();
                 return false;
             }
 
+            // Chinh sach hien tai: chi cho refund som (truoc >= 2 ngay) de tranh anh huong van hanh.
             if (!snapshot.scheduleStart.isAfter(LocalDateTime.now().plusDays(2))) {
                 conn.rollback();
                 return false;
             }
 
+            // paid -> pending refund: danh dau cho bo phan tai chinh xu ly hoan tien.
             boolean updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_REFUND, STATUS_PAID);
             if (!updated) {
                 conn.rollback();
                 return false;
             }
 
+            // Payment doi sang REFUND_PENDING de dong bo trang thai tien voi trang thai booking.
             updatePaymentStatusByBooking(conn, bookingId, "REFUND_PENDING", false);
             conn.commit();
             return true;
@@ -806,18 +844,23 @@ public class BookingDAO {
                 return false;
             }
 
+            // Da cancelled roi thi coi nhu idempotent success.
             if (STATUS_CANCELLED.equals(snapshot.status)) {
                 conn.rollback();
                 return true;
             }
 
+            // Luong nay chi ap dung cho booking pending (chua thu tien).
             if (!STATUS_PENDING.equals(snapshot.status)) {
                 conn.rollback();
                 return false;
             }
 
+            // pending -> cancelled: huy dat san do het han/that bai thanh toan.
             updateBookingStatus(conn, bookingId, STATUS_CANCELLED, STATUS_PENDING);
+            // Payment chuyen FAILED va dong moc thoi gian de audit.
             updatePaymentStatusByBooking(conn, bookingId, "FAILED", true);
+            // Giai phong khung gio + cong tra dung cu de nguoi khac co the dat.
             releaseBookingResources(conn, bookingId, snapshot.scheduleId);
             conn.commit();
             return true;
@@ -836,6 +879,7 @@ public class BookingDAO {
         // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
+            // Chi cho phep transition pending -> paid, tranh nhay coc trang thai.
             boolean updated = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_PENDING);
             if (!updated) {
                 conn.rollback();
@@ -853,6 +897,7 @@ public class BookingDAO {
     //Description: Executes the markWeeklyGroupPaid write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean markWeeklyGroupPaid(UUID weeklyGroupId) {
         // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
+        // Nhom dat tuan thanh toan 1 lan: cap nhat tat ca booking pending trong nhom sang paid.
         String sql = "UPDATE Booking SET status = 'paid' WHERE weekly_group_id = ? AND status = 'pending'";
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -876,16 +921,19 @@ public class BookingDAO {
             conn.setAutoCommit(false);
 
             BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
+            // Chi booking checked in moi duoc tao phu thu dung cu.
             if (snapshot == null || !STATUS_CHECKED_IN.equals(snapshot.status)) {
                 conn.rollback();
                 return false;
             }
 
+            // Booking phai con trong khung gio dang da, neu het gio thi khong tao phi bo sung nua.
             if (!isBookingActive(snapshot, LocalDateTime.now())) {
                 conn.rollback();
                 return false;
             }
 
+            // checked in -> pending extra: cho xac nhan thanh toan bo sung.
             boolean updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_EXTRA, STATUS_CHECKED_IN);
             if (!updated) {
                 conn.rollback();
@@ -918,16 +966,19 @@ public class BookingDAO {
                 return false;
             }
 
+            // Khong o pending extra thi khong can settle; tra true de luong goi ben ngoai de idempotent.
             if (!STATUS_PENDING_EXTRA.equals(snapshot.status)) {
                 conn.rollback();
                 return true;
             }
 
+            // Chi cho resolve trang thai khi payment bo sung da SUCCESS.
             if (!isPaymentSuccessful(conn, bookingId)) {
                 conn.rollback();
                 return false;
             }
 
+            // Neu da het gio choi thi complete, nguoc lai quay ve checked in de tiep tuc su dung.
             String targetStatus = resolvePostSupplementaryStatus(snapshot, LocalDateTime.now());
             boolean updated = updateBookingStatus(conn, bookingId, targetStatus, STATUS_PENDING_EXTRA);
             if (!updated) {
@@ -977,6 +1028,7 @@ public class BookingDAO {
     //Description: Executes the updateStatus write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean updateStatus(UUID bookingId, String newStatus) {
         // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
+        // API trung tam de enforce state machine cua Booking.
         if (newStatus == null) {
             return false;
         }
@@ -997,6 +1049,7 @@ public class BookingDAO {
                     return false;
                 }
 
+                // Khong doi trang thai thi xem nhu thanh cong logic.
                 if (newStatus.equals(snapshot.status)) {
                     conn.rollback();
                     return true;
@@ -1005,11 +1058,14 @@ public class BookingDAO {
                 boolean updated;
                 switch (newStatus) {
                     case STATUS_PAID:
+                        // pending -> paid: xac nhan da thu tien dat san ban dau.
                         updated = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_PENDING);
                         break;
                     case STATUS_CHECKED_IN:
+                        // paid -> checked in: nhan khach den san.
                         if (STATUS_PAID.equals(snapshot.status)) {
                             updated = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_PAID);
+                        // pending extra -> checked in: chi hop le khi phi bo sung da thanh toan xong.
                         } else if (STATUS_PENDING_EXTRA.equals(snapshot.status) && isPaymentSuccessful(conn, bookingId)) {
                             updated = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_PENDING_EXTRA);
                         } else {
@@ -1017,40 +1073,48 @@ public class BookingDAO {
                         }
                         break;
                     case STATUS_PENDING_EXTRA:
+                        // checked in -> pending extra: dat trang thai cho khoan thanh toan bo sung.
                         updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_EXTRA, STATUS_CHECKED_IN);
                         break;
                     case STATUS_PENDING_REFUND:
+                        // Chi booking paid moi duoc yeu cau hoan tien.
                         if (!STATUS_PAID.equals(snapshot.status)) {
                             updated = false;
                             break;
                         }
                         updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_REFUND, STATUS_PAID);
                         if (updated) {
+                            // Dong bo payment sang REFUND_PENDING de boi thuong nguoc.
                             updatePaymentStatusByBooking(conn, bookingId, "REFUND_PENDING", false);
                         }
                         break;
                     case STATUS_REFUNDED:
+                        // refunded la buoc ket thuc sau pending refund.
                         if (!STATUS_PENDING_REFUND.equals(snapshot.status)) {
                             updated = false;
                             break;
                         }
                         updated = updateBookingStatus(conn, bookingId, STATUS_REFUNDED, STATUS_PENDING_REFUND);
                         if (updated) {
+                            // Sau khi hoan tien xong: dong bo payment + giai phong tai nguyen.
                             updatePaymentStatusByBooking(conn, bookingId, "REFUNDED", true);
                             releaseBookingResources(conn, bookingId, snapshot.scheduleId);
                         }
                         break;
                     case STATUS_COMPLETED:
+                        // Chi cho complete khi dang checked in hoac pending extra.
                         if (!(STATUS_CHECKED_IN.equals(snapshot.status) || STATUS_PENDING_EXTRA.equals(snapshot.status))) {
                             updated = false;
                             break;
                         }
 
+                        // Chua den gio ket thuc thi khong duoc complete som.
                         if (snapshot.scheduleEnd == null || LocalDateTime.now().isBefore(snapshot.scheduleEnd)) {
                             updated = false;
                             break;
                         }
 
+                        // Neu van pending extra thi bat buoc payment bo sung phai thanh cong truoc khi complete.
                         if (STATUS_PENDING_EXTRA.equals(snapshot.status) && !isPaymentSuccessful(conn, bookingId)) {
                             updated = false;
                             break;
@@ -1059,15 +1123,18 @@ public class BookingDAO {
                         updated = updateBookingStatus(conn, bookingId, STATUS_COMPLETED, snapshot.status);
                         break;
                     case STATUS_CANCELLED:
+                        // Cancel tay chi cho 2 trang thai dau vao: pending hoac paid.
                         if (!STATUS_PENDING.equals(snapshot.status) && !STATUS_PAID.equals(snapshot.status)) {
                             updated = false;
                             break;
                         }
                         updated = updateBookingStatus(conn, bookingId, STATUS_CANCELLED, snapshot.status);
                         if (updated) {
+                            // Pending cancel: danh dau payment FAILED. Paid cancel da co luong refund rieng.
                             if (STATUS_PENDING.equals(snapshot.status)) {
                                 updatePaymentStatusByBooking(conn, bookingId, "FAILED", true);
                             }
+                            // Huy booking thi phai tra lai slot va dung cu.
                             releaseBookingResources(conn, bookingId, snapshot.scheduleId);
                         }
                         break;
@@ -1574,6 +1641,7 @@ public class BookingDAO {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
+            // Cron-on-read: he thong tu dong chot cac booking da qua gio cho 2 trang thai paid/checked in.
             String sql = "SELECT b.booking_id, LOWER(ISNULL(b.status, '')) AS booking_status "
                     + "FROM Booking b "
                     + "INNER JOIN Schedule s ON s.schedule_id = b.schedule_id "
@@ -1597,9 +1665,11 @@ public class BookingDAO {
                     continue;
                 }
                 if (STATUS_PAID.equals(snapshot.status)) {
+                    // paid ma qua gio nhung chua check-in -> coi nhu khong su dung, chuyen cancelled.
                     updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CANCELLED, STATUS_PAID);
                     releaseBookingResources(conn, expiredBooking.bookingId, snapshot.scheduleId);
                 } else if (STATUS_CHECKED_IN.equals(snapshot.status)) {
+                    // checked-in qua gio -> completed.
                     updateBookingStatus(conn, expiredBooking.bookingId, STATUS_COMPLETED, STATUS_CHECKED_IN);
                 }
             }
@@ -1617,6 +1687,7 @@ public class BookingDAO {
     //Description: Retrieves and prepares data for getBookingSnapshot by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     private BookingSnapshot getBookingSnapshot(Connection conn, UUID bookingId) throws SQLException {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
+        // Snapshot la du lieu toi thieu de quyet dinh transition: khong load du model de giam chi phi.
         String sql = "SELECT b.schedule_id, b.field_id, b.status, s.booking_date, s.start_time, s.end_time "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON s.schedule_id = b.schedule_id "
@@ -1664,6 +1735,7 @@ public class BookingDAO {
         if (snapshot == null || snapshot.scheduleStart == null || snapshot.scheduleEnd == null) {
             return false;
         }
+        // [start, end): cho phep dung san tu luc bat dau den truoc luc ket thuc.
         return !now.isBefore(snapshot.scheduleStart) && now.isBefore(snapshot.scheduleEnd);
     }
 
@@ -1674,9 +1746,11 @@ public class BookingDAO {
     //Description: Retrieves and prepares data for resolvePostSupplementaryStatus by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     private String resolvePostSupplementaryStatus(BookingSnapshot snapshot, LocalDateTime now) {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
+        // Neu khach thanh toan bo sung khi tran da ket thuc -> complete luon.
         if (snapshot != null && snapshot.scheduleEnd != null && !now.isBefore(snapshot.scheduleEnd)) {
             return STATUS_COMPLETED;
         }
+        // Nguoc lai tra ve checked in de tiep tuc tran dang dien ra.
         return STATUS_CHECKED_IN;
     }
 
@@ -1695,10 +1769,14 @@ public class BookingDAO {
                     return false;
                 }
                 String paymentStatus = normalizeStatus(rs.getString("payment_status"));
+                // Ho tro du lieu lich su co the ghi 'paid' thay vi 'success'.
                 return "success".equals(paymentStatus) || "paid".equals(paymentStatus);
             }
         }
     }
+    
+    
+//=============================================================================================STATUS CONTROL===============================================================================================//
 
     /**
      * Updates booking status only when current status matches expectedStatus.
@@ -1707,6 +1785,7 @@ public class BookingDAO {
     //Description: Executes the updateBookingStatus write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     private boolean updateBookingStatus(Connection conn, UUID bookingId, String newStatus, String expectedStatus) throws SQLException {
         // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
+        // Compare-and-set o DB: chi update khi status hien tai dung expectedStatus.
         String sql = "UPDATE Booking SET status = ? WHERE booking_id = ? AND LOWER(ISNULL(status, '')) = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, newStatus);
@@ -1720,9 +1799,13 @@ public class BookingDAO {
      * Updates payment status by booking ID and optionally touches payment_time.
      */
     
+    
+    //=============================================================================================PAYMENT STATUS CONTROLE===============================================================================================//
+
     //Description: Executes the updatePaymentStatusByBooking write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     private void updatePaymentStatusByBooking(Connection conn, UUID bookingId, String paymentStatus, boolean touchPaymentTime) throws SQLException {
         // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
+        // touchPaymentTime=true khi can danh dau moc thay doi payment (failed/refunded...).
         String sql = touchPaymentTime
                 ? "UPDATE Payment SET payment_status = ?, payment_time = SYSDATETIME() WHERE booking_id = ?"
                 : "UPDATE Payment SET payment_status = ? WHERE booking_id = ?";
@@ -1730,9 +1813,17 @@ public class BookingDAO {
             ps.setString(1, paymentStatus);
             ps.setString(2, bookingId.toString());
             ps.executeUpdate();
-        }
+        }   
     }
-
+    
+    
+    
+    
+    
+//=============================================================================================GIVE BACK EQUIPMENTS===============================================================================================//
+    
+    
+    
     /**
      * Releases schedule slot and returns all booked equipment quantity to location stock.
      */
@@ -1741,12 +1832,14 @@ public class BookingDAO {
     private void releaseBookingResources(Connection conn, UUID bookingId, UUID scheduleId) throws SQLException {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         if (scheduleId != null) {
+            // Tra slot lich ve available de cho phep dat lai.
             try (PreparedStatement ps = conn.prepareStatement("UPDATE Schedule SET status = 'available' WHERE schedule_id = ?")) {
                 ps.setString(1, scheduleId.toString());
                 ps.executeUpdate();
             }
         }
 
+        // Tra lai dung cu da gan voi booking vao ton kho cua location tuong ung.
         String sql = "UPDATE le "
                 + "SET le.quantity = le.quantity + be.quantity, "
                 + "    le.status = CASE WHEN le.quantity + be.quantity > 0 THEN 'available' ELSE le.status END "
@@ -1770,8 +1863,12 @@ public class BookingDAO {
     private String normalizeStatus(String status) {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         return status == null ? "" : status.trim().toLowerCase();
+        
+        
     }
-
+//=============================================================================================QUICK MAPPING===============================================================================================//
+    
+    
     private static class BookingSnapshot {
         private UUID bookingId;
         private UUID scheduleId;
@@ -1800,6 +1897,7 @@ public class BookingDAO {
         // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
 
         List<Booking> created = new ArrayList<>();
+                        // sessionCount = so buoi dat trong tuan. Dung de tinh tong ton dung cu can tru.
         int sessionCount = scheduleIds.size();
 
         try (Connection conn = DBConnection.getConnection()) {
@@ -1818,6 +1916,7 @@ public class BookingDAO {
                             ps.setString(2, be.getEquipmentId().toString());
                             ResultSet rs = ps.executeQuery();
                             int stock = rs.next() ? rs.getInt(1) : 0;
+                            // needed = so luong moi session * tong so session.
                             int needed = be.getQuantity() * sessionCount;
                             if (stock < needed) {
                                 conn.rollback();
@@ -1842,6 +1941,7 @@ public class BookingDAO {
                             }
                             BigDecimal rentalPrice = rs.getBigDecimal(1);
                             if (rentalPrice != null && be.getQuantity() > 0) {
+                                // Tong gia dung cu cho 1 session de cong vao gia san tung booking.
                                 equipmentTotalPerSession = equipmentTotalPerSession.add(
                                         rentalPrice.multiply(BigDecimal.valueOf(be.getQuantity()))
                                 );
@@ -1884,6 +1984,7 @@ public class BookingDAO {
                     java.math.BigDecimal subtotal = rawPrice.add(equipmentTotalPerSession);
                     java.math.BigDecimal factor = java.math.BigDecimal.ONE.subtract(
                             discountPercent.divide(java.math.BigDecimal.valueOf(100)));
+                        // totalPrice sau voucher = (gia san + gia dung cu/session) * (1 - discount%).
                     java.math.BigDecimal totalPrice = subtotal.multiply(factor);
 
                     Booking b = new Booking();
@@ -1895,6 +1996,7 @@ public class BookingDAO {
                     b.setVoucherId(voucherId);
                     b.setBookingTime(now);
                     b.setStatus("pending");
+                    // pending: cho khach thanh toan trong payment_deadline.
                     b.setTotalPrice(totalPrice);
                     b.setPaymentDeadline(paymentDeadline);
                     b.setWeeklyGroupId(weeklyGroupId);
@@ -1912,6 +2014,7 @@ public class BookingDAO {
                     try (PreparedStatement ps = conn.prepareStatement(updateEquip)) {
                         for (BookingEquipment be : equipmentList) {
                             int totalQty = be.getQuantity() * sessionCount;
+                            // totalQty la tong dung cu can tru cho tat ca session trong tuan.
                             ps.setInt(1, totalQty);
                             ps.setInt(2, totalQty);
                             ps.setString(3, fieldId.toString());

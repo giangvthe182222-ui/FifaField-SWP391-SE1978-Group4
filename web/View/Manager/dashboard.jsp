@@ -172,7 +172,7 @@
                     </a>
 
                     <!-- Xem ca đã phân -->
-                    <a href="${pageContext.request.contextPath}/manager/staff-shifts" class="action-card group relative bg-white border border-gray-100 rounded-[2.5rem] p-8 text-gray-900 overflow-hidden transition-all duration-300 shadow-sm hover:shadow-xl">
+                    <a href="${pageContext.request.contextPath}/shifts/add" class="action-card group relative bg-white border border-gray-100 rounded-[2.5rem] p-8 text-gray-900 overflow-hidden transition-all duration-300 shadow-sm hover:shadow-xl">
                         <div class="absolute -right-4 -top-4 text-blue-500/5 group-hover:scale-110 transition-transform duration-500">
                             <i data-lucide="history" class="w-32 h-32"></i>
                         </div>
@@ -181,7 +181,7 @@
                                 <i data-lucide="eye" class="w-6 h-6 text-blue-600"></i>
                             </div>
                             <div>
-                                <h3 class="text-xl font-black uppercase tracking-tight mb-2">Lịch Sử Phân Ca</h3>
+                                <h3 class="text-xl font-black uppercase tracking-tight mb-2">Thêm ca</h3>
                                 <p class="text-gray-400 text-[10px] font-bold uppercase tracking-widest">Kiểm soát tiến độ công việc</p>
                             </div>
                         </div>
@@ -208,7 +208,7 @@
                                 <span class="text-lg font-black">${todayCount}</span>
                             </div>
                             <a href="${pageContext.request.contextPath}/manager/shifts" class="flex items-center justify-between p-4 bg-white/10 hover:bg-white/20 rounded-2xl transition-all group/btn mt-4">
-                                <span class="text-[10px] font-black uppercase tracking-widest">Danh sách ca mẫu</span>
+                                <span class="text-[10px] font-black uppercase tracking-widest">Danh sách ca</span>
                                 <i data-lucide="chevron-right" class="w-4 h-4 group-hover/btn:translate-x-1 transition-transform"></i>
                             </a>
                         </div>
