@@ -158,9 +158,9 @@
                                         </c:forEach>
                                     </div>
 
-                                    <button type="submit" class="w-full md:w-auto bg-gray-900 hover:bg-[#008751] text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 inline-flex items-center justify-center gap-2 shadow-lg shadow-gray-200">
+                                    <button type="submit" class="w-full md:w-auto bg-[#008751] hover:bg-[#006b40] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008751]/20 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.99] inline-flex items-center justify-center gap-2 shadow-lg shadow-emerald-200">
                                         <i data-lucide="package-plus" class="w-4 h-4"></i>
-                                        THÊM EQUIPMENT VÀO BOOKING
+                                        THÊM DỤNG CỤ VÀO BOOKING
                                     </button>
                                 </form>
                             </c:when>
