@@ -44,129 +44,119 @@ public class BookingDAO {
             STATUS_PENDING_EXTRA,
             STATUS_COMPLETED
     ));
-    
+
     /**
-     * giangvthe182222
-     * Creates a new booking in a single transaction:
-     * locks schedule, reserves equipment stock, inserts booking and booking-equipment rows.
+     * giangvthe182222 Creates a new booking in a single transaction: locks
+     * schedule, reserves equipment stock, inserts booking and booking-equipment
+     * rows.
      */
-    
     public boolean insert(Booking booking, List<BookingEquipment> equipmentList) {
 
-    lastInsertError = null;
+        lastInsertError = null;
 
-    try (Connection conn = DBConnection.getConnection()) {
-        //set auto commit to false to heandle transaction properly
-        conn.setAutoCommit(false);
+        try (Connection conn = DBConnection.getConnection()) {
+            //set auto commit to false to heandle transaction properly
+            conn.setAutoCommit(false);
 
-        // Locking the slot so that double booking cannot happen
-        String updateSchedule = "UPDATE Schedule SET status = 'unavailable' WHERE schedule_id = ? AND status = 'available'";
+            // Locking the slot so that double booking cannot happen
+            String updateSchedule = "UPDATE Schedule SET status = 'unavailable' WHERE schedule_id = ? AND status = 'available'";
 
-        try (PreparedStatement ps = conn.prepareStatement(updateSchedule)) {
-            ps.setString(1, booking.getScheduleId().toString());
-            int affected = ps.executeUpdate();
+            try (PreparedStatement ps = conn.prepareStatement(updateSchedule)) {
+                ps.setString(1, booking.getScheduleId().toString());
+                int affected = ps.executeUpdate();
 
-            if (affected == 0) {
-                conn.rollback();
-                lastInsertError = "Selected schedule is no longer available.";
-                return false; // slot haven taken
+                if (affected == 0) {
+                    conn.rollback();
+                    lastInsertError = "Selected schedule is no longer available.";
+                    return false; // slot haven taken
+                }
             }
-        }
 
-        // Minus the equipment amount chosed in the bookings
-        if (equipmentList != null && !equipmentList.isEmpty()) {
+            // Minus the equipment amount chosed in the bookings
+            if (equipmentList != null && !equipmentList.isEmpty()) {
 
-            String updateEquip = "UPDATE le "
-                    + "SET le.quantity = le.quantity - ?, "
-                    + "    le.status = CASE WHEN le.quantity - ? <= 0 THEN 'unavailable' ELSE 'available' END "
-                    + "FROM Location_Equipment le "
-                    + "INNER JOIN Field f ON f.location_id = le.location_id "
-                    + "WHERE f.field_id = ? AND le.equipment_id = ? AND le.quantity >= ?";
+                String updateEquip = "UPDATE le "
+                        + "SET le.quantity = le.quantity - ?, "
+                        + "    le.status = CASE WHEN le.quantity - ? <= 0 THEN 'unavailable' ELSE 'available' END "
+                        + "FROM Location_Equipment le "
+                        + "INNER JOIN Field f ON f.location_id = le.location_id "
+                        + "WHERE f.field_id = ? AND le.equipment_id = ? AND le.quantity >= ?";
 
-            try (PreparedStatement ps = conn.prepareStatement(updateEquip)) {
+                try (PreparedStatement ps = conn.prepareStatement(updateEquip)) {
 
-                for (BookingEquipment be : equipmentList) {
+                    for (BookingEquipment be : equipmentList) {
 
-                    // minus equipment quantity
-                    // equipment amout <= 0, then change status to unavailable
-                    ps.setInt(1, be.getQuantity());
-                    ps.setInt(2, be.getQuantity());
-                    ps.setString(3, booking.getFieldId().toString());
-                    ps.setString(4, be.getEquipmentId().toString());
-                    ps.setInt(5, be.getQuantity());
+                        // Decrease equipment quantity
+                        // If quantity <= 0, set status to 'unavailable'
+                        ps.setInt(1, be.getQuantity());
+                        ps.setInt(2, be.getQuantity());
+                        ps.setString(3, booking.getFieldId().toString());
+                        ps.setString(4, be.getEquipmentId().toString());
+                        ps.setInt(5, be.getQuantity());
 
-                    int affected = ps.executeUpdate();
+                        int affected = ps.executeUpdate();
 
-                    if (affected == 0) {
-                        conn.rollback();
-                        lastInsertError = "Equipment stock changed. Please review selected quantities.";
-                        return false; // equipment amount not enough in db when trying to insert
+                        if (affected == 0) {
+                            conn.rollback();
+                            lastInsertError = "Equipment stock changed. Please review selected quantities.";
+                            return false; // equipment amount not enough in db when trying to insert
+                        }
                     }
                 }
             }
-        }
 
-        // insert the booking (migration handled)
-        if (!insertBookingRow(conn, booking)) {
-            conn.rollback();
+            // insert the booking (migration handled)
+            if (!insertBookingRow(conn, booking)) {
+                conn.rollback();
+                return false;
+            }
+
+            // insert the info of equipments chosen for a booking
+            if (equipmentList != null && !equipmentList.isEmpty()) {
+
+                String insertEquip = "INSERT INTO Booking_Equipment (booking_id, equipment_id, quantity) VALUES (?, ?, ?)";
+
+                try (PreparedStatement ps = conn.prepareStatement(insertEquip)) {
+
+                    for (BookingEquipment be : equipmentList) {
+                        ps.setString(1, booking.getBookingId().toString());
+                        ps.setString(2, be.getEquipmentId().toString());
+                        ps.setInt(3, be.getQuantity());
+                        ps.addBatch();
+                    }
+
+                    ps.executeBatch();
+                }
+            }
+            //final commit
+            conn.commit();
+            return true;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (lastInsertError == null || lastInsertError.isBlank()) {
+                lastInsertError = "Database error while creating booking: " + e.getMessage();
+            }
             return false;
         }
-
-        // insert the info of equipments chosen for a booking
-        if (equipmentList != null && !equipmentList.isEmpty()) {
-
-            String insertEquip = "INSERT INTO Booking_Equipment (booking_id, equipment_id, quantity) VALUES (?, ?, ?)";
-
-            try (PreparedStatement ps = conn.prepareStatement(insertEquip)) {
-
-                for (BookingEquipment be : equipmentList) {
-                    ps.setString(1, booking.getBookingId().toString());
-                    ps.setString(2, be.getEquipmentId().toString());
-                    ps.setInt(3, be.getQuantity());
-                    ps.addBatch();
-                }
-
-                ps.executeBatch();
-            }
-        }
-        //final commit
-        conn.commit();
-        return true;
-
-    } catch (Exception e) {
-        e.printStackTrace();
-        if (lastInsertError == null || lastInsertError.isBlank()) {
-            lastInsertError = "Database error while creating booking: " + e.getMessage();
-        }
-        return false;
     }
-}
 
-    
-    
-    
     /**
      * Returns the last error captured by write operations in this DAO.
      */
-    
-    //Description: Retrieves and prepares data for getLastInsertError by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //Retrieves and prepares data for getLastInsertError by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public String getLastInsertError() {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         return lastInsertError;
     }
 
     /**
-     * Inserts the booking row and automatically falls back when legacy databases
-     * do not yet contain payment_deadline.
+     * Inserts the booking row and automatically falls back when legacy
+     * databases do not yet contain payment_deadline.
      */
-    
-    //Description: Executes the insertBookingRow write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
+    //insert the data retrieved with the migration handled (if its neccesary for the rollback in database)
     private boolean insertBookingRow(Connection conn, Booking booking) throws SQLException {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
-        // He thong ho tro nhieu bien the schema:
-        // - Co/khong payment_deadline
-        // - Co/khong phone_number
-        // Thu lan luot de tuong thich CSDL chua migrate day du.
+        // Booking with payment but rolled back on DB
+        // Booking with phone number but rolled back on DB
         String sqlWithDeadlineAndPhone = "INSERT INTO Booking (booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         String sqlWithDeadlineNoPhone = "INSERT INTO Booking (booking_id, booker_id, field_id, schedule_id, voucher_id, status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         String sqlWithoutDeadlineAndPhone = "INSERT INTO Booking (booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, status, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -191,12 +181,11 @@ public class BookingDAO {
                 return true;
             } catch (SQLException ex) {
                 lastException = ex;
-                // Neu khong phai loi thieu cot thi dung ngay (vi la loi nghiem trong khac).
+                // To handle other errors other then migrations related.
                 if (!isMissingColumnError(ex)) {
                     lastInsertError = "Cannot insert booking record: " + ex.getMessage();
                     return false;
                 }
-                // Neu la loi thieu cot thi tiep tuc fallback SQL tiep theo.
             }
         }
 
@@ -205,10 +194,8 @@ public class BookingDAO {
         return false;
     }
 
-    
-    //Description: Evaluates business conditions in isMissingColumnError and returns a deterministic boolean result used to protect state transitions and payment/booking integrity rules.
+    //Evaluates business conditions in isMissingColumnError and returns a deterministic boolean result used to protect state transitions and payment/booking integrity rules.
     private boolean isMissingColumnError(SQLException ex) {
-        // Internal Flow: compute condition from normalized state and return a strict boolean outcome.
         String message = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
         return message.contains("invalid column") || message.contains("column name") || message.contains("does not exist");
     }
@@ -216,27 +203,25 @@ public class BookingDAO {
     /**
      * Binds common booking parameters for insert statements.
      */
-    
-    //Description: Applies normalization/mapping logic in bindBookingParams to keep data format stable across DAO boundaries and reduce duplicate parsing logic in higher layers.
+    //Applies normalization/mapping logic in bindBookingParams to keep data format stable across DAO boundaries and reduce duplicate parsing logic in higher layers.
     private void bindBookingParams(PreparedStatement ps, Booking booking, boolean includeDeadline, boolean includePhone) throws SQLException {
-        // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         ps.setString(1, booking.getBookingId().toString());
         ps.setString(2, booking.getBookerId().toString());
 
-        // idx la con tro vi tri parameter, dich chuyen dong theo co/khong phone, deadline.
+        // idx is the inital placement of phone field (placement will be increased if phone field exists)
         int idx = 3;
         if (includePhone) {
             if (booking.getPhoneNumber() != null && !booking.getPhoneNumber().trim().isEmpty()) {
                 ps.setString(idx++, booking.getPhoneNumber().trim());
             } else {
-                // Luu NULL thay vi chuoi rong de tranh du lieu rac.
+                // save null value to avoid trash info
                 ps.setNull(idx++, Types.NVARCHAR);
             }
         }
 
         ps.setString(idx++, booking.getFieldId().toString());
         ps.setString(idx++, booking.getScheduleId().toString());
-
+        //same for vouchers
         if (booking.getVoucherId() != null) {
             ps.setString(idx++, booking.getVoucherId().toString());
         } else {
@@ -245,7 +230,7 @@ public class BookingDAO {
 
         ps.setString(idx++, booking.getStatus());
         ps.setBigDecimal(idx++, booking.getTotalPrice());
-
+        //same to dl
         if (includeDeadline) {
             if (booking.getPaymentDeadline() != null) {
                 ps.setTimestamp(idx, Timestamp.valueOf(booking.getPaymentDeadline()));
@@ -255,30 +240,23 @@ public class BookingDAO {
         }
     }
 
-    
-    
     //=====================================================================GET BOOKINGs INFO================================================================//
-    
-    
-    
     /**
      * Gets booking history for one customer.
      */
-    
-    //Description: Retrieves and prepares data for getByBooker by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //etrieves and prepares data for getByBooker by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<BookingViewModel> getByBooker(UUID bookerId) {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone " +
-            "FROM Booking b " +
-            "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
-            "LEFT JOIN Field f ON b.field_id = f.field_id " +
-            "LEFT JOIN Users u ON b.booker_id = u.user_id " +
-            "WHERE b.booker_id = ? ORDER BY s.booking_date DESC, s.start_time";
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
+                + "FROM Booking b "
+                + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
+                + "LEFT JOIN Field f ON b.field_id = f.field_id "
+                + "LEFT JOIN Users u ON b.booker_id = u.user_id "
+            + "WHERE b.booker_id = ? ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, bookerId.toString());
             ResultSet rs = ps.executeQuery();
@@ -289,11 +267,17 @@ public class BookingDAO {
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
-                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                if (bd != null) {
+                    vm.setBookingDate(bd.toLocalDate());
+                }
                 Time st = rs.getTime("start_time");
-                if (st != null) vm.setStartTime(st.toLocalTime());
+                if (st != null) {
+                    vm.setStartTime(st.toLocalTime());
+                }
                 Time et = rs.getTime("end_time");
-                if (et != null) vm.setEndTime(et.toLocalTime());
+                if (et != null) {
+                    vm.setEndTime(et.toLocalTime());
+                }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setCustomerPhone(rs.getString("customer_phone"));
@@ -308,10 +292,10 @@ public class BookingDAO {
     }
 
     /**
-     * Gets customer bookings with optional filters by date, start time and status.
+     * Gets customer bookings with optional filters by date, start time and
+     * status.
      */
-    
-    //Description: Retrieves and prepares data for getByBookerFiltered by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //Retrieves and prepares data for getByBookerFiltered by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<BookingViewModel> getByBookerFiltered(UUID bookerId, String bookingDateStr, String startTimeStr, String status) {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
@@ -335,7 +319,7 @@ public class BookingDAO {
         }
         // field filter removed per requirements
 
-        sql.append(" ORDER BY s.booking_date DESC, s.start_time");
+        sql.append(" ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC");
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
             int idx = 1;
@@ -363,11 +347,17 @@ public class BookingDAO {
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
-                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                if (bd != null) {
+                    vm.setBookingDate(bd.toLocalDate());
+                }
                 Time st = rs.getTime("start_time");
-                if (st != null) vm.setStartTime(st.toLocalTime());
+                if (st != null) {
+                    vm.setStartTime(st.toLocalTime());
+                }
                 Time et = rs.getTime("end_time");
-                if (et != null) vm.setEndTime(et.toLocalTime());
+                if (et != null) {
+                    vm.setEndTime(et.toLocalTime());
+                }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setStatus(rs.getString("status"));
@@ -380,23 +370,16 @@ public class BookingDAO {
         return list;
     }
 
-    
-    
-    //=================================================GROUP WEEKLY BOOKING==================================================================//
-    
-    
-    
-    //Description: Retrieves and prepares data for getByWeeklyGroupId by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //Retrieves and prepares data for getByWeeklyGroupId by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<BookingViewModel> getByWeeklyGroupId(UUID weeklyGroupId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
         String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, "
-            + "ISNULL(s.price, 0) AS field_price, "
-            + "ISNULL((SELECT SUM(ISNULL(be.quantity, 0) * ISNULL(e.rental_price, 0)) "
-            + "       FROM Booking_Equipment be "
-            + "       LEFT JOIN Equipment e ON be.equipment_id = e.equipment_id "
-            + "       WHERE be.booking_id = b.booking_id), 0) AS equipment_price, "
+                + "ISNULL(s.price, 0) AS field_price, "
+                + "ISNULL((SELECT SUM(ISNULL(be.quantity, 0) * ISNULL(e.rental_price, 0)) "
+                + "       FROM Booking_Equipment be "
+                + "       LEFT JOIN Equipment e ON be.equipment_id = e.equipment_id "
+                + "       WHERE be.booking_id = b.booking_id), 0) AS equipment_price, "
                 + "s.booking_date, s.start_time, s.end_time, f.field_name, l.location_name "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
@@ -405,8 +388,7 @@ public class BookingDAO {
                 + "WHERE b.weekly_group_id = ? "
                 + "ORDER BY s.booking_date, s.start_time";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, weeklyGroupId.toString());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -416,11 +398,17 @@ public class BookingDAO {
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
-                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                if (bd != null) {
+                    vm.setBookingDate(bd.toLocalDate());
+                }
                 Time st = rs.getTime("start_time");
-                if (st != null) vm.setStartTime(st.toLocalTime());
+                if (st != null) {
+                    vm.setStartTime(st.toLocalTime());
+                }
                 Time et = rs.getTime("end_time");
-                if (et != null) vm.setEndTime(et.toLocalTime());
+                if (et != null) {
+                    vm.setEndTime(et.toLocalTime());
+                }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setLocationName(rs.getString("location_name"));
                 vm.setStatus(rs.getString("status"));
@@ -436,12 +424,11 @@ public class BookingDAO {
     }
 
     /**
-     * Gets customer bookings for calendar rendering in a given date range and optional location/field filters.
+     * Gets customer bookings for calendar rendering in a given date range and
+     * optional location/field filters.
      */
-    
-    //Description: Retrieves and prepares data for getCustomerCalendarBookings by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //Retrieves and prepares data for getCustomerCalendarBookings by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<BookingViewModel> getCustomerCalendarBookings(UUID bookerId, LocalDate fromDate, LocalDate toDate, LocalDate selectedDate, UUID locationId, UUID fieldId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
 
@@ -493,11 +480,17 @@ public class BookingDAO {
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
 
                 Date bd = rs.getDate("booking_date");
-                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                if (bd != null) {
+                    vm.setBookingDate(bd.toLocalDate());
+                }
                 Time st = rs.getTime("start_time");
-                if (st != null) vm.setStartTime(st.toLocalTime());
+                if (st != null) {
+                    vm.setStartTime(st.toLocalTime());
+                }
                 Time et = rs.getTime("end_time");
-                if (et != null) vm.setEndTime(et.toLocalTime());
+                if (et != null) {
+                    vm.setEndTime(et.toLocalTime());
+                }
 
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setLocationName(rs.getString("location_name"));
@@ -514,19 +507,16 @@ public class BookingDAO {
     }
 
     /**
-     * Gets distinct fields appearing in the customer's booking calendar dataset.
+     * Gets distinct fields appearing in the customer's booking calendar type
+     * dataset.
      */
-    
-    //Description: Retrieves and prepares data for getCustomerCalendarFields by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //Retrieves and prepares data for getCustomerCalendarFields by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<Field> getCustomerCalendarFields(UUID bookerId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         return getCustomerCalendarFields(bookerId, null);
     }
 
-    
-    //Description: Retrieves and prepares data for getCustomerCalendarFields by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //Retrieves and prepares data for getCustomerCalendarFields by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<Field> getCustomerCalendarFields(UUID bookerId, UUID locationId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         List<Field> fields = new ArrayList<>();
         StringBuilder sql = new StringBuilder();
@@ -566,21 +556,21 @@ public class BookingDAO {
     }
 
     /**
-     * Gets distinct locations appearing in the customer's booking calendar dataset.
+     * Gets distinct locations appearing in the customer's booking calendar
+     * dataset.
      */
-    
     //Description: Retrieves and prepares data for getCustomerCalendarLocations by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<Location> getCustomerCalendarLocations(UUID bookerId) {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         List<Location> locations = new ArrayList<>();
-        String sql = "SELECT DISTINCT l.location_id, l.location_name " +
-                "FROM Booking b " +
-                "JOIN Field f ON b.field_id = f.field_id " +
-                "JOIN Location l ON f.location_id = l.location_id " +
-                "WHERE b.booker_id = ? " +
-                "AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') " +
-                "ORDER BY l.location_name";
+        String sql = "SELECT DISTINCT l.location_id, l.location_name "
+                + "FROM Booking b "
+                + "JOIN Field f ON b.field_id = f.field_id "
+                + "JOIN Location l ON f.location_id = l.location_id "
+                + "WHERE b.booker_id = ? "
+                + "AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') "
+                + "ORDER BY l.location_name";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, bookerId.toString());
@@ -601,20 +591,18 @@ public class BookingDAO {
     /**
      * Gets one booking view model by booking ID.
      */
-    
-    //Description: Retrieves and prepares data for getById by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //Retrieves and prepares data for getById by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public BookingViewModel getById(UUID bookingId) {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name " +
-            "FROM Booking b " +
-            "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
-            "LEFT JOIN Field f ON b.field_id = f.field_id " +
-            "LEFT JOIN Users u ON b.booker_id = u.user_id " +
-            "WHERE b.booking_id = ?";
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name "
+                + "FROM Booking b "
+                + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
+                + "LEFT JOIN Field f ON b.field_id = f.field_id "
+                + "LEFT JOIN Users u ON b.booker_id = u.user_id "
+                + "WHERE b.booking_id = ?";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, bookingId.toString());
             ResultSet rs = ps.executeQuery();
@@ -624,14 +612,22 @@ public class BookingDAO {
                 vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
                 String locationId = rs.getString("location_id");
-                if (locationId != null) vm.setLocationId(UUID.fromString(locationId));
+                if (locationId != null) {
+                    vm.setLocationId(UUID.fromString(locationId));
+                }
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
-                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                if (bd != null) {
+                    vm.setBookingDate(bd.toLocalDate());
+                }
                 Time st = rs.getTime("start_time");
-                if (st != null) vm.setStartTime(st.toLocalTime());
+                if (st != null) {
+                    vm.setStartTime(st.toLocalTime());
+                }
                 Time et = rs.getTime("end_time");
-                if (et != null) vm.setEndTime(et.toLocalTime());
+                if (et != null) {
+                    vm.setEndTime(et.toLocalTime());
+                }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setStatus(rs.getString("status"));
@@ -647,21 +643,18 @@ public class BookingDAO {
     /**
      * Gets latest non-cancelled/non-refunded booking by schedule ID.
      */
-    
-    //Description: Retrieves and prepares data for getByScheduleId by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //Retrieves and prepares data for getByScheduleId by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public BookingViewModel getByScheduleId(UUID scheduleId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
-        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone " +
-            "FROM Booking b " +
-            "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
-            "LEFT JOIN Field f ON b.field_id = f.field_id " +
-            "LEFT JOIN Users u ON b.booker_id = u.user_id " +
-            "WHERE b.schedule_id = ? AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') " +
-            "ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
+        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
+                + "FROM Booking b "
+                + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
+                + "LEFT JOIN Field f ON b.field_id = f.field_id "
+                + "LEFT JOIN Users u ON b.booker_id = u.user_id "
+                + "WHERE b.schedule_id = ? AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') "
+                + "ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, scheduleId.toString());
             ResultSet rs = ps.executeQuery();
@@ -672,11 +665,17 @@ public class BookingDAO {
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
-                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                if (bd != null) {
+                    vm.setBookingDate(bd.toLocalDate());
+                }
                 Time st = rs.getTime("start_time");
-                if (st != null) vm.setStartTime(st.toLocalTime());
+                if (st != null) {
+                    vm.setStartTime(st.toLocalTime());
+                }
                 Time et = rs.getTime("end_time");
-                if (et != null) vm.setEndTime(et.toLocalTime());
+                if (et != null) {
+                    vm.setEndTime(et.toLocalTime());
+                }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setCustomerPhone(rs.getString("customer_phone"));
@@ -693,22 +692,19 @@ public class BookingDAO {
     /**
      * Gets latest booking by schedule ID for calendar context.
      */
-    
-    //Description: Retrieves and prepares data for getByScheduleIdForCalendar by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //Retrieves and prepares data for getByScheduleIdForCalendar by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public BookingViewModel getByScheduleIdForCalendar(UUID scheduleId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
-        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone " +
-            "FROM Booking b " +
-            "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
-            "LEFT JOIN Field f ON b.field_id = f.field_id " +
-            "LEFT JOIN Users u ON b.booker_id = u.user_id " +
-            "WHERE b.schedule_id = ? " +
-            "AND LOWER(ISNULL(b.status, '')) IN ('pending', 'paid', 'checked in', 'pending extra', 'completed') " +
-            "ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
+        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
+                + "FROM Booking b "
+                + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
+                + "LEFT JOIN Field f ON b.field_id = f.field_id "
+                + "LEFT JOIN Users u ON b.booker_id = u.user_id "
+                + "WHERE b.schedule_id = ? "
+                + "AND LOWER(ISNULL(b.status, '')) IN ('pending', 'paid', 'checked in', 'pending extra', 'completed') "
+                + "ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, scheduleId.toString());
             ResultSet rs = ps.executeQuery();
@@ -719,11 +715,17 @@ public class BookingDAO {
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
-                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                if (bd != null) {
+                    vm.setBookingDate(bd.toLocalDate());
+                }
                 Time st = rs.getTime("start_time");
-                if (st != null) vm.setStartTime(st.toLocalTime());
+                if (st != null) {
+                    vm.setStartTime(st.toLocalTime());
+                }
                 Time et = rs.getTime("end_time");
-                if (et != null) vm.setEndTime(et.toLocalTime());
+                if (et != null) {
+                    vm.setEndTime(et.toLocalTime());
+                }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setCustomerPhone(rs.getString("customer_phone"));
@@ -740,18 +742,15 @@ public class BookingDAO {
     /**
      * Gets equipment lines attached to a booking.
      */
-    
-    //Description: Retrieves and prepares data for getBookingEquipments by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    //etrieves and prepares data for getBookingEquipments by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<BookingEquipmentViewModel> getBookingEquipments(UUID bookingId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         List<BookingEquipmentViewModel> list = new ArrayList<>();
-        String sql = "SELECT be.equipment_id, be.quantity, e.name, e.rental_price " +
-                "FROM Booking_Equipment be " +
-                "LEFT JOIN Equipment e ON be.equipment_id = e.equipment_id " +
-                "WHERE be.booking_id = ?";
+        String sql = "SELECT be.equipment_id, be.quantity, e.name, e.rental_price "
+                + "FROM Booking_Equipment be "
+                + "LEFT JOIN Equipment e ON be.equipment_id = e.equipment_id "
+                + "WHERE be.booking_id = ?";
 
-        try (Connection con = DBConnection.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, bookingId.toString());
             ResultSet rs = ps.executeQuery();
@@ -769,56 +768,48 @@ public class BookingDAO {
         return list;
     }
 
-    
-    
-    
-    
-    //===========================================================CANCEL BOOKING STATUS HANDLE===========================================================================//
-    
     /**
-     * Cancels booking by policy:
-     * pending bookings use payment-cancel flow; paid bookings may move to pending refund when eligible.
+     * Cancels booking by policy: pending bookings use payment-cancel flow; paid
+     * bookings may move to pending refund when eligible.
      */
-    
     //Description: Executes the cancelBooking write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean cancelBooking(UUID bookingId) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
 
-            // snapshot gom status hien tai + cua so thoi gian cua khung gio dat.
+            // snapshot of booking to get booking's slot time and current status
             BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
             if (snapshot == null) {
                 conn.rollback();
                 return false;
             }
 
-            // pending = chua thanh toan. Luong huy cho pending can release tai nguyen ngay lap tuc.
+            // to retrieve slots, equipments data if booking is cancelled
             if (STATUS_PENDING.equals(snapshot.status)) {
                 conn.rollback();
                 return cancelBookingForPayment(bookingId);
             }
 
-            // Luong refund chi cho phep voi booking da paid va co thong tin thoi gian san.
+            // refund request is only possible if booking is paid 
             if (!STATUS_PAID.equals(snapshot.status) || snapshot.scheduleStart == null) {
                 conn.rollback();
                 return false;
             }
 
-            // Chinh sach hien tai: chi cho refund som (truoc >= 2 ngay) de tranh anh huong van hanh.
+            // refund is only allowed within maximum more than 2 days before schedule
             if (!snapshot.scheduleStart.isAfter(LocalDateTime.now().plusDays(2))) {
                 conn.rollback();
                 return false;
             }
 
-            // paid -> pending refund: danh dau cho bo phan tai chinh xu ly hoan tien.
+            // paid -> pending refund
             boolean updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_REFUND, STATUS_PAID);
             if (!updated) {
                 conn.rollback();
                 return false;
             }
 
-            // Payment doi sang REFUND_PENDING de dong bo trang thai tien voi trang thai booking.
+            // update peyment to refund pending status 
             updatePaymentStatusByBooking(conn, bookingId, "REFUND_PENDING", false);
             conn.commit();
             return true;
@@ -829,12 +820,11 @@ public class BookingDAO {
     }
 
     /**
-     * Force-cancel booking for unpaid payment flow and immediately release slot/equipment.
+     * Force-cancel booking for unpaid payment flow and immediately release
+     * slot/equipment.
      */
-    
     //Description: Executes the cancelBookingForPayment write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean cancelBookingForPayment(UUID bookingId) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
 
@@ -844,23 +834,23 @@ public class BookingDAO {
                 return false;
             }
 
-            // Da cancelled roi thi coi nhu idempotent success.
+            // ennsure idempotent .
             if (STATUS_CANCELLED.equals(snapshot.status)) {
                 conn.rollback();
                 return true;
             }
 
-            // Luong nay chi ap dung cho booking pending (chua thu tien).
+            // to represent that this function applies only to pending status bookings
             if (!STATUS_PENDING.equals(snapshot.status)) {
                 conn.rollback();
                 return false;
             }
 
-            // pending -> cancelled: huy dat san do het han/that bai thanh toan.
+            // automatic cancellation based on payment timeout
             updateBookingStatus(conn, bookingId, STATUS_CANCELLED, STATUS_PENDING);
-            // Payment chuyen FAILED va dong moc thoi gian de audit.
+            // payment to failed status
             updatePaymentStatusByBooking(conn, bookingId, "FAILED", true);
-            // Giai phong khung gio + cong tra dung cu de nguoi khac co the dat.
+            // Releases the slot and equipments
             releaseBookingResources(conn, bookingId, snapshot.scheduleId);
             conn.commit();
             return true;
@@ -873,13 +863,11 @@ public class BookingDAO {
     /**
      * Marks booking as paid (pending -> paid).
      */
-    
-    //Description: Executes the markBookingPaid write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
+    //Executes the markBookingPaid write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean markBookingPaid(UUID bookingId) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
-            // Chi cho phep transition pending -> paid, tranh nhay coc trang thai.
+            // only allows pending -> paid status
             boolean updated = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_PENDING);
             if (!updated) {
                 conn.rollback();
@@ -893,14 +881,11 @@ public class BookingDAO {
         }
     }
 
-    
-    //Description: Executes the markWeeklyGroupPaid write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
+    //Executes the markWeeklyGroupPaid write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean markWeeklyGroupPaid(UUID weeklyGroupId) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
-        // Nhom dat tuan thanh toan 1 lan: cap nhat tat ca booking pending trong nhom sang paid.
+        // To set all the bookings from weekly booking group from pending to paid
         String sql = "UPDATE Booking SET status = 'paid' WHERE weekly_group_id = ? AND status = 'pending'";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, weeklyGroupId.toString());
             ps.executeUpdate();
             return true;
@@ -911,27 +896,27 @@ public class BookingDAO {
     }
 
     /**
-     * Marks booking as pending extra (checked in -> pending extra) when staff creates extra-equipment payment.
+     * Marks booking as pending extra (checked in -> pending extra) when staff
+     * creates extra-equipment payment.
      */
-    
     public boolean markBookingPendingExtra(UUID bookingId) {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
 
             BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
-            // Chi booking checked in moi duoc tao phu thu dung cu.
+            // only bookings that are checked in are allowed to have extra equipment booking
             if (snapshot == null || !STATUS_CHECKED_IN.equals(snapshot.status)) {
                 conn.rollback();
                 return false;
             }
 
-            // Booking phai con trong khung gio dang da, neu het gio thi khong tao phi bo sung nua.
+            // Bookings have to be happening so that extra equipment booking is possible
             if (!isBookingActive(snapshot, LocalDateTime.now())) {
                 conn.rollback();
                 return false;
             }
 
-            // checked in -> pending extra: cho xac nhan thanh toan bo sung.
+            // to set status for unpaid extra equipment booking
             boolean updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_EXTRA, STATUS_CHECKED_IN);
             if (!updated) {
                 conn.rollback();
@@ -947,11 +932,10 @@ public class BookingDAO {
     }
 
     /**
-     * Resolves booking status after supplementary payment succeeds:
-     * - pending extra -> completed if schedule already ended
-     * - pending extra -> checked in if schedule has not ended yet
+     * Resolves booking status after supplementary payment succeeds: - pending
+     * extra -> completed if schedule already ended - pending extra -> checked
+     * in if schedule has not ended yet
      */
-    
     public boolean settlePendingExtraStatus(UUID bookingId) {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
@@ -962,20 +946,22 @@ public class BookingDAO {
                 return false;
             }
 
-            // Khong o pending extra thi khong can settle; tra true de luong goi ben ngoai de idempotent.
+            // if booking is not pending extra then states in this function is needn't to happen
             if (!STATUS_PENDING_EXTRA.equals(snapshot.status)) {
                 conn.rollback();
                 return true;
             }
 
-            // Chi cho resolve trang thai khi payment bo sung da SUCCESS.
+            // only allows function to work if payment is succesful
             if (!isPaymentSuccessful(conn, bookingId)) {
                 conn.rollback();
                 return false;
             }
 
-            // Neu da het gio choi thi complete, nguoc lai quay ve checked in de tiep tuc su dung.
+            // if playtime is over then completed, if not booking keeps on at checked in status
             String targetStatus = resolvePostSupplementaryStatus(snapshot, LocalDateTime.now());
+            // Move booking from 'pending extra' to the next state (checked in or completed)
+            // Only update if current status is still 'pending extra' to avoid race condition issues
             boolean updated = updateBookingStatus(conn, bookingId, targetStatus, STATUS_PENDING_EXTRA);
             if (!updated) {
                 conn.rollback();
@@ -990,14 +976,11 @@ public class BookingDAO {
         }
     }
 
-    
-    //Description: Executes the cancelWeeklyGroupForPayment write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
+    //Executes the cancelWeeklyGroupForPayment write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean cancelWeeklyGroupForPayment(UUID weeklyGroupId) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
         List<UUID> bookingIds = new ArrayList<>();
         String sql = "SELECT booking_id FROM Booking WHERE weekly_group_id = ? AND status = 'pending'";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, weeklyGroupId.toString());
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
@@ -1007,7 +990,7 @@ public class BookingDAO {
             e.printStackTrace();
             return false;
         }
-
+        //
         boolean allOk = true;
         for (UUID bookingId : bookingIds) {
             if (!cancelBookingForPayment(bookingId)) {
@@ -1020,133 +1003,150 @@ public class BookingDAO {
     /**
      * Central status transition API with guarded business rules.
      */
-    
-    //Description: Executes the updateStatus write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
+    //Executes the updateStatus write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean updateStatus(UUID bookingId, String newStatus) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
-        // API trung tam de enforce state machine cua Booking.
+
+        // Reject null input
         if (newStatus == null) {
             return false;
         }
 
+        // Normalize and validate status (see if statuses fits only statuses lisst allowed)
         synchronizeBookingStates();
         newStatus = normalizeStatus(newStatus);
         if (!SUPPORTED_STATUSES.contains(newStatus)) {
             return false;
         }
 
-        try {
-            try (Connection conn = DBConnection.getConnection()) {
-                conn.setAutoCommit(false);
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
 
-                BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
-                if (snapshot == null) {
-                    conn.rollback();
-                    return false;
-                }
+            // Get current booking information
+            BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
+            if (snapshot == null) {
+                conn.rollback();
+                return false;
+            }
 
-                // Khong doi trang thai thi xem nhu thanh cong logic.
-                if (newStatus.equals(snapshot.status)) {
-                    conn.rollback();
-                    return true;
-                }
-
-                boolean updated;
-                switch (newStatus) {
-                    case STATUS_PAID:
-                        // pending -> paid: xac nhan da thu tien dat san ban dau.
-                        updated = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_PENDING);
-                        break;
-                    case STATUS_CHECKED_IN:
-                        // paid -> checked in: nhan khach den san.
-                        if (STATUS_PAID.equals(snapshot.status)) {
-                            updated = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_PAID);
-                        // pending extra -> checked in: chi hop le khi phi bo sung da thanh toan xong.
-                        } else if (STATUS_PENDING_EXTRA.equals(snapshot.status) && isPaymentSuccessful(conn, bookingId)) {
-                            updated = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_PENDING_EXTRA);
-                        } else {
-                            updated = false;
-                        }
-                        break;
-                    case STATUS_PENDING_EXTRA:
-                        // checked in -> pending extra: dat trang thai cho khoan thanh toan bo sung.
-                        updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_EXTRA, STATUS_CHECKED_IN);
-                        break;
-                    case STATUS_PENDING_REFUND:
-                        // Chi booking paid moi duoc yeu cau hoan tien.
-                        if (!STATUS_PAID.equals(snapshot.status)) {
-                            updated = false;
-                            break;
-                        }
-                        updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_REFUND, STATUS_PAID);
-                        if (updated) {
-                            // Dong bo payment sang REFUND_PENDING de boi thuong nguoc.
-                            updatePaymentStatusByBooking(conn, bookingId, "REFUND_PENDING", false);
-                        }
-                        break;
-                    case STATUS_REFUNDED:
-                        // refunded la buoc ket thuc sau pending refund.
-                        if (!STATUS_PENDING_REFUND.equals(snapshot.status)) {
-                            updated = false;
-                            break;
-                        }
-                        updated = updateBookingStatus(conn, bookingId, STATUS_REFUNDED, STATUS_PENDING_REFUND);
-                        if (updated) {
-                            // Sau khi hoan tien xong: dong bo payment + giai phong tai nguyen.
-                            updatePaymentStatusByBooking(conn, bookingId, "REFUNDED", true);
-                            releaseBookingResources(conn, bookingId, snapshot.scheduleId);
-                        }
-                        break;
-                    case STATUS_COMPLETED:
-                        // Chi cho complete khi dang checked in hoac pending extra.
-                        if (!(STATUS_CHECKED_IN.equals(snapshot.status) || STATUS_PENDING_EXTRA.equals(snapshot.status))) {
-                            updated = false;
-                            break;
-                        }
-
-                        // Chua den gio ket thuc thi khong duoc complete som.
-                        if (snapshot.scheduleEnd == null || LocalDateTime.now().isBefore(snapshot.scheduleEnd)) {
-                            updated = false;
-                            break;
-                        }
-
-                        // Neu van pending extra thi bat buoc payment bo sung phai thanh cong truoc khi complete.
-                        if (STATUS_PENDING_EXTRA.equals(snapshot.status) && !isPaymentSuccessful(conn, bookingId)) {
-                            updated = false;
-                            break;
-                        }
-
-                        updated = updateBookingStatus(conn, bookingId, STATUS_COMPLETED, snapshot.status);
-                        break;
-                    case STATUS_CANCELLED:
-                        // Cancel tay chi cho 2 trang thai dau vao: pending hoac paid.
-                        if (!STATUS_PENDING.equals(snapshot.status) && !STATUS_PAID.equals(snapshot.status)) {
-                            updated = false;
-                            break;
-                        }
-                        updated = updateBookingStatus(conn, bookingId, STATUS_CANCELLED, snapshot.status);
-                        if (updated) {
-                            // Pending cancel: danh dau payment FAILED. Paid cancel da co luong refund rieng.
-                            if (STATUS_PENDING.equals(snapshot.status)) {
-                                updatePaymentStatusByBooking(conn, bookingId, "FAILED", true);
-                            }
-                            // Huy booking thi phai tra lai slot va dung cu.
-                            releaseBookingResources(conn, bookingId, snapshot.scheduleId);
-                        }
-                        break;
-                    default:
-                        updated = false;
-                        break;
-                }
-
-                if (!updated) {
-                    conn.rollback();
-                    return false;
-                }
-
-                conn.commit();
+            // ensure idempotent 
+            if (newStatus.equals(snapshot.status)) {
+                conn.rollback();
                 return true;
             }
+
+            boolean updated;
+
+            switch (newStatus) {
+
+                case STATUS_PAID:
+                    // Only allow: pending → paid
+                    updated = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_PENDING);
+                    break;
+
+                case STATUS_CHECKED_IN:
+                    // Allows bookings to be checked in only if its paid (including extra payment)
+                    if (STATUS_PAID.equals(snapshot.status)) {
+                        updated = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_PAID);
+                    } else if (STATUS_PENDING_EXTRA.equals(snapshot.status)
+                            && isPaymentSuccessful(conn, bookingId)) {
+                        updated = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_PENDING_EXTRA);
+                    } else {
+                        updated = false;
+                    }
+                    break;
+
+                case STATUS_PENDING_EXTRA:
+                    // Only allows checked in bookings to have extra booking
+                    updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_EXTRA, STATUS_CHECKED_IN);
+                    break;
+
+                case STATUS_PENDING_REFUND:
+                    // only paid bookings can have refund request
+                    if (!STATUS_PAID.equals(snapshot.status)) {
+                        updated = false;
+                        break;
+                    }
+                    updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_REFUND, STATUS_PAID);
+                    if (updated) {
+                        // Mark payment as refund pending
+                        updatePaymentStatusByBooking(conn, bookingId, "REFUND_PENDING", false);
+                    }
+                    break;
+
+                case STATUS_REFUNDED:
+                    // only pending refund status can be changed to refunded
+                    if (!STATUS_PENDING_REFUND.equals(snapshot.status)) {
+                        updated = false;
+                        break;
+                    }
+                    updated = updateBookingStatus(conn, bookingId, STATUS_REFUNDED, STATUS_PENDING_REFUND);
+                    if (updated) {
+                        // Finalize refund and release resources
+                        updatePaymentStatusByBooking(conn, bookingId, "REFUNDED", true);
+                        releaseBookingResources(conn, bookingId, snapshot.scheduleId);
+                    }
+                    break;
+
+                case STATUS_COMPLETED:
+                    // Only allow if:
+                    // current status is checked in OR pending extra
+                    // booking time has ended
+                    // if pending extra → payment must be completed
+                    if (!(STATUS_CHECKED_IN.equals(snapshot.status)
+                            || STATUS_PENDING_EXTRA.equals(snapshot.status))) {
+                        updated = false;
+                        break;
+                    }
+
+                    if (snapshot.scheduleEnd == null
+                            || LocalDateTime.now().isBefore(snapshot.scheduleEnd)) {
+                        updated = false;
+                        break;
+                    }
+
+                    if (STATUS_PENDING_EXTRA.equals(snapshot.status)
+                            && !isPaymentSuccessful(conn, bookingId)) {
+                        updated = false;
+                        break;
+                    }
+
+                    updated = updateBookingStatus(conn, bookingId, STATUS_COMPLETED, snapshot.status);
+                    break;
+
+                case STATUS_CANCELLED:
+                    // Only allow cancel from pending or paid
+                    if (!STATUS_PENDING.equals(snapshot.status)
+                            && !STATUS_PAID.equals(snapshot.status)) {
+                        updated = false;
+                        break;
+                    }
+
+                    updated = updateBookingStatus(conn, bookingId, STATUS_CANCELLED, snapshot.status);
+                    if (updated) {
+                        // If pending → mark payment failed
+                        if (STATUS_PENDING.equals(snapshot.status)) {
+                            updatePaymentStatusByBooking(conn, bookingId, "FAILED", true);
+                        }
+                        // Release slot and equipment
+                        releaseBookingResources(conn, bookingId, snapshot.scheduleId);
+                    }
+                    break;
+
+                default:
+                    updated = false;
+                    break;
+            }
+
+            // If update failed → rollback
+            if (!updated) {
+                conn.rollback();
+                return false;
+            }
+
+            // If everything ok → commit
+            conn.commit();
+            return true;
+
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -1154,10 +1154,10 @@ public class BookingDAO {
     }
 
     /**
-     * Legacy direct supplementary insertion flow.
-     * Kept for compatibility; current payment-first flow should use finalizeSupplementaryEquipment after payment success.
+     * Legacy direct supplementary insertion flow. Kept for compatibility;
+     * current payment-first flow should use finalizeSupplementaryEquipment
+     * after payment success.
      */
-    
     public boolean addEquipmentToBooking(UUID bookingId, List<BookingEquipment> equipmentList, BigDecimal additionalAmount) {
         lastInsertError = null;
 
@@ -1221,8 +1221,7 @@ public class BookingDAO {
             String updateExistingEquipment = "UPDATE Booking_Equipment SET quantity = quantity + ? WHERE booking_id = ? AND equipment_id = ?";
             String insertNewEquipment = "INSERT INTO Booking_Equipment (booking_id, equipment_id, quantity) VALUES (?, ?, ?)";
 
-            try (PreparedStatement updatePs = conn.prepareStatement(updateExistingEquipment);
-                 PreparedStatement insertPs = conn.prepareStatement(insertNewEquipment)) {
+            try (PreparedStatement updatePs = conn.prepareStatement(updateExistingEquipment); PreparedStatement insertPs = conn.prepareStatement(insertNewEquipment)) {
                 for (BookingEquipment be : equipmentList) {
                     updatePs.setInt(1, be.getQuantity());
                     updatePs.setString(2, bookingId.toString());
@@ -1266,11 +1265,10 @@ public class BookingDAO {
     }
 
     /**
-     * Finalizes supplementary equipment only after payment success:
-     * reserves stock, merges booking equipment, updates booking total,
-     * then resolves status from pending extra to checked in/completed.
+     * Finalizes supplementary equipment only after payment success: reserves
+     * stock, merges booking equipment, updates booking total, then resolves
+     * status from pending extra to checked in/completed.
      */
-    
     public boolean finalizeSupplementaryEquipment(UUID bookingId, List<BookingEquipment> equipmentList, BigDecimal additionalAmount) {
         lastInsertError = null;
 
@@ -1339,8 +1337,7 @@ public class BookingDAO {
             String insertNewEquipment = "INSERT INTO Booking_Equipment (booking_id, equipment_id, quantity) VALUES (?, ?, ?)";
 
             // Merge supplementary items into Booking_Equipment: update existing rows, insert missing rows.
-            try (PreparedStatement updatePs = conn.prepareStatement(updateExistingEquipment);
-                 PreparedStatement insertPs = conn.prepareStatement(insertNewEquipment)) {
+            try (PreparedStatement updatePs = conn.prepareStatement(updateExistingEquipment); PreparedStatement insertPs = conn.prepareStatement(insertNewEquipment)) {
                 for (BookingEquipment be : equipmentList) {
                     updatePs.setInt(1, be.getQuantity());
                     updatePs.setString(2, bookingId.toString());
@@ -1385,9 +1382,9 @@ public class BookingDAO {
     }
 
     /**
-     * Returns supplementary amount currently represented by booking total - schedule field price.
+     * Returns supplementary amount currently represented by booking total -
+     * schedule field price.
      */
-    
     public BigDecimal getSupplementaryAmountByBookingId(UUID bookingId) {
         try (Connection conn = DBConnection.getConnection()) {
             return getSupplementaryAmount(conn, bookingId);
@@ -1400,7 +1397,6 @@ public class BookingDAO {
     /**
      * Calculates supplementary amount using one open connection.
      */
-    
     private BigDecimal getSupplementaryAmount(Connection conn, UUID bookingId) throws SQLException {
         String sql = "SELECT ISNULL(b.total_price, 0) AS total_price, ISNULL(s.price, 0) AS field_price "
                 + "FROM Booking b "
@@ -1431,18 +1427,17 @@ public class BookingDAO {
     /**
      * Gets bookings for one location.
      */
-    
     //Description: Retrieves and prepares data for getByLocation by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<BookingViewModel> getByLocation(UUID locationId) {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
-    String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone " +
-                "FROM Booking b " +
-                "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id " +
-                "LEFT JOIN Field f ON b.field_id = f.field_id " +
-                "LEFT JOIN Users u ON b.booker_id = u.user_id " +
-                "WHERE f.location_id = ? ORDER BY s.booking_date DESC, s.start_time";
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
+                + "FROM Booking b "
+                + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
+                + "LEFT JOIN Field f ON b.field_id = f.field_id "
+                + "LEFT JOIN Users u ON b.booker_id = u.user_id "
+            + "WHERE f.location_id = ? ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
             ps.setString(1, locationId.toString());
@@ -1453,14 +1448,22 @@ public class BookingDAO {
                 vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
                 String bookingLocationId = rs.getString("location_id");
-                if (bookingLocationId != null) vm.setLocationId(UUID.fromString(bookingLocationId));
+                if (bookingLocationId != null) {
+                    vm.setLocationId(UUID.fromString(bookingLocationId));
+                }
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
-                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                if (bd != null) {
+                    vm.setBookingDate(bd.toLocalDate());
+                }
                 Time st = rs.getTime("start_time");
-                if (st != null) vm.setStartTime(st.toLocalTime());
+                if (st != null) {
+                    vm.setStartTime(st.toLocalTime());
+                }
                 Time et = rs.getTime("end_time");
-                if (et != null) vm.setEndTime(et.toLocalTime());
+                if (et != null) {
+                    vm.setEndTime(et.toLocalTime());
+                }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setCustomerPhone(rs.getString("customer_phone"));
@@ -1475,16 +1478,16 @@ public class BookingDAO {
     }
 
     /**
-     * Gets location bookings with optional filters by date, status and customer keyword.
+     * Gets location bookings with optional filters by date, status and customer
+     * keyword.
      */
-    
     //Description: Retrieves and prepares data for getByLocationFiltered by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<BookingViewModel> getByLocationFiltered(UUID locationId, String bookingDateStr, String status, String customerKeyword) {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder();
-    sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone ");
+        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone ");
         sql.append("FROM Booking b ");
         sql.append("LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id ");
         sql.append("LEFT JOIN Field f ON b.field_id = f.field_id ");
@@ -1501,7 +1504,7 @@ public class BookingDAO {
             sql.append(" AND (LOWER(u.full_name) LIKE LOWER(?) OR b.phone_number LIKE ?) ");
         }
 
-        sql.append(" ORDER BY s.booking_date DESC, s.start_time");
+        sql.append(" ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC");
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
             int idx = 1;
@@ -1524,14 +1527,22 @@ public class BookingDAO {
                 vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
                 vm.setFieldId(UUID.fromString(rs.getString("field_id")));
                 String bookingLocationId = rs.getString("location_id");
-                if (bookingLocationId != null) vm.setLocationId(UUID.fromString(bookingLocationId));
+                if (bookingLocationId != null) {
+                    vm.setLocationId(UUID.fromString(bookingLocationId));
+                }
                 vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
                 Date bd = rs.getDate("booking_date");
-                if (bd != null) vm.setBookingDate(bd.toLocalDate());
+                if (bd != null) {
+                    vm.setBookingDate(bd.toLocalDate());
+                }
                 Time st = rs.getTime("start_time");
-                if (st != null) vm.setStartTime(st.toLocalTime());
+                if (st != null) {
+                    vm.setStartTime(st.toLocalTime());
+                }
                 Time et = rs.getTime("end_time");
-                if (et != null) vm.setEndTime(et.toLocalTime());
+                if (et != null) {
+                    vm.setEndTime(et.toLocalTime());
+                }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setCustomerPhone(rs.getString("customer_phone"));
@@ -1548,15 +1559,13 @@ public class BookingDAO {
     /**
      * Get raw Booking object by ID (including payment_deadline)
      */
-    
     //Description: Retrieves and prepares data for getBookingById by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public Booking getBookingById(UUID bookingId) {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         String sql = "SELECT * FROM Booking WHERE booking_id = ?";
 
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, bookingId.toString());
             ResultSet rs = ps.executeQuery();
@@ -1567,26 +1576,26 @@ public class BookingDAO {
                 booking.setBookerId(UUID.fromString(rs.getString("booker_id")));
                 booking.setFieldId(UUID.fromString(rs.getString("field_id")));
                 booking.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
-                
+
                 String voucherId = rs.getString("voucher_id");
                 if (voucherId != null) {
                     booking.setVoucherId(UUID.fromString(voucherId));
                 }
-                
+
                 Timestamp bookingTime = rs.getTimestamp("booking_time");
                 if (bookingTime != null) {
                     booking.setBookingTime(bookingTime.toLocalDateTime());
                 }
-                
+
                 booking.setStatus(rs.getString("status"));
                 booking.setPhoneNumber(rs.getString("phone_number"));
                 booking.setTotalPrice(rs.getBigDecimal("total_price"));
-                
+
                 Timestamp paymentDeadline = rs.getTimestamp("payment_deadline");
                 if (paymentDeadline != null) {
                     booking.setPaymentDeadline(paymentDeadline.toLocalDateTime());
                 }
-                
+
                 return booking;
             }
 
@@ -1597,9 +1606,9 @@ public class BookingDAO {
     }
 
     /**
-     * Resets payment deadline for a booking (typically used by staff/admin support flow).
+     * Resets payment deadline for a booking (typically used by staff/admin
+     * support flow).
      */
-    
     //Description: Executes the resetPaymentDeadline write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean resetPaymentDeadline(UUID bookingId, LocalDateTime newDeadline) {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
@@ -1608,8 +1617,7 @@ public class BookingDAO {
         }
 
         String sql = "UPDATE Booking SET payment_deadline = ? WHERE booking_id = ?";
-        try (Connection conn = DBConnection.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setTimestamp(1, Timestamp.valueOf(newDeadline));
             ps.setString(2, bookingId.toString());
             return ps.executeUpdate() > 0;
@@ -1620,12 +1628,11 @@ public class BookingDAO {
     }
 
     /**
-     * Auto-synchronizes lifecycle states:
-     * - paid bookings past slot end => cancelled and resources released
-     * - checked-in bookings past slot end => completed
-     * pending extra is intentionally excluded to allow payment at any time.
+     * Auto-synchronizes lifecycle states: - paid bookings past slot end =>
+     * cancelled and resources released - checked-in bookings past slot end =>
+     * completed pending extra is intentionally excluded to allow payment at any
+     * time.
      */
-    
     //Description: Implements the synchronizeBookingStates business routine with validation, database interaction, exception handling, and predictable outputs for upstream controllers/services.
     private void synchronizeBookingStates() {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
@@ -1673,7 +1680,6 @@ public class BookingDAO {
     /**
      * Loads a compact booking snapshot used by status-transition logic.
      */
-    
     //Description: Retrieves and prepares data for getBookingSnapshot by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     private BookingSnapshot getBookingSnapshot(Connection conn, UUID bookingId) throws SQLException {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
@@ -1716,9 +1722,9 @@ public class BookingDAO {
     }
 
     /**
-     * Checks whether current time lies inside booking schedule window [start, end).
+     * Checks whether current time lies inside booking schedule window [start,
+     * end).
      */
-    
     //Description: Evaluates business conditions in isBookingActive and returns a deterministic boolean result used to protect state transitions and payment/booking integrity rules.
     private boolean isBookingActive(BookingSnapshot snapshot, LocalDateTime now) {
         // Internal Flow: compute condition from normalized state and return a strict boolean outcome.
@@ -1732,7 +1738,6 @@ public class BookingDAO {
     /**
      * Resolves status after supplementary payment based on schedule end time.
      */
-    
     //Description: Retrieves and prepares data for resolvePostSupplementaryStatus by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     private String resolvePostSupplementaryStatus(BookingSnapshot snapshot, LocalDateTime now) {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
@@ -1747,7 +1752,6 @@ public class BookingDAO {
     /**
      * Checks whether payment linked to booking is successful.
      */
-    
     //Description: Evaluates business conditions in isPaymentSuccessful and returns a deterministic boolean result used to protect state transitions and payment/booking integrity rules.
     private boolean isPaymentSuccessful(Connection conn, UUID bookingId) throws SQLException {
         // Internal Flow: compute condition from normalized state and return a strict boolean outcome.
@@ -1764,14 +1768,11 @@ public class BookingDAO {
             }
         }
     }
-    
-    
-//=============================================================================================STATUS CONTROL===============================================================================================//
 
+//=============================================================================================STATUS CONTROL===============================================================================================//
     /**
      * Updates booking status only when current status matches expectedStatus.
      */
-    
     //Description: Executes the updateBookingStatus write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     private boolean updateBookingStatus(Connection conn, UUID bookingId, String newStatus, String expectedStatus) throws SQLException {
         // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
@@ -1788,10 +1789,7 @@ public class BookingDAO {
     /**
      * Updates payment status by booking ID and optionally touches payment_time.
      */
-    
-    
     //=============================================================================================PAYMENT STATUS CONTROLE===============================================================================================//
-
     //Description: Executes the updatePaymentStatusByBooking write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     private void updatePaymentStatusByBooking(Connection conn, UUID bookingId, String paymentStatus, boolean touchPaymentTime) throws SQLException {
         // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
@@ -1803,21 +1801,14 @@ public class BookingDAO {
             ps.setString(1, paymentStatus);
             ps.setString(2, bookingId.toString());
             ps.executeUpdate();
-        }   
+        }
     }
-    
-    
-    
-    
-    
+
 //=============================================================================================GIVE BACK EQUIPMENTS===============================================================================================//
-    
-    
-    
     /**
-     * Releases schedule slot and returns all booked equipment quantity to location stock.
+     * Releases schedule slot and returns all booked equipment quantity to
+     * location stock.
      */
-    
     //Description: Implements the releaseBookingResources business routine with validation, database interaction, exception handling, and predictable outputs for upstream controllers/services.
     private void releaseBookingResources(Connection conn, UUID bookingId, UUID scheduleId) throws SQLException {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
@@ -1848,18 +1839,16 @@ public class BookingDAO {
     /**
      * Normalizes status string for stable comparisons.
      */
-    
     //Description: Applies normalization/mapping logic in normalizeStatus to keep data format stable across DAO boundaries and reduce duplicate parsing logic in higher layers.
     private String normalizeStatus(String status) {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         return status == null ? "" : status.trim().toLowerCase();
-        
-        
+
     }
 //=============================================================================================QUICK MAPPING===============================================================================================//
-    
-    
+
     private static class BookingSnapshot {
+
         private UUID bookingId;
         private UUID scheduleId;
         private UUID fieldId;
@@ -1869,25 +1858,26 @@ public class BookingDAO {
     }
 
     /**
-     * Weekly booking: lock multiple schedule slots and create one Booking per slot in a single
-     * atomic transaction.  If ANY slot is already 'unavailable' the whole transaction rolls back.
-     * Equipment (same list) is attached to every booking and stock is decremented per session.
+     * Weekly booking: lock multiple schedule slots and create one Booking per
+     * slot in a single atomic transaction. If ANY slot is already 'unavailable'
+     * the whole transaction rolls back. Equipment (same list) is attached to
+     * every booking and stock is decremented per session.
      *
-     * @param equipmentList equipment to attach to each session (may be null/empty)
+     * @param equipmentList equipment to attach to each session (may be
+     * null/empty)
      * @return list of created Booking objects (one per selected schedule)
      */
-    
     //Description: Executes the insertWeekly write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public List<Booking> insertWeekly(UUID bookerId, UUID fieldId, List<UUID> scheduleIds,
-                                      List<BookingEquipment> equipmentList,
-                                      UUID voucherId, java.math.BigDecimal discountPercent,
-                                      java.time.LocalDateTime paymentDeadline,
-                                      UUID weeklyGroupId,
-                                      String bookingPhone) throws Exception {
+            List<BookingEquipment> equipmentList,
+            UUID voucherId, java.math.BigDecimal discountPercent,
+            java.time.LocalDateTime paymentDeadline,
+            UUID weeklyGroupId,
+            String bookingPhone) throws Exception {
         // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
 
         List<Booking> created = new ArrayList<>();
-                        // sessionCount = so buoi dat trong tuan. Dung de tinh tong ton dung cu can tru.
+        // sessionCount = so buoi dat trong tuan. Dung de tinh tong ton dung cu can tru.
         int sessionCount = scheduleIds.size();
 
         try (Connection conn = DBConnection.getConnection()) {
@@ -1940,7 +1930,7 @@ public class BookingDAO {
                     }
                 }
 
-                String lockSql  = "UPDATE [Schedule] SET status = 'unavailable' "
+                String lockSql = "UPDATE [Schedule] SET status = 'unavailable' "
                         + "WHERE schedule_id = ? AND field_id = ? AND status = 'available'";
                 String priceSql = "SELECT price FROM [Schedule] WHERE schedule_id = ? AND field_id = ?";
 
@@ -1953,7 +1943,9 @@ public class BookingDAO {
                         ResultSet rs = ps.executeQuery();
                         if (rs.next()) {
                             java.math.BigDecimal p = rs.getBigDecimal("price");
-                            if (p != null) rawPrice = p;
+                            if (p != null) {
+                                rawPrice = p;
+                            }
                         } else {
                             conn.rollback();
                             throw new Exception("Khung gio khong hop le hoac khong thuoc san da chon.");
@@ -1974,7 +1966,7 @@ public class BookingDAO {
                     java.math.BigDecimal subtotal = rawPrice.add(equipmentTotalPerSession);
                     java.math.BigDecimal factor = java.math.BigDecimal.ONE.subtract(
                             discountPercent.divide(java.math.BigDecimal.valueOf(100)));
-                        // totalPrice sau voucher = (gia san + gia dung cu/session) * (1 - discount%).
+                    // totalPrice sau voucher = (gia san + gia dung cu/session) * (1 - discount%).
                     java.math.BigDecimal totalPrice = subtotal.multiply(factor);
 
                     Booking b = new Booking();
@@ -2076,7 +2068,10 @@ public class BookingDAO {
                 return created;
 
             } catch (Exception e) {
-                try { conn.rollback(); } catch (SQLException ignored) {}
+                try {
+                    conn.rollback();
+                } catch (SQLException ignored) {
+                }
                 throw e;
             }
         }

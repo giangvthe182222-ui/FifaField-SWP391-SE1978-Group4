@@ -296,7 +296,8 @@ public class PaymentServlet extends HttpServlet {
                 response.sendRedirect(request.getContextPath() + bookingHistoryPath);
                 return;
             }
-            response.sendRedirect(request.getContextPath() + "/booking-success?bookingId=" + bookingId.toString());
+            session.setAttribute("flash_success", "Thanh toán đặt sân thành công.");
+            response.sendRedirect(request.getContextPath() + bookingHistoryPath);
             return;
         }
 

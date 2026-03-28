@@ -18,6 +18,41 @@
     Boolean isWeeklyGroupPayment = (Boolean) request.getAttribute("isWeeklyGroupPayment");
     Integer weeklySessionCount = (Integer) request.getAttribute("weeklySessionCount");
     String weeklyGroupId = (String) request.getAttribute("weeklyGroupId");
+        Models.User viewUser = (Models.User) session.getAttribute("user");
+        boolean staffUser = viewUser != null
+            && viewUser.getRole() != null
+            && viewUser.getRole().getRoleName() != null
+            && "STAFF".equalsIgnoreCase(viewUser.getRole().getRoleName());
+
+        String paymentLocationId = (bookingVM != null && bookingVM.getLocationId() != null)
+            ? bookingVM.getLocationId().toString()
+            : "";
+        String paymentFieldId = (booking != null && booking.getFieldId() != null)
+            ? booking.getFieldId().toString()
+            : "";
+        String paymentPhone = (booking != null && booking.getPhoneNumber() != null)
+            ? booking.getPhoneNumber()
+            : "";
+        String staffPaymentBackPath = request.getContextPath() + "/booking";
+        if (staffUser) {
+            StringBuilder sb = new StringBuilder(staffPaymentBackPath);
+            boolean hasQuery = false;
+
+            if (paymentLocationId != null && !paymentLocationId.trim().isEmpty()) {
+                sb.append(hasQuery ? '&' : '?').append("locationId=").append(paymentLocationId.trim());
+                hasQuery = true;
+            }
+            if (paymentFieldId != null && !paymentFieldId.trim().isEmpty()) {
+                sb.append(hasQuery ? '&' : '?').append("fieldId=").append(paymentFieldId.trim());
+                hasQuery = true;
+            }
+            if (paymentPhone != null && !paymentPhone.trim().isEmpty()) {
+                sb.append(hasQuery ? '&' : '?').append("bookingPhone=")
+                        .append(java.net.URLEncoder.encode(paymentPhone.trim(), java.nio.charset.StandardCharsets.UTF_8.name()));
+            }
+
+            staffPaymentBackPath = sb.toString();
+        }
 
     if (paymentSource == null || paymentSource.isBlank()) {
         paymentSource = "booking";
@@ -228,7 +263,8 @@
 
                     <div>
                         <% if ("supplementary".equalsIgnoreCase(paymentSource)) { %>
-                            <a href="${pageContext.request.contextPath}<%= bookingHistoryPath %>" class="block w-full text-center rounded-xl py-3 border border-[var(--brand-border)] bg-[var(--brand-green-soft)] text-[var(--brand-green-dark)] font-semibold hover:bg-[#def4e8] transition">
+                            <% String backPath = staffUser ? staffPaymentBackPath : (request.getContextPath() + bookingHistoryPath); %>
+                            <a href="<%= backPath %>" class="block w-full text-center rounded-xl py-3 border border-[var(--brand-border)] bg-[var(--brand-green-soft)] text-[var(--brand-green-dark)] font-semibold hover:bg-[#def4e8] transition">
                                 Quay lại
                             </a>
                         <% } else { %>
@@ -236,6 +272,12 @@
                                 <input type="hidden" name="bookingId" value="<%= booking.getBookingId() %>" />
                                 <% if (Boolean.TRUE.equals(isWeeklyGroupPayment) && weeklyGroupId != null) { %>
                                 <input type="hidden" name="weeklyGroupId" value="<%= weeklyGroupId %>" />
+                                <% } %>
+                                <% if (staffUser) { %>
+                                <input type="hidden" name="redirectToBooking" value="1" />
+                                <input type="hidden" name="locationId" value="<%= paymentLocationId %>" />
+                                <input type="hidden" name="fieldId" value="<%= paymentFieldId %>" />
+                                <input type="hidden" name="bookingPhone" value="<%= paymentPhone %>" />
                                 <% } %>
                                 <button type="submit" class="w-full rounded-xl py-3 border border-[var(--brand-border)] bg-[var(--brand-green-soft)] text-[var(--brand-green-dark)] font-semibold hover:bg-[#def4e8] transition">
                                     Quay lại
@@ -444,11 +486,7 @@
                 statusDiv.classList.remove('hidden');
 
                 setTimeout(() => {
-                    if (paymentSource === 'supplementary') {
-                        window.location.href = '${pageContext.request.contextPath}<%= bookingHistoryPath %>';
-                    } else {
-                        window.location.href = '${pageContext.request.contextPath}/booking-success?bookingId=' + bookingId;
-                    }
+                    window.location.href = '${pageContext.request.contextPath}<%= bookingHistoryPath %>';
                 }, 1800);
             }
 
