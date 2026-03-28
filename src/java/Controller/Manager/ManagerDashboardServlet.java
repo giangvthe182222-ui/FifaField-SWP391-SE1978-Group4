@@ -28,7 +28,7 @@ public class ManagerDashboardServlet extends HttpServlet {
 
                 request.setAttribute("totalStaff", totalStaff);
                 request.setAttribute("assignedCount", assignedCount);
-                request.setAttribute("upcoming", upcoming);
+                request.setAttribute("upcoming", 10);
                 request.setAttribute("todayCount", todayCount);
             } catch (Exception ex) {
                 ex.printStackTrace();

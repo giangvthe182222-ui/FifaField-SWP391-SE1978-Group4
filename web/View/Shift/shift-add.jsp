@@ -10,7 +10,7 @@
 <body class="bg-gray-50">
 <c:choose>
     <c:when test="${sessionScope.user != null and sessionScope.user.role != null and sessionScope.user.role.roleName == 'MANAGER'}"><jsp:include page="/View/Layout/HeaderManager.jsp" /></c:when>
-    <c:otherwise><jsp:include page="/View/Layout/HeaderAdmin.jsp" /></c:otherwise>
+    <c:otherwise><jsp:include page="/View/Layout/HeaderManager.jsp" /></c:otherwise>
 </c:choose>
 <main class="max-w-3xl mx-auto p-6">
     <h1 class="text-2xl font-bold mb-4">Thêm ca mới</h1>
@@ -41,7 +41,7 @@
 </main>
 <c:choose>
     <c:when test="${sessionScope.user != null and sessionScope.user.role != null and sessionScope.user.role.roleName == 'MANAGER'}"><jsp:include page="/View/Layout/FooterManager.jsp" /></c:when>
-    <c:otherwise><jsp:include page="/View/Layout/Footer.jsp" /></c:otherwise>
+    <c:otherwise><jsp:include page="/View/Layout/FooterManager.jsp" /></c:otherwise>
 </c:choose>
 <script>
 function validateShiftTime() {

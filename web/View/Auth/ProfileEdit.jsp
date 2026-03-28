@@ -15,6 +15,12 @@
 <main class="max-w-3xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black mb-4">Chỉnh sửa hồ sơ</h1>
 
+    <c:if test="${not empty sessionScope.user and not empty sessionScope.user.role and sessionScope.user.role.roleName != null and sessionScope.user.role.roleName.equalsIgnoreCase('customer')}">
+        <div class="mb-6">
+            <jsp:include page="/View/Layout/CustomerQuickPanel.jsp"/>
+        </div>
+    </c:if>
+
     <div class="bg-white rounded-xl shadow p-6">
         <c:if test="${not empty error}">
             <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded mb-4">${error}</div>
@@ -28,7 +34,7 @@
                 </div>
                 <div>
                     <label class="text-sm font-bold">Số điện thoại</label>
-                    <input type="text" name="phone" value="${sessionScope.user.phone}" class="w-full p-2 border rounded" />
+                    <input type="tel" name="phone" value="${sessionScope.user.phone}" class="w-full p-2 border rounded" inputmode="numeric" pattern="[0-9]*" maxlength="15" oninput="this.value = this.value.replace(/\D/g, '')" title="Chỉ nhập số" />
                 </div>
                 <div>
                     <label class="text-sm font-bold">Địa chỉ</label>

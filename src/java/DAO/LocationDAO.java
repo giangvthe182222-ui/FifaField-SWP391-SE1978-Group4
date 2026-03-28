@@ -17,7 +17,7 @@ public class LocationDAO {
 
         String url =
             "jdbc:sqlserver://localhost:1433;"
-          + "databaseName=FifaFieldDB;"
+          + "databaseName=FifaFieldDB2;"
           + "encrypt=true;"
           + "trustServerCertificate=true;";
 

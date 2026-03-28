@@ -13,12 +13,14 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 @WebServlet(name = "CustomerLocationDetailServlet", urlPatterns = {"/customer/location-detail"})
 public class CustomerLocationDetailServlet extends HttpServlet {
+    private static final int FIELD_PAGE_SIZE = 8;
 
     private final LocationDAO locationDAO = new LocationDAO();
     private final FieldDAO fieldDAO = new FieldDAO();
@@ -52,8 +54,40 @@ public class CustomerLocationDetailServlet extends HttpServlet {
                             && ("ACTIVE".equalsIgnoreCase(f.getStatus()) || "AVAILABLE".equalsIgnoreCase(f.getStatus())))
                     .collect(Collectors.toList());
 
+            int pageNum = 1;
+            String pageParam = request.getParameter("page");
+            if (pageParam != null && !pageParam.isBlank()) {
+                try {
+                    pageNum = Integer.parseInt(pageParam);
+                    if (pageNum < 1) {
+                        pageNum = 1;
+                    }
+                } catch (NumberFormatException ignored) {
+                    pageNum = 1;
+                }
+            }
+
+            int totalFields = fields.size();
+            int totalPages = (totalFields + FIELD_PAGE_SIZE - 1) / FIELD_PAGE_SIZE;
+            if (totalPages == 0) {
+                totalPages = 1;
+            }
+            if (pageNum > totalPages) {
+                pageNum = totalPages;
+            }
+
+            int startIdx = (pageNum - 1) * FIELD_PAGE_SIZE;
+            int endIdx = Math.min(startIdx + FIELD_PAGE_SIZE, totalFields);
+            List<Field> pageFields = new ArrayList<>();
+            if (startIdx < endIdx) {
+                pageFields = new ArrayList<>(fields.subList(startIdx, endIdx));
+            }
+
             request.setAttribute("location", location);
-            request.setAttribute("fields", fields);
+            request.setAttribute("fields", pageFields);
+            request.setAttribute("currentPage", pageNum);
+            request.setAttribute("totalPages", totalPages);
+            request.setAttribute("totalFields", totalFields);
             request.getRequestDispatcher("/View/Customer/location-detail.jsp").forward(request, response);
         } catch (Exception ex) {
             response.sendRedirect(request.getContextPath() + "/customer/dashboard");

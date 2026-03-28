@@ -16,6 +16,8 @@
 <main class="max-w-3xl mx-auto px-6 py-12">
     <h1 class="text-2xl font-black mb-4">Hồ sơ cá nhân</h1>
 
+ 
+
     <div class="bg-white rounded-xl shadow p-6">
         <div class="grid grid-cols-1 gap-3 text-sm">
             <div><strong>Họ tên:</strong> ${sessionScope.user.fullName}</div>

@@ -24,6 +24,7 @@
 <jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
 
 <main class="flex-grow max-w-7xl mx-auto w-full px-6 py-12 space-y-12">
+    <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
     
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
@@ -37,8 +38,6 @@
             Về Dashboard
         </a>
     </div>
-
-    <jsp:include page="/View/Layout/CustomerQuickPanel.jsp"/>
 
     <c:if test="${not empty error}">
         <div class="bg-rose-50 border border-rose-100 p-5 rounded-3xl flex items-center gap-4">
@@ -120,7 +119,7 @@
                             <i data-lucide="calendar" class="w-3 h-3"></i>
                             <p class="text-[9px] font-black uppercase tracking-widest">Từ: ${v.startDate}</p>
                         </div>
-                        <a href="${pageContext.request.contextPath}/booking?locationId=${v.locationId}"
+                        <a href="${pageContext.request.contextPath}/booking?locationId=${v.locationId}&voucherId=${v.voucherId}"
                            class="px-8 py-4 rounded-2xl bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-all shadow-lg shadow-gray-200">
                             Sử dụng ngay
                         </a>

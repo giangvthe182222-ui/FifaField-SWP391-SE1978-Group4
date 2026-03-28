@@ -1,10 +1,10 @@
 package Controller.Manager;
 
+import DAO.BookingDAO;
 import DAO.ManagerDAO;
 import Models.BookingViewModel;
 import Models.Manager;
 import Models.User;
-import Service.BookingService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -44,8 +44,8 @@ public class ManagerLocationBookingListServlet extends HttpServlet {
                 customerKeyword = request.getParameter("customerName");
             }
 
-            BookingService bookingService = new BookingService();
-            List<BookingViewModel> allBookings = bookingService.getLocationBookingHistory(manager.getLocationId(), date, status, customerKeyword);
+            BookingDAO bookingDAO = new BookingDAO();
+            List<BookingViewModel> allBookings = bookingDAO.getByLocationFiltered(manager.getLocationId(), date, status, customerKeyword);
 
             int pageNum = 1;
             String pageParam = request.getParameter("page");
@@ -95,7 +95,7 @@ public class ManagerLocationBookingListServlet extends HttpServlet {
             return;
         }
 
-        boolean ok = new BookingService().updateBookingStatus(java.util.UUID.fromString(bookingIdParam), status);
+        boolean ok = new BookingDAO().updateStatus(java.util.UUID.fromString(bookingIdParam), status);
         if (ok) session.setAttribute("flash_success", "Updated booking status.");
         else session.setAttribute("flash_error", "Failed to update status.");
 

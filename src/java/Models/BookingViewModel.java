@@ -9,15 +9,20 @@ public class BookingViewModel {
     private UUID bookingId;
     private UUID bookerId;
     private UUID fieldId;
+    private UUID locationId;
     private UUID scheduleId;
     private LocalDate bookingDate;
     private LocalTime startTime;
     private LocalTime endTime;
     private String fieldName;
+    private String locationName;
     private String customerName;
     private String customerPhone;
     private String status;
+    private BigDecimal fieldPrice;
+    private BigDecimal equipmentPrice;
     private BigDecimal totalPrice;
+    private boolean equipmentBookingAllowed;
 
     public BookingViewModel() {}
 
@@ -29,6 +34,9 @@ public class BookingViewModel {
 
     public UUID getFieldId() { return fieldId; }
     public void setFieldId(UUID fieldId) { this.fieldId = fieldId; }
+
+    public UUID getLocationId() { return locationId; }
+    public void setLocationId(UUID locationId) { this.locationId = locationId; }
 
     public UUID getScheduleId() { return scheduleId; }
     public void setScheduleId(UUID scheduleId) { this.scheduleId = scheduleId; }
@@ -45,6 +53,9 @@ public class BookingViewModel {
     public String getFieldName() { return fieldName; }
     public void setFieldName(String fieldName) { this.fieldName = fieldName; }
 
+    public String getLocationName() { return locationName; }
+    public void setLocationName(String locationName) { this.locationName = locationName; }
+
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
 
@@ -54,6 +65,15 @@ public class BookingViewModel {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public BigDecimal getFieldPrice() { return fieldPrice; }
+    public void setFieldPrice(BigDecimal fieldPrice) { this.fieldPrice = fieldPrice; }
+
+    public BigDecimal getEquipmentPrice() { return equipmentPrice; }
+    public void setEquipmentPrice(BigDecimal equipmentPrice) { this.equipmentPrice = equipmentPrice; }
+
     public BigDecimal getTotalPrice() { return totalPrice; }
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
+
+    public boolean isEquipmentBookingAllowed() { return equipmentBookingAllowed; }
+    public void setEquipmentBookingAllowed(boolean equipmentBookingAllowed) { this.equipmentBookingAllowed = equipmentBookingAllowed; }
 }

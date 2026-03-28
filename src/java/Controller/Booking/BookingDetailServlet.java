@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -53,9 +54,13 @@ public class BookingDetailServlet extends HttpServlet {
         }
 
         List<BookingEquipmentViewModel> equipments = bookingDAO.getBookingEquipments(bookingId);
+        boolean canRequestRefund = canRequestRefund(booking);
+        boolean refundBlockedByPolicy = "paid".equalsIgnoreCase(booking.getStatus()) && !canRequestRefund;
 
         request.setAttribute("booking", booking);
         request.setAttribute("equipments", equipments);
+        request.setAttribute("canRequestRefund", canRequestRefund);
+        request.setAttribute("refundBlockedByPolicy", refundBlockedByPolicy);
         request.getRequestDispatcher("/View/Booking/BookingDetail.jsp").forward(request, response);
     }
 
@@ -79,6 +84,25 @@ public class BookingDetailServlet extends HttpServlet {
 
         if ("cancel".equalsIgnoreCase(action)) {
             BookingDAO bookingDAO = new BookingDAO();
+
+            BookingViewModel booking = bookingDAO.getById(bookingId);
+            User user = (User) session.getAttribute("user");
+            if (booking == null || !user.getUserId().equals(booking.getBookerId())) {
+                session.setAttribute("flash_error", "Unauthorized access to booking.");
+                response.sendRedirect(request.getContextPath() + "/customer/bookings");
+                return;
+            }
+
+            if (!canRequestRefund(booking)) {
+                if ("paid".equalsIgnoreCase(booking.getStatus())) {
+                    session.setAttribute("flash_error", "Đơn không được refund vì lịch đấu còn 2 ngày hoặc ít hơn.");
+                } else {
+                    session.setAttribute("flash_error", "Đơn hiện tại không thể yêu cầu refund.");
+                }
+                response.sendRedirect(request.getContextPath() + "/customer/bookings");
+                return;
+            }
+
             boolean ok = bookingDAO.cancelBooking(bookingId);
             if (ok) {
                 session.setAttribute("flash_success", "Booking moved to pending refund.");
@@ -88,5 +112,17 @@ public class BookingDetailServlet extends HttpServlet {
         }
 
         response.sendRedirect(request.getContextPath() + "/customer/bookings");
+    }
+
+    private boolean canRequestRefund(BookingViewModel booking) {
+        if (booking == null || !"paid".equalsIgnoreCase(booking.getStatus())) {
+            return false;
+        }
+        if (booking.getBookingDate() == null || booking.getStartTime() == null) {
+            return false;
+        }
+
+        LocalDateTime scheduleStart = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
+        return scheduleStart.isAfter(LocalDateTime.now().plusDays(2));
     }
 }

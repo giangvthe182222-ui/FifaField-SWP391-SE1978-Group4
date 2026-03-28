@@ -174,6 +174,7 @@ GO
 CREATE TABLE Booking (
     booking_id VARCHAR(36) PRIMARY KEY,
     booker_id VARCHAR(36) NOT NULL,
+    phone_number NVARCHAR(20) NULL,
     schedule_id VARCHAR(36) NOT NULL,
     field_id VARCHAR(36) NOT NULL,
     voucher_id VARCHAR(36) NULL,
@@ -260,3 +261,7 @@ BEGIN
     CROSS JOIN Equipment e;
 END;
 GO
+
+-- Cleanup snippet for existing databases that previously created supplementary tables:
+-- DROP TABLE IF EXISTS Supplementary_Equipment;
+-- DROP TABLE IF EXISTS Supplementary_Equipment_Rental;

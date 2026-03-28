@@ -35,6 +35,10 @@
 </c:choose>
 
 <main class="flex-grow max-w-7xl mx-auto px-6 py-12 w-full space-y-12">
+
+    <c:if test="${viewMode == 'customer'}">
+        <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
+    </c:if>
     
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -95,6 +99,46 @@
             <div class="w-10 h-10 bg-rose-500 text-white rounded-xl flex items-center justify-center">
             </div>
             <p class="text-sm font-bold text-rose-700 uppercase tracking-tight">${flashError}</p>
+        </div>
+    </c:if>
+
+    <c:if test="${viewMode == 'staff'}">
+        <div class="bg-white elite-card border border-amber-100 shadow-sm p-6 md:p-8 space-y-5">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div>
+                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.25em]">Refund alerts</p>
+                    <h2 class="text-2xl font-black text-gray-900 uppercase tracking-tight">Thông báo đơn cần refund</h2>
+                </div>
+                <div class="px-4 py-2 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 text-[11px] font-black uppercase tracking-widest">
+                    Còn ${refundPendingCount} đơn chưa refund
+                </div>
+            </div>
+
+            <c:choose>
+                <c:when test="${refundPendingCount > 0}">
+                    <div class="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                        <c:forEach var="refundBooking" items="${refundPendingBookings}">
+                            <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${refundBooking.bookingId}" class="block p-4 rounded-2xl border border-amber-100 bg-amber-50/40 hover:bg-amber-50 transition-colors">
+                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                    <div>
+                                        <p class="text-sm font-black text-gray-900 uppercase tracking-tight">${refundBooking.fieldName}</p>
+                                        <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">${refundBooking.bookingDate} | ${refundBooking.startTime} - ${refundBooking.endTime}</p>
+                                        <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">KH: ${refundBooking.customerName} - ${refundBooking.customerPhone}</p>
+                                    </div>
+                                    <span class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white border border-amber-200 text-amber-700 text-[10px] font-black uppercase tracking-widest">
+                                        Chi tiết đơn
+                                    </span>
+                                </div>
+                            </a>
+                        </c:forEach>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div class="p-4 rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700 text-sm font-bold">
+                        Hiện chưa có đơn pending refund tại location bạn phụ trách.
+                    </div>
+                </c:otherwise>
+            </c:choose>
         </div>
     </c:if>
 
@@ -183,25 +227,53 @@
                                             </p>
                                         </div>
                                         <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-100 w-full sm:w-auto">
-                                            <select name="status_${b.bookingId}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-700 focus:ring-0 cursor-pointer px-3">
-                                                <option value="pending" ${b.status == 'pending' ? 'selected' : ''}>pending</option>
-                                                <option value="paid" ${b.status == 'paid' ? 'selected' : ''}>paid</option>
-                                                <option value="checked in" ${b.status == 'checked in' ? 'selected' : ''}>checked in</option>
-                                                <option value="completed" ${b.status == 'completed' ? 'selected' : ''}>completed</option>
-                                                <option value="pending refund" ${b.status == 'pending refund' ? 'selected' : ''}>pending refund</option>
-                                                <option value="cancelled" ${b.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
-                                                <option value="refunded" ${b.status == 'refunded' ? 'selected' : ''}>refunded</option>
-                                            </select>
-                                            <button type="button" onclick="updateStatus('${b.bookingId}')" class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors">Update</button>
+                                            <c:choose>
+                                                <c:when test="${viewMode == 'staff'}">
+                                                    <c:set var="canStaffUpdate" value="${staffCanCheckInMap[b.bookingId] || staffCanRefundMap[b.bookingId]}"/>
+                                                    <select name="status_${b.bookingId}" ${!canStaffUpdate ? 'disabled' : ''} class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-700 focus:ring-0 cursor-pointer px-3 ${!canStaffUpdate ? 'opacity-60 cursor-not-allowed' : ''}">
+                                                        <option value="${b.status}" selected>${b.status}</option>
+                                                        <c:if test="${staffCanCheckInMap[b.bookingId] && b.status != 'checked in'}">
+                                                            <option value="checked in">checked in</option>
+                                                        </c:if>
+                                                        <c:if test="${staffCanRefundMap[b.bookingId] && b.status != 'refunded'}">
+                                                            <option value="refunded">refunded</option>
+                                                        </c:if>
+                                                    </select>
+                                                    <button type="button" onclick="updateStatus('${b.bookingId}')" ${!canStaffUpdate ? 'disabled' : ''} class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors ${!canStaffUpdate ? 'opacity-50 cursor-not-allowed hover:bg-gray-900' : ''}">Update</button>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <select name="status_${b.bookingId}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-700 focus:ring-0 cursor-pointer px-3">
+                                                        <option value="pending" ${b.status == 'pending' ? 'selected' : ''}>pending</option>
+                                                        <option value="paid" ${b.status == 'paid' ? 'selected' : ''}>paid</option>
+                                                        <option value="checked in" ${b.status == 'checked in' ? 'selected' : ''}>checked in</option>
+                                                        <option value="completed" ${b.status == 'completed' ? 'selected' : ''}>completed</option>
+                                                        <option value="pending refund" ${b.status == 'pending refund' ? 'selected' : ''}>pending refund</option>
+                                                        <option value="cancelled" ${b.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
+                                                        <option value="refunded" ${b.status == 'refunded' ? 'selected' : ''}>refunded</option>
+                                                    </select>
+                                                    <button type="button" onclick="updateStatus('${b.bookingId}')" class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors">Update</button>
+                                                </c:otherwise>
+                                            </c:choose>
                                         </div>
-                                        <c:choose>
-                                            <c:when test="${viewMode == 'staff'}">
-                                                <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">Chi tiết</a>
-                                            </c:when>
-                                            <c:otherwise>
-                                                <span class="w-full md:w-auto bg-gray-100 text-gray-500 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">Theo dõi tại lịch sân</span>
-                                            </c:otherwise>
-                                        </c:choose>
+                                        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                                            <c:if test="${b.status == 'pending extra'}">
+                                                <a href="${pageContext.request.contextPath}/payment?bookingId=${b.bookingId}&source=supplementary" class="bg-[#008751] hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors">Tiếp tục thanh toán</a>
+                                            </c:if>
+                                            <c:if test="${viewMode == 'staff' && (b.status == 'paid' || b.status == 'checked in')}">
+                                                <a href="${pageContext.request.contextPath}/staff/addSupplementaryEquipment?bookingId=${b.bookingId}" class="bg-[#008751] hover:bg-[#006b40] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008751]/20 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-[0.99] shadow-lg shadow-emerald-200">
+                                                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                                    THÊM DỤNG CỤ
+                                                </a>
+                                            </c:if>
+                                            <c:choose>
+                                                <c:when test="${viewMode == 'staff'}">
+                                                    <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">${b.equipmentBookingAllowed ? 'Chi tiết / thêm equipment' : 'Chi tiết'}</a>
+                                                </c:when>
+                                                <c:otherwise>
+                                                    <span class="w-full md:w-auto bg-gray-100 text-gray-500 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">Theo dõi tại lịch sân</span>
+                                                </c:otherwise>
+                                            </c:choose>
+                                        </div>
                                     </div>
 
                                 </div>
@@ -236,6 +308,9 @@
 
                                         <div class="flex flex-wrap items-center gap-2">
                                             <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="bg-gray-900 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-colors">Chi tiết</a>
+                                            <c:if test="${b.status == 'pending extra'}">
+                                                <a href="${pageContext.request.contextPath}/payment?bookingId=${b.bookingId}&source=supplementary" class="bg-[#008751] text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 transition-colors">Tiếp tục thanh toán</a>
+                                            </c:if>
                                             <c:if test="${reviewableBookingMap[b.bookingId]}">
                                                 <c:choose>
                                                     <c:when test="${feedbackBookingMap[b.bookingId]}">

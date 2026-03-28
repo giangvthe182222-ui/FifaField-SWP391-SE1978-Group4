@@ -51,14 +51,12 @@ public class RegisterVerifyOtpServlet extends HttpServlet {
             return;
         }
 
-        // sau khi verify đúng:
+        // Danh dau da verify va tra ve verifyKey de RegisterServlet#create kiem tra.
         session.setAttribute("reg_verified", true);
 
-// tạo verifyKey
         String verifyKey = java.util.UUID.randomUUID().toString();
         session.setAttribute("reg_verify_key", verifyKey);
 
-// trả về JSON có verifyKey
         resp.getWriter().write("{\"ok\":true,\"msg\":\"Xác minh thành công!\",\"verifyKey\":\"" + verifyKey + "\"}");
 
     }

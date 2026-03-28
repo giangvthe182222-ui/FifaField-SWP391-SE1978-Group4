@@ -1,0 +1,234 @@
+package Controller.Booking;
+
+import DAO.BookingDAO;
+import DAO.LocationEquipmentDAO;
+import DAO.PaymentDAO;
+import Models.BookingViewModel;
+import Models.LocationEquipmentViewModel;
+import Models.BookingEquipment;
+import Models.Payment;
+import Utils.DBConnection;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@WebServlet(name = "StaffAddSupplementaryEquipmentServlet", urlPatterns = {"/staff/addSupplementaryEquipment"})
+public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
+
+    private static String payloadKey(UUID bookingId) {
+        return "supp_equipment_payload_" + bookingId;
+    }
+
+    private static String amountKey(UUID bookingId) {
+        return "supp_equipment_amount_" + bookingId;
+    }
+
+    private static String serializeEquipmentPayload(List<BookingEquipment> equipmentList) {
+        StringBuilder sb = new StringBuilder();
+        for (BookingEquipment be : equipmentList) {
+            if (sb.length() > 0) {
+                sb.append(',');
+            }
+            // Format: equipmentId:quantity,equipmentId:quantity
+            sb.append(be.getEquipmentId()).append(':').append(be.getQuantity());
+        }
+        return sb.toString();
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        // Show equipment selection form for one checked-in booking in active slot.
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login?redirect=staff/locationBookings");
+            return;
+        }
+
+        String bookingIdParam = request.getParameter("bookingId");
+        if (bookingIdParam == null || bookingIdParam.isBlank()) {
+            session.setAttribute("flash_error", "Booking ID is required.");
+            response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
+            return;
+        }
+
+        UUID bookingId = UUID.fromString(bookingIdParam);
+        BookingDAO bookingDAO = new BookingDAO();
+        BookingViewModel booking = bookingDAO.getById(bookingId);
+
+        if (booking == null) {
+            session.setAttribute("flash_error", "Booking not found.");
+            response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
+            return;
+        }
+
+        if (booking.getLocationId() == null) {
+            session.setAttribute("flash_error", "Booking location not found.");
+            response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
+            return;
+        }
+
+        if (!isEquipmentBookingAllowed(booking)) {
+            session.setAttribute("flash_error", "Booking must be checked in and still within its slot time to add equipment.");
+            response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
+            return;
+        }
+
+        LocationEquipmentDAO locationEquipmentDAO = new LocationEquipmentDAO(new DBConnection());
+        List<LocationEquipmentViewModel> availableEquipments = new ArrayList<>();
+        for (LocationEquipmentViewModel equipment : locationEquipmentDAO.getByLocation(booking.getLocationId())) {
+            if (equipment.getQuantity() > 0 && "available".equalsIgnoreCase(equipment.getStatus())) {
+                availableEquipments.add(equipment);
+            }
+        }
+
+        moveFlashMessages(session, request);
+
+        request.setAttribute("booking", booking);
+        request.setAttribute("availableEquipments", availableEquipments);
+        request.getRequestDispatcher("/View/Booking/StaffAddSupplementaryEquipment.jsp").forward(request, response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        // Validate selected quantities and open supplementary payment flow.
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("user") == null) {
+            response.sendRedirect(request.getContextPath() + "/login?redirect=staff/locationBookings");
+            return;
+        }
+
+        String bookingIdParam = request.getParameter("bookingId");
+        if (bookingIdParam == null || bookingIdParam.isBlank()) {
+            session.setAttribute("flash_error", "Invalid booking.");
+            response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
+            return;
+        }
+
+        UUID bookingId = UUID.fromString(bookingIdParam);
+        BookingDAO bookingDAO = new BookingDAO();
+        BookingViewModel booking = bookingDAO.getById(bookingId);
+
+        if (booking == null || booking.getLocationId() == null) {
+            session.setAttribute("flash_error", "Booking not found or invalid.");
+            response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
+            return;
+        }
+
+        LocationEquipmentDAO locationEquipmentDAO = new LocationEquipmentDAO(new DBConnection());
+        List<LocationEquipmentViewModel> locationEquipments = locationEquipmentDAO.getByLocation(booking.getLocationId());
+        List<BookingEquipment> selectedEquipments = new ArrayList<>();
+        BigDecimal totalPrice = BigDecimal.ZERO;
+
+        for (LocationEquipmentViewModel equipment : locationEquipments) {
+            if (equipment.getQuantity() <= 0 || !"available".equalsIgnoreCase(equipment.getStatus())) {
+                continue;
+            }
+
+            String qtyParam = request.getParameter("equipment_" + equipment.getEquipmentId());
+            if (qtyParam == null || qtyParam.isBlank()) {
+                continue;
+            }
+
+            int quantity;
+            try {
+                quantity = Integer.parseInt(qtyParam.trim());
+            } catch (NumberFormatException ex) {
+                session.setAttribute("flash_error", "Equipment quantity must be a valid number.");
+                response.sendRedirect(request.getContextPath() + "/staff/addSupplementaryEquipment?bookingId=" + bookingId);
+                return;
+            }
+
+            if (quantity <= 0) {
+                continue;
+            }
+
+            if (quantity > equipment.getQuantity()) {
+                session.setAttribute("flash_error", "Requested quantity exceeds remaining stock for " + equipment.getName() + ".");
+                response.sendRedirect(request.getContextPath() + "/staff/addSupplementaryEquipment?bookingId=" + bookingId);
+                return;
+            }
+
+            BookingEquipment suppEquip = new BookingEquipment();
+            suppEquip.setEquipmentId(equipment.getEquipmentId());
+            suppEquip.setQuantity(quantity);
+            selectedEquipments.add(suppEquip);
+
+            if (equipment.getRentalPrice() != null) {
+                totalPrice = totalPrice.add(equipment.getRentalPrice().multiply(BigDecimal.valueOf(quantity)));
+            }
+        }
+
+        if (selectedEquipments.isEmpty()) {
+            session.setAttribute("flash_error", "Please choose at least one equipment item.");
+            response.sendRedirect(request.getContextPath() + "/staff/addSupplementaryEquipment?bookingId=" + bookingId);
+            return;
+        }
+
+        // Step 1: create/update supplementary payment record as PENDING.
+        PaymentDAO paymentDAO = new PaymentDAO();
+        boolean pendingMarked = paymentDAO.markSupplementaryPending(bookingId, totalPrice);
+        if (!pendingMarked) {
+            session.setAttribute("flash_error", "Failed to initialize supplementary payment.");
+            response.sendRedirect(request.getContextPath() + "/staff/addSupplementaryEquipment?bookingId=" + bookingId);
+            return;
+        }
+
+        // Step 2: lock booking into PENDING EXTRA so normal state transitions are blocked.
+        if (!bookingDAO.markBookingPendingExtra(bookingId)) {
+            Payment payment = paymentDAO.getPaymentByBookingId(bookingId);
+            if (payment != null && payment.getPaymentId() != null) {
+                paymentDAO.updatePaymentFailed(payment.getPaymentId());
+            }
+            session.setAttribute("flash_error", "Only checked-in bookings in active slot can start supplementary payment.");
+            response.sendRedirect(request.getContextPath() + "/staff/addSupplementaryEquipment?bookingId=" + bookingId);
+            return;
+        }
+
+        // Step 3: store draft in session; PaymentServlet finalizes stock + booking equipment on payment success.
+        session.setAttribute(payloadKey(bookingId), serializeEquipmentPayload(selectedEquipments));
+        session.setAttribute(amountKey(bookingId), totalPrice.toPlainString());
+        response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + bookingId + "&source=supplementary");
+    }
+
+    private boolean isEquipmentBookingAllowed(BookingViewModel booking) {
+        if (booking == null || booking.getBookingDate() == null || booking.getStartTime() == null || booking.getEndTime() == null) {
+            return false;
+        }
+
+        String status = booking.getStatus() == null ? "" : booking.getStatus().trim().toLowerCase();
+        if (!"checked in".equals(status)) {
+            return false;
+        }
+
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        java.time.LocalDateTime start = java.time.LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
+        java.time.LocalDateTime end = java.time.LocalDateTime.of(booking.getBookingDate(), booking.getEndTime());
+        return !now.isBefore(start) && now.isBefore(end);
+    }
+
+    private void moveFlashMessages(HttpSession session, HttpServletRequest request) {
+        String flashSuccess = (String) session.getAttribute("flash_success");
+        if (flashSuccess != null) {
+            request.setAttribute("flashSuccess", flashSuccess);
+            session.removeAttribute("flash_success");
+        }
+
+        String flashError = (String) session.getAttribute("flash_error");
+        if (flashError != null) {
+            request.setAttribute("flashError", flashError);
+            session.removeAttribute("flash_error");
+        }
+    }
+}

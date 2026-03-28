@@ -35,6 +35,16 @@ public class AssignShiftServlet extends HttpServlet {
                 Models.Manager manager = managerDAO.getManagerById(user.getUserId());
                 if (manager != null && manager.getLocationId() != null) {
                     managerLocationId = manager.getLocationId();
+                } else {
+                    // Fallback: some legacy records may only map manager in Location.manager_id
+                    LocationDAO fallbackLocationDAO = new LocationDAO();
+                    List<Location> allLocations = fallbackLocationDAO.getAllLocations();
+                    for (Location loc : allLocations) {
+                        if (loc.getManagerId() != null && loc.getManagerId().equals(user.getUserId())) {
+                            managerLocationId = loc.getLocationId();
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -57,11 +67,15 @@ public class AssignShiftServlet extends HttpServlet {
                 if (managerLocation != null) {
                     locations.add(managerLocation);
                 }
+                request.setAttribute("locationId", managerLocationId.toString());
             } else {
                 // Fallback for admin or testing
                 staff = staffDAO.getAllStaff();
                 fields = fieldDAO.getAllFields();
                 locations = locationDAO.getAllLocations();
+                if (locations.isEmpty()) {
+                    request.setAttribute("error", "Không tìm thấy cụm sân để phân ca.");
+                }
             }
             
             List<Shift> shifts = shiftDAO.getAllShifts();
@@ -93,6 +107,10 @@ public class AssignShiftServlet extends HttpServlet {
             ex.printStackTrace();
             request.setAttribute("error", "Lỗi khi tải dữ liệu: " + ex.getMessage());
             request.getRequestDispatcher("/View/Manager/assign-shift.jsp").forward(request, response);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            request.setAttribute("error", "Lỗi không xác định khi tải dữ liệu phân ca: " + ex.getMessage());
+            request.getRequestDispatcher("/View/Manager/assign-shift.jsp").forward(request, response);
         }
     }
 
@@ -104,7 +122,12 @@ public class AssignShiftServlet extends HttpServlet {
         String start = request.getParameter("startDate");
         String end = request.getParameter("endDate");
         String locationId = request.getParameter("locationId");
+        String locationHidden = request.getParameter("locationHidden");
         String fieldId = request.getParameter("fieldId");
+
+        if ((locationId == null || locationId.isEmpty()) && locationHidden != null && !locationHidden.isEmpty()) {
+            locationId = locationHidden;
+        }
 
         // ensure staff and location are consistent
         if (staffId != null && !staffId.isEmpty()) {
@@ -125,6 +148,9 @@ public class AssignShiftServlet extends HttpServlet {
                 locationId = staffVm.getLocationId();
             } catch (Exception ex) {
                 ex.printStackTrace();
+                request.setAttribute("error", "Không thể kiểm tra thông tin nhân viên.");
+                doGet(request, response);
+                return;
             }
         }
 
@@ -193,6 +219,7 @@ public class AssignShiftServlet extends HttpServlet {
                 String origField = request.getParameter("origFieldId");
                 String origShift = request.getParameter("origShiftId");
                 String origDate = request.getParameter("origWorkingDate");
+                ss.setWorkingDate(startDate);
                 StaffShiftDAO dao1 = new StaffShiftDAO();
                 boolean updated = dao1.updateStaffShift(
                         UUID.fromString(origStaff),

@@ -64,7 +64,7 @@
                             <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
                             <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Thông tin trận đấu</h2>
                         </div>
-                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' || booking.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : booking.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : booking.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : booking.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : booking.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
+                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' || booking.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : booking.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : booking.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : booking.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : booking.status == 'pending extra' ? 'bg-orange-50 text-orange-600 border border-orange-100' : booking.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
                             ${booking.status}
                         </span>
                     </div>
@@ -122,6 +122,61 @@
                             </c:otherwise>
                         </c:choose>
                     </div>
+
+                    <div class="pt-8 border-t border-gray-50 space-y-6">
+                        <div class="flex items-center gap-4">
+                            <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
+                            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Thêm vật tư cho khách</h2>
+                        </div>
+
+                        <c:choose>
+                            <c:when test="${canAddEquipment and not empty availableEquipments}">
+                                <div class="bg-emerald-50 border border-emerald-100 rounded-3xl p-5">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#008751]">Chỉ áp dụng khi booking đã checked in và đang trong khung giờ sử dụng</p>
+                                    <p class="text-sm font-semibold text-emerald-800 mt-2">Khi tạo thêm equipment, booking sẽ chuyển sang pending extra cho đến khi khoản bổ sung được thanh toán.</p>
+                                </div>
+
+                                <form method="post" action="${pageContext.request.contextPath}/staff/bookingDetail" class="space-y-4">
+                                    <input type="hidden" name="action" value="addEquipment" />
+                                    <input type="hidden" name="id" value="${booking.bookingId}" />
+
+                                    <div class="space-y-4">
+                                        <c:forEach var="item" items="${availableEquipments}">
+                                            <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 items-center p-4 bg-gray-50 rounded-2xl border border-gray-100">
+                                                <div class="space-y-1">
+                                                    <p class="text-sm font-black text-gray-900 uppercase tracking-tight">${item.name}</p>
+                                                    <div class="flex flex-wrap items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
+                                                        <span>Còn lại: ${item.quantity}</span>
+                                                        <span>Đơn giá: <fmt:formatNumber value="${item.rentalPrice}" pattern="#,##0"/> đ</span>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-3 justify-end">
+                                                    <label for="equipment_${item.equipmentId}" class="text-[9px] font-black uppercase tracking-widest text-gray-400">Số lượng</label>
+                                                    <input id="equipment_${item.equipmentId}" type="number" min="0" max="${item.quantity}" value="0" name="equipment_${item.equipmentId}" class="w-24 rounded-2xl border border-gray-200 px-4 py-3 text-sm font-black text-gray-900 focus:border-[#008751] focus:ring focus:ring-[#008751]/10 outline-none" />
+                                                </div>
+                                            </div>
+                                        </c:forEach>
+                                    </div>
+
+                                    <button type="submit" class="w-full md:w-auto bg-[#008751] hover:bg-[#006b40] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008751]/20 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.99] inline-flex items-center justify-center gap-2 shadow-lg shadow-emerald-200">
+                                        <i data-lucide="package-plus" class="w-4 h-4"></i>
+                                        THÊM DỤNG CỤ VÀO BOOKING
+                                    </button>
+                                </form>
+                            </c:when>
+                            <c:when test="${canAddEquipment}">
+                                <div class="py-6 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-100">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Không còn equipment khả dụng tại location này</p>
+                                </div>
+                            </c:when>
+                            <c:otherwise>
+                                <div class="py-6 px-6 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-100 space-y-2">
+                                    <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Chưa đủ điều kiện thêm equipment</p>
+                                    <p class="text-sm font-semibold text-gray-500">Booking phải ở trạng thái checked in và thời điểm hiện tại nằm trong khung giờ ${booking.startTime} - ${booking.endTime}.</p>
+                                </div>
+                            </c:otherwise>
+                        </c:choose>
+                    </div>
                 </section>
             </div>
 
@@ -139,22 +194,24 @@
                         </h2>
 
                         <form method="post" action="${pageContext.request.contextPath}/staff/bookingDetail" class="space-y-6">
+                            <input type="hidden" name="action" value="updateStatus" />
                             <input type="hidden" name="id" value="${booking.bookingId}" />
                             
                             <div class="space-y-2">
                                 <label for="status" class="text-[9px] font-black uppercase tracking-widest opacity-60">Chọn trạng thái mới</label>
-                                <select name="status" id="status" class="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:ring-2 focus:ring-emerald-400/50 appearance-none cursor-pointer">
-                                    <option value="pending" ${booking.status=='pending' ? 'selected' : ''} class="text-gray-900">pending</option>
-                                    <option value="paid" ${booking.status=='paid' ? 'selected' : ''} class="text-gray-900">paid</option>
-                                    <option value="checked in" ${booking.status=='checked in' ? 'selected' : ''} class="text-gray-900">checked in</option>
-                                    <option value="completed" ${booking.status=='completed' ? 'selected' : ''} class="text-gray-900">completed</option>
-                                    <option value="pending refund" ${booking.status=='pending refund' ? 'selected' : ''} class="text-gray-900">pending refund</option>
-                                    <option value="cancelled" ${booking.status=='cancelled' ? 'selected' : ''} class="text-gray-900">cancelled</option>
-                                    <option value="refunded" ${booking.status=='refunded' ? 'selected' : ''} class="text-gray-900">refunded</option>
+                                <c:set var="canUpdate" value="${canCheckIn || canRefund}"/>
+                                <select name="status" id="status" ${!canUpdate ? 'disabled' : ''} class="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:ring-2 focus:ring-emerald-400/50 appearance-none cursor-pointer ${!canUpdate ? 'opacity-60 cursor-not-allowed' : ''}">
+                                    <option value="${booking.status}" selected class="text-gray-900">${booking.status}</option>
+                                    <c:if test="${canCheckIn && booking.status != 'checked in'}">
+                                        <option value="checked in" class="text-gray-900">checked in</option>
+                                    </c:if>
+                                    <c:if test="${canRefund && booking.status != 'refunded'}">
+                                        <option value="refunded" class="text-gray-900">refunded</option>
+                                    </c:if>
                                 </select>
                             </div>
 
-                            <button type="submit" class="w-full bg-[#008751] hover:bg-emerald-400 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-black/20">
+                            <button type="submit" ${!canUpdate ? 'disabled' : ''} class="w-full bg-[#008751] hover:bg-emerald-400 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-black/20 ${!canUpdate ? 'opacity-60 cursor-not-allowed hover:bg-[#008751] hover:translate-y-0 active:scale-100' : ''}">
                                 <i data-lucide="save" class="w-4 h-4"></i>
                                 LƯU THAY ĐỔI
                             </button>

@@ -65,7 +65,7 @@ public class LoginServlet extends HttpServlet {
 
         request.getSession(true).setAttribute("user", user);
 
-        // Redirect based on role
+        // Dang nhap thanh cong thi dieu huong den dashboard theo role.
         String roleName = user.getRole().getRoleName().toLowerCase();
         String redirectUrl;
         switch (roleName) {
