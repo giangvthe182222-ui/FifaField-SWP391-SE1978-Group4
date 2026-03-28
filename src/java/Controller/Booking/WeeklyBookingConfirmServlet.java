@@ -189,13 +189,8 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
             }
             weeklyGroupDAO.updateTotalAmount(weeklyGroupId, total);
 
-            // Store new booking IDs in session so the success page can display them
-            List<String> ids = new ArrayList<>();
-            for (Booking b : created) ids.add(b.getBookingId().toString());
-            session.setAttribute("weeklyBookingIds", ids);
-            session.setAttribute("weeklyBookingGroupId", weeklyGroupId.toString());
-
-            response.sendRedirect(request.getContextPath() + "/booking/weekly-success");
+            // Jump straight to weekly payment flow; success/failure will return to role-based booking history.
+            response.sendRedirect(request.getContextPath() + "/payment?weeklyGroupId=" + weeklyGroupId);
 
         } catch (Exception e) {
             weeklyGroupDAO.delete(weeklyGroupId);

@@ -10,34 +10,31 @@ import java.util.UUID;
 import java.math.BigDecimal;
 
 /**
- * PaymentDAO - Handle payment operations for VietQR Banking
+ * PaymentDAO
+ * This class handles all DB operations related to Payment.
+ * Basically, it's the bridge between your system and the Payment table.
  */
 public class PaymentDAO {
 
     private String lastError;
 
-    //Creator: GitHub Copilot
-    //Description: Retrieves and prepares data for getLastError by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    // Get the last error message (useful for debugging or returning to service layer)
     public String getLastError() {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         return lastError;
     }
 
-    //Creator: GitHub Copilot
-    //Description: Implements the setLastError business routine with validation, database interaction, exception handling, and predictable outputs for upstream controllers/services.
+    // Set internal error (only used inside DAO)
     private void setLastError(String message) {
-        // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         this.lastError = message;
     }
 
     /**
-     * Create a new payment record for a booking
+     * Create a new payment record
+     * Each payment = one payment attempt (important: we don't reuse old ones)
      */
-    //Creator: GitHub Copilot
-    //Description: Executes the createPayment write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean createPayment(Payment payment) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
-        setLastError(null);
+        setLastError(null); 
+
         String sql = "INSERT INTO Payment (payment_id, booking_id, weekly_group_id, amount, payment_method, payment_status, "
             + "transaction_code, qr_content, bank_code, account_number) "
             + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -47,49 +44,58 @@ public class PaymentDAO {
 
             ps.setString(1, payment.getPaymentId().toString());
             ps.setString(2, payment.getBookingId().toString());
+
+            // Weekly booking group id (can be null as there are independent bookings)
             if (payment.getWeeklyGroupId() != null) {
                 ps.setString(3, payment.getWeeklyGroupId().toString());
             } else {
                 ps.setNull(3, Types.VARCHAR);
             }
+
             ps.setBigDecimal(4, payment.getAmount());
             ps.setString(5, payment.getPaymentMethod());
             ps.setString(6, payment.getPaymentStatus());
-            ps.setString(7, payment.getTransactionCode());
+            ps.setString(7, payment.getTransactionCode()); 
             ps.setString(8, payment.getQrContent());
             ps.setString(9, payment.getBankCode());
             ps.setString(10, payment.getAccountNumber());
 
             int affected = ps.executeUpdate();
+
             if (affected <= 0) {
                 setLastError("Cannot create payment row in database.");
             }
+
             return affected > 0;
 
         } catch (SQLException e) {
             String message = e.getMessage() == null ? "" : e.getMessage();
+
+            // DB not updated 
             if (message.toLowerCase().contains("invalid column name")
                     && (message.toLowerCase().contains("transaction_code")
                     || message.toLowerCase().contains("qr_content")
                     || message.toLowerCase().contains("bank_code")
                     || message.toLowerCase().contains("account_number"))) {
-                setLastError("Payment schema is outdated. Please run database/payment_system_update.sql to add required payment columns.");
+                setLastError("database thieu roi.");
             } else {
                 setLastError("SQL error while creating payment: " + message);
             }
+
             e.printStackTrace();
             return false;
+
         } catch (Exception e) {
-            setLastError("Error while creating payment: " + (e.getMessage() == null ? "unknown" : e.getMessage()));
+            setLastError("Unexpected error: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
     }
 
-    //Creator: GitHub Copilot
-    //Description: Retrieves and prepares data for getPaymentByWeeklyGroupId by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    /**
+     * Get the latest payment of a weekly group
+     */
     public Payment getPaymentByWeeklyGroupId(UUID weeklyGroupId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         String sql = "SELECT * FROM Payment WHERE weekly_group_id = ? ORDER BY payment_time DESC";
 
         try (Connection conn = DBConnection.getConnection();
@@ -98,6 +104,7 @@ public class PaymentDAO {
             ps.setString(1, weeklyGroupId.toString());
             ResultSet rs = ps.executeQuery();
 
+            // only take the newest one (current active payment)
             if (rs.next()) {
                 return extractPaymentFromResultSet(rs);
             }
@@ -111,10 +118,7 @@ public class PaymentDAO {
     /**
      * Get payment by booking ID
      */
-    //Creator: GitHub Copilot
-    //Description: Retrieves and prepares data for getPaymentByBookingId by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public Payment getPaymentByBookingId(UUID bookingId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         String sql = "SELECT * FROM Payment WHERE booking_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
@@ -134,12 +138,9 @@ public class PaymentDAO {
     }
 
     /**
-     * Get payment by payment ID
+     * Get payment by its primary ID
      */
-    //Creator: GitHub Copilot
-    //Description: Retrieves and prepares data for getPaymentById by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public Payment getPaymentById(UUID paymentId) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         String sql = "SELECT * FROM Payment WHERE payment_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
@@ -159,12 +160,10 @@ public class PaymentDAO {
     }
 
     /**
-     * Update payment status to SUCCESS
+     * Mark payment as SUCCESS
+     * Called when bank confirms the transaction
      */
-    //Creator: GitHub Copilot
-    //Description: Executes the updatePaymentSuccess write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean updatePaymentSuccess(UUID paymentId) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
         String sql = "UPDATE Payment SET payment_status = 'SUCCESS', payment_time = SYSDATETIME() "
                 + "WHERE payment_id = ?";
 
@@ -172,9 +171,7 @@ public class PaymentDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, paymentId.toString());
-
-            int affected = ps.executeUpdate();
-            return affected > 0;
+            return ps.executeUpdate() > 0;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -183,12 +180,10 @@ public class PaymentDAO {
     }
 
     /**
-     * Update payment status to FAILED
+     * Mark payment as FAILED
+     * Used when payment fails or expires
      */
-    //Creator: GitHub Copilot
-    //Description: Executes the updatePaymentFailed write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean updatePaymentFailed(UUID paymentId) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
         String sql = "UPDATE Payment SET payment_status = 'FAILED', payment_time = SYSDATETIME() "
                 + "WHERE payment_id = ?";
 
@@ -196,9 +191,7 @@ public class PaymentDAO {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setString(1, paymentId.toString());
-
-            int affected = ps.executeUpdate();
-            return affected > 0;
+            return ps.executeUpdate() > 0;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -206,24 +199,27 @@ public class PaymentDAO {
         }
     }
 
-    //Creator: GitHub Copilot
-    //Description: Executes the updatePaymentRefundPending write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
+    /**
+     * Set payment to REFUND_PENDING
+     * Means refund process has started but not done yet
+     */
     public boolean updatePaymentRefundPending(UUID bookingId) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
         return updatePaymentStatusByBooking(bookingId, "REFUND_PENDING", false);
     }
 
-    //Creator: GitHub Copilot
-    //Description: Executes the updatePaymentRefunded write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
+    /**
+     * Set payment to REFUNDED
+     * Final state after money is returned to user
+     */
     public boolean updatePaymentRefunded(UUID bookingId) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
         return updatePaymentStatusByBooking(bookingId, "REFUNDED", true);
     }
 
-    //Creator: GitHub Copilot
-    //Description: Retrieves and prepares data for getPaymentByTransactionCode by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
+    /**
+     * Find payment using transaction code from bank
+     * Match incoming bank transactions to the system
+     */
     public Payment getPaymentByTransactionCode(String transactionCode) {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         String sql = "SELECT * FROM Payment WHERE transaction_code = ?";
 
         try (Connection conn = DBConnection.getConnection();
@@ -231,6 +227,7 @@ public class PaymentDAO {
 
             ps.setString(1, transactionCode);
             ResultSet rs = ps.executeQuery();
+
             if (rs.next()) {
                 return extractPaymentFromResultSet(rs);
             }
@@ -242,12 +239,10 @@ public class PaymentDAO {
     }
 
     /**
-     * Log payment check attempt
+     * Log every time we check payment status with bank
+     * Useful for debugging and tracking payment attempts
      */
-    //Creator: GitHub Copilot
-    //Description: Implements the logPaymentCheck business routine with validation, database interaction, exception handling, and predictable outputs for upstream controllers/services.
     public boolean logPaymentCheck(PaymentLog log) {
-        // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         String sql = "INSERT INTO Payment_Log (payment_id, check_time, status, response_message) "
                 + "VALUES (?, SYSDATETIME(), ?, ?)";
 
@@ -258,8 +253,7 @@ public class PaymentDAO {
             ps.setString(2, log.getStatus());
             ps.setString(3, log.getResponseMessage());
 
-            int affected = ps.executeUpdate();
-            return affected > 0;
+            return ps.executeUpdate() > 0;
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -268,13 +262,12 @@ public class PaymentDAO {
     }
 
     /**
-     * Get all pending payments that are expired (past payment_deadline)
+     * Get all PENDING payments that are already expired
+     * Usually used by background job to auto-cancel bookings
      */
-    //Creator: GitHub Copilot
-    //Description: Retrieves and prepares data for getExpiredPendingPayments by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public java.util.List<Payment> getExpiredPendingPayments() {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         java.util.List<Payment> list = new java.util.ArrayList<>();
+
         String sql = "SELECT p.* FROM Payment p "
                 + "INNER JOIN Booking b ON p.booking_id = b.booking_id "
                 + "WHERE p.payment_status = 'PENDING' "
@@ -296,13 +289,12 @@ public class PaymentDAO {
     }
 
     /**
-     * Extract Payment object from ResultSet
+     * Convert DB row → Payment object
+     * Central place for mapping to avoid duplicate code
      */
-    //Creator: GitHub Copilot
-    //Description: Applies normalization/mapping logic in extractPaymentFromResultSet to keep data format stable across DAO boundaries and reduce duplicate parsing logic in higher layers.
     private Payment extractPaymentFromResultSet(ResultSet rs) throws SQLException {
-        // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         Payment payment = new Payment();
+
         payment.setPaymentId(UUID.fromString(rs.getString("payment_id")));
         payment.setBookingId(UUID.fromString(rs.getString("booking_id")));
         payment.setAmount(rs.getBigDecimal("amount"));
@@ -314,29 +306,28 @@ public class PaymentDAO {
             payment.setPaymentTime(paymentTime.toLocalDateTime());
         }
 
+        // bank-related info
         payment.setTransactionCode(rs.getString("transaction_code"));
         payment.setQrContent(rs.getString("qr_content"));
         payment.setBankCode(rs.getString("bank_code"));
         payment.setAccountNumber(rs.getString("account_number"));
+
+        // optional field (for backward compatibility)
         try {
             String wg = rs.getString("weekly_group_id");
             if (wg != null && !wg.isBlank()) {
                 payment.setWeeklyGroupId(UUID.fromString(wg));
             }
-        } catch (SQLException ignored) {
-            // Backward compatibility when schema has not been migrated yet.
-        }
+        } catch (SQLException ignored) {}
 
         return payment;
     }
 
     /**
-     * Check if payment exists for a booking
+     * Check if a booking already has a payment
+     * Used to prevent duplicate payment creation
      */
-    //Creator: GitHub Copilot
-    //Description: Implements the paymentExistsForBooking business routine with validation, database interaction, exception handling, and predictable outputs for upstream controllers/services.
     public boolean paymentExistsForBooking(UUID bookingId) {
-        // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
         String sql = "SELECT COUNT(*) FROM Payment WHERE booking_id = ?";
 
         try (Connection conn = DBConnection.getConnection();
@@ -355,10 +346,12 @@ public class PaymentDAO {
         return false;
     }
 
-    //Creator: GitHub Copilot
-    //Description: Executes the markSupplementaryPending write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
+    /**
+     * Update payment when extra cost is added (e.g., user adds services)
+     * Reset status to PENDING so user needs to pay again
+     */
     public boolean markSupplementaryPending(UUID bookingId, BigDecimal amount) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
+
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             return false;
         }
@@ -370,6 +363,7 @@ public class PaymentDAO {
 
             ps.setBigDecimal(1, amount);
             ps.setString(2, bookingId.toString());
+
             return ps.executeUpdate() > 0;
 
         } catch (Exception e) {
@@ -378,10 +372,12 @@ public class PaymentDAO {
         }
     }
 
-    //Creator: GitHub Copilot
-    //Description: Executes the updatePaymentStatusByBooking write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
+    /**
+     * Generic method to update payment status by booking
+     * Helps avoid duplicate code for refund / other states
+     */
     private boolean updatePaymentStatusByBooking(UUID bookingId, String paymentStatus, boolean touchPaymentTime) {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
+
         String sql = touchPaymentTime
                 ? "UPDATE Payment SET payment_status = ?, payment_time = SYSDATETIME() WHERE booking_id = ?"
                 : "UPDATE Payment SET payment_status = ? WHERE booking_id = ?";
@@ -391,6 +387,7 @@ public class PaymentDAO {
 
             ps.setString(1, paymentStatus);
             ps.setString(2, bookingId.toString());
+
             return ps.executeUpdate() > 0;
 
         } catch (Exception e) {

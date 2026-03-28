@@ -45,13 +45,27 @@
 
 <main class="flex-grow max-w-7xl mx-auto px-6 py-12 space-y-10 w-full">
 
+    <c:set var="dashboardPath" value="/customer/dashboard" />
+    <c:choose>
+        <c:when test="${sessionScope.user.role.roleName eq 'STAFF' or sessionScope.user.role.roleName eq 'staff'}">
+            <c:set var="dashboardPath" value="/staff/dashboard" />
+        </c:when>
+        <c:when test="${sessionScope.user.role.roleName eq 'MANAGER' or sessionScope.user.role.roleName eq 'manager'}">
+            <c:set var="dashboardPath" value="/manager/dashboard" />
+        </c:when>
+        <c:when test="${sessionScope.user.role.roleName eq 'ADMIN' or sessionScope.user.role.roleName eq 'admin'}">
+            <c:set var="dashboardPath" value="/admin-dashboard" />
+        </c:when>
+    </c:choose>
+
     <%-- ── Title & mode switch ───────────────────────────────────────────────── --%>
     <div class="flex flex-col space-y-8">
         <div class="space-y-2">
-            <button type="button" onclick="history.back()"
-                    class="w-10 h-10 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center">
+            <a href="${pageContext.request.contextPath}${dashboardPath}"
+               class="w-10 h-10 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center"
+               aria-label="Quay lại" title="Quay lại dashboard">
                 <i data-lucide="arrow-left" class="w-5 h-5"></i>
-            </button>
+            </a>
             <h1 class="text-4xl font-black text-gray-900 tracking-tight uppercase leading-none">
                 ĐẶT SÂN <span class="text-[#008751]">THEO TUẦN</span>
             </h1>

@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
@@ -19,6 +21,51 @@ import java.util.UUID;
  */
 @WebServlet(name = "PaymentCancelServlet", urlPatterns = {"/payment-cancel"})
 public class PaymentCancelServlet extends HttpServlet {
+
+    private boolean isStaffUser(User user) {
+        return user != null
+                && user.getRole() != null
+                && user.getRole().getRoleName() != null
+                && "STAFF".equalsIgnoreCase(user.getRole().getRoleName());
+    }
+
+    private String resolveHistoryPath(User user) {
+        return isStaffUser(user) ? "/staff/locationBookings" : "/customer/bookings";
+    }
+
+    private String buildStaffBookingRedirect(HttpServletRequest request) {
+        String locationId = request.getParameter("locationId");
+        String fieldId = request.getParameter("fieldId");
+        String bookingPhone = request.getParameter("bookingPhone");
+
+        StringBuilder url = new StringBuilder(request.getContextPath()).append("/booking");
+        boolean hasQuery = false;
+
+        if (locationId != null && !locationId.isBlank()) {
+            url.append(hasQuery ? '&' : '?').append("locationId=").append(locationId.trim());
+            hasQuery = true;
+        }
+
+        if (fieldId != null && !fieldId.isBlank()) {
+            url.append(hasQuery ? '&' : '?').append("fieldId=").append(fieldId.trim());
+            hasQuery = true;
+        }
+
+        if (bookingPhone != null && !bookingPhone.isBlank()) {
+            url.append(hasQuery ? '&' : '?')
+                    .append("bookingPhone=")
+                    .append(URLEncoder.encode(bookingPhone.trim(), StandardCharsets.UTF_8));
+        }
+
+        return url.toString();
+    }
+
+    private String resolveRedirectPath(HttpServletRequest request, User user) {
+        if (isStaffUser(user) && "1".equals(request.getParameter("redirectToBooking"))) {
+            return buildStaffBookingRedirect(request);
+        }
+        return request.getContextPath() + resolveHistoryPath(user);
+    }
 
     /**
      * Cancel a specific booking due to payment timeout
@@ -34,6 +81,7 @@ public class PaymentCancelServlet extends HttpServlet {
         }
 
         User user = (User) session.getAttribute("user");
+        String redirectPath = resolveRedirectPath(request, user);
         String bookingIdParam = request.getParameter("bookingId");
         String weeklyGroupIdParam = request.getParameter("weeklyGroupId");
 
@@ -43,7 +91,7 @@ public class PaymentCancelServlet extends HttpServlet {
                 weeklyGroupId = UUID.fromString(weeklyGroupIdParam);
             } catch (IllegalArgumentException e) {
                 session.setAttribute("flash_error", "Invalid weekly group ID format.");
-                response.sendRedirect(request.getContextPath() + "/customer/bookings");
+                response.sendRedirect(redirectPath);
                 return;
             }
 
@@ -51,7 +99,7 @@ public class PaymentCancelServlet extends HttpServlet {
             WeeklyBookingGroup group = groupDAO.getById(weeklyGroupId);
             if (group == null || !group.getBookerId().equals(user.getUserId())) {
                 session.setAttribute("flash_error", "Weekly group not found.");
-                response.sendRedirect(request.getContextPath() + "/customer/bookings");
+                response.sendRedirect(redirectPath);
                 return;
             }
 
@@ -70,13 +118,13 @@ public class PaymentCancelServlet extends HttpServlet {
             } else {
                 session.setAttribute("flash_error", "Failed to cancel weekly booking group.");
             }
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(redirectPath);
             return;
         }
 
         if (bookingIdParam == null || bookingIdParam.isBlank()) {
             session.setAttribute("flash_error", "Invalid booking ID.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(redirectPath);
             return;
         }
 
@@ -85,7 +133,7 @@ public class PaymentCancelServlet extends HttpServlet {
             bookingId = UUID.fromString(bookingIdParam);
         } catch (IllegalArgumentException e) {
             session.setAttribute("flash_error", "Invalid booking ID format.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(redirectPath);
             return;
         }
 
@@ -95,21 +143,21 @@ public class PaymentCancelServlet extends HttpServlet {
         Booking booking = bookingDAO.getBookingById(bookingId);
         if (booking == null || !booking.getBookerId().equals(user.getUserId())) {
             session.setAttribute("flash_error", "Booking not found.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(redirectPath);
             return;
         }
 
         Payment payment = paymentDAO.getPaymentByBookingId(bookingId);
         if (payment == null) {
             session.setAttribute("flash_error", "Payment not found.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(redirectPath);
             return;
         }
 
         // Verify payment is still PENDING
         if (!"PENDING".equalsIgnoreCase(payment.getPaymentStatus())) {
             session.setAttribute("flash_error", "Payment is not in pending state.");
-            response.sendRedirect(request.getContextPath() + "/customer/bookings");
+            response.sendRedirect(redirectPath);
             return;
         }
 
@@ -122,7 +170,7 @@ public class PaymentCancelServlet extends HttpServlet {
             session.setAttribute("flash_error", "Failed to cancel booking.");
         }
 
-        response.sendRedirect(request.getContextPath() + "/customer/bookings");
+        response.sendRedirect(redirectPath);
     }
 
     /**
