@@ -109,18 +109,27 @@
         </div>
     </c:if>
 
-    <%-- ── Main form (POST to /booking/weekly-confirm) ───────────────────────── --%>
-    <%-- Filter state (locationId, fieldType, fieldId, weekStart) is ALSO carried in
-         this form; when user changes location/fieldType/field we do a GET redirect via JS. --%>
+        <%-- Trace flow của weekly booking trên JSP:
+            1. Servlet WeeklyBookingServlet forward sang file này cùng toàn bộ request attribute.
+            2. JSP render UI chọn sân / tuần / slot / vật tư / voucher.
+            3. User đổi filter thì JS gọi lại GET /booking/weekly để WeeklyBookingServlet nạp lại dữ liệu.
+            4. User bấm xác nhận thì form POST sang /booking/weekly-confirm. --%>
+        <%-- Filter state (locationId, fieldType, fieldId, weekStart) is ALSO carried in
+            this form; when user changes location/fieldType/field we do a GET redirect via JS. --%>
     <form method="post" action="${pageContext.request.contextPath}/booking/weekly-confirm"
           id="weeklyForm" class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
 
-        <%-- Hidden state carried through to POST --%>
+           <%-- Hidden state carried through to POST:
+               các giá trị này đến từ request attribute do WeeklyBookingServlet set,
+               sau đó được submit tiếp cho WeeklyBookingConfirmServlet khi user xác nhận đặt. --%>
         <input type="hidden" name="fieldId"    id="hFieldId"    value="${selectedFieldId}">
         <input type="hidden" name="locationId" id="hLocationId" value="${selectedLocationId}">
         <input type="hidden" name="weekStart"  id="hWeekStart"  value="${weekStart}">
         <input type="hidden" name="weekCount"  id="hWeekCount"  value="${selectedWeekCount}">
         <%-- fieldType is only for GET filter, not needed in POST --%>
+           <%-- Hai container hidden này được JS dùng để bổ sung scheduleIds khi:
+               - auto recurring các tuần sau,
+               - giữ lại các ca đã chọn khi đổi tuần/filter. --%>
         <div id="autoRecurringSelections" class="hidden"></div>
         <div id="persistedCarrySelections" class="hidden"></div>
 
@@ -203,7 +212,9 @@
                         <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">2. Chọn lịch theo tuần</h2>
                     </div>
                     <c:if test="${not empty selectedFieldId}">
-                    <%-- Week navigation --%>
+                    <%-- Week navigation:
+                        link GET quay lại WeeklyBookingServlet với weekStart mới.
+                        JS sẽ chèn thêm selectedIds/anchorIds trước khi điều hướng để không mất state. --%>
                     <div class="flex items-center gap-3">
                         <a href="${pageContext.request.contextPath}/booking/weekly?locationId=${selectedLocationId}&fieldType=${selectedFieldType}&fieldId=${selectedFieldId}&weekStart=${prevWeekStart}&weekCount=${selectedWeekCount}"
                            data-week-start="${prevWeekStart}"
@@ -293,7 +304,10 @@
                         </span>
                     </div>
 
-                    <%-- Weekly board (FieldSchedule-like day columns) --%>
+                    <%-- Weekly board:
+                        JSP duyệt weekDates để tạo 7 cột ngày.
+                        Bên trong mỗi cột, JSP duyệt gridRows; mỗi row chứa 1 cell tương ứng ngày hiện tại.
+                        Dữ liệu gridRows này được dựng ở WeeklyBookingServlet. --%>
                     <div class="overflow-x-auto custom-scrollbar pb-6" id="weeklyScroll">
                         <div class="flex gap-6 min-w-max px-2">
                             <c:forEach var="d" items="${weekDates}" varStatus="dSt">
@@ -317,6 +331,8 @@
                                                     </div>
                                                 </c:when>
                                                 <c:when test="${cell.available}">
+                                                    <%-- cell.available = true thì render checkbox name="scheduleIds".
+                                                         Đây là input chính gửi sang WeeklyBookingConfirmServlet khi submit POST. --%>
                                                     <label class="slot-avail block border-2 rounded-[1.4rem] p-4 bg-white shadow-sm ${cell.selected ? 'picked border-[#047857] bg-emerald-100/70' : 'border-gray-50 hover:border-[#008751] hover:shadow-xl'}"
                                                            for="sc_${cell.scheduleId}">
                                                         <input type="checkbox" id="sc_${cell.scheduleId}"
@@ -548,7 +564,8 @@
 
 </main>
 
-<%-- Embed slot prices as JSON for JS --%>
+<%-- Các block JSON này là cầu nối giữa dữ liệu server-side và JS client-side.
+    Servlet set request attribute -> JSP nhúng vào script JSON -> JS đọc lại để tính summary và auto recurring. --%>
 <script id="slotPricesData" type="application/json">
 {
 <c:forEach var="row" items="${gridRows}" varStatus="rSt">
@@ -590,6 +607,12 @@
 <script>
 (function () {
     lucide.createIcons();
+
+    // Trace JS:
+    // 1. Đọc dữ liệu JSON đã được JSP nhúng từ request attribute.
+    // 2. Khôi phục state các ca đã chọn trước đó.
+    // 3. Tự động chọn các tuần sau dựa trên anchorIds.
+    // 4. Tính summary ở panel bên phải.
 
     // ── slot price map ─────────────────────────────────────────────────────────
     var rawPricesJson = (document.getElementById('slotPricesData') || {}).textContent || '{}';
@@ -729,6 +752,8 @@
         var notice = document.getElementById('autoRecurringNotice');
         if (!container) return;
 
+        // Hàm này tự sinh thêm hidden input scheduleIds cho các tuần tiếp theo.
+        // Nghĩa là user chỉ cần tick tuần đầu, JS sẽ tự thêm các ca lặp lại nếu schedule còn available.
         container.innerHTML = '';
 
         var weekCountSel = document.getElementById('weekCountSelect');
@@ -791,6 +816,8 @@
     }
 
     function buildSelectedIdsForNavigation() {
+        // Khi user đổi tuần hoặc đổi filter, danh sách selectedIds sẽ được đưa lên URL.
+        // Mục tiêu là quay lại WeeklyBookingServlet nhưng vẫn giữ được những ca đã chọn trước đó.
         var merged = {};
         Object.keys(persistedSelectedIds).forEach(function(id) { merged[id] = true; });
 
@@ -890,8 +917,10 @@
         var sid = String(cb.value);
         var meta = scheduleMeta(sid, cb.getAttribute('data-date'), cb.getAttribute('data-start'));
         if (cb.checked) {
+            // Ca được user chủ động chọn ở tuần hiện tại sẽ trở thành anchor để auto recurring.
             persistedAnchorIds[sid] = true;
         } else {
+            // Nếu bỏ chọn một anchor thì xóa luôn cả series cùng thứ/cùng giờ ở các tuần sau.
             clearSeriesByKey(meta.key);
             delete persistedAnchorIds[sid];
             delete persistedSelectedIds[sid];
@@ -953,6 +982,7 @@
         var wcSel = document.getElementById('weekCountSelect');
         var wc = wcSel ? wcSel.value : '${selectedWeekCount}';
 
+        // Đây là request GET quay lại WeeklyBookingServlet để servlet nạp lại fields/equipments/vouchers/gridRows.
         if (locVal)   params.set('locationId', locVal);
         if (ft)       params.set('fieldType',  ft);
         if (fieldVal) params.set('fieldId',    fieldVal);
@@ -990,6 +1020,7 @@
             document.getElementById('noSelectMsg').classList.remove('hidden');
             return false;
         }
+        // Nếu confirm = true thì form POST sang /booking/weekly-confirm cùng toàn bộ scheduleIds đã merge.
         var total = parseFloat(document.getElementById('sumTotal').textContent.replace(/[^0-9.-]/g,''))||0;
         return confirm(
             'Bạn đã chọn ' + count + ' khung giờ trong tuần.\n' +
