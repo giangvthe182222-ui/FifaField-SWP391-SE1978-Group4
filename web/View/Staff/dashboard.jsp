@@ -90,6 +90,53 @@
                     </div>
                 </c:otherwise>
             </c:choose>
+
+            <div class="mt-8 pt-8 border-t border-amber-100">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center">
+                            <i data-lucide="wallet-cards" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Extra payment queue</p>
+                            <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight leading-none">Thông báo đơn bổ sung</h3>
+                        </div>
+                    </div>
+                    <div class="px-4 py-2 rounded-2xl bg-orange-50 border border-orange-100 text-orange-700 font-black text-[11px] uppercase tracking-widest">
+                        Còn ${pendingExtraCount} đơn chờ thanh toán bổ sung
+                    </div>
+                </div>
+
+                <c:choose>
+                    <c:when test="${pendingExtraCount > 0}">
+                        <div class="space-y-3 max-h-64 overflow-y-auto pr-2">
+                            <c:forEach var="pendingExtraBooking" items="${pendingExtraBookings}">
+                                <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${pendingExtraBooking.bookingId}" class="block p-4 rounded-2xl border border-orange-100 bg-orange-50/50 hover:bg-orange-50 transition-colors">
+                                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                                        <div>
+                                            <p class="text-sm font-black text-gray-900 uppercase tracking-tight">${pendingExtraBooking.fieldName}</p>
+                                            <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                                                ${pendingExtraBooking.bookingDate} | ${pendingExtraBooking.startTime} - ${pendingExtraBooking.endTime}
+                                            </p>
+                                            <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">
+                                                KH: ${pendingExtraBooking.customerName}
+                                            </p>
+                                        </div>
+                                        <span class="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white border border-orange-200 text-orange-700 text-[10px] font-black uppercase tracking-widest">
+                                            Xử lý thanh toán
+                                        </span>
+                                    </div>
+                                </a>
+                            </c:forEach>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="p-5 rounded-2xl border border-emerald-100 bg-emerald-50 text-emerald-700 text-sm font-bold">
+                            Hiện chưa có đơn nào đang chờ thanh toán bổ sung tại cơ sở của bạn.
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+            </div>
         </div>
 
         <!-- MAIN ACTIONS GRID -->
