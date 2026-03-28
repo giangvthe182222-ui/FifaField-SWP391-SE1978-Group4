@@ -5,16 +5,14 @@ import Models.Blog;
 import Models.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.UUID;
 
 @WebServlet(name = "BlogLikeServlet", urlPatterns = {"/blog/like/toggle"})
-public class BlogLikeServlet extends HttpServlet {
+public class BlogLikeServlet extends BaseBlogServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -26,7 +24,7 @@ public class BlogLikeServlet extends HttpServlet {
         }
 
         String role = getRole(user);
-        if (!"customer".equals(role) && !"staff".equals(role) && !"manager".equals(role)) {
+        if (!isRoleAllowed(role, ROLE_CUSTOMER, ROLE_STAFF, ROLE_MANAGER)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Role not allowed.");
             return;
         }
@@ -45,33 +43,15 @@ public class BlogLikeServlet extends HttpServlet {
                 return;
             }
 
+            if (!"approved".equalsIgnoreCase(visibleBlog.getStatus())) {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "Chi blog da duyet moi duoc tym.");
+                return;
+            }
+
             dao.toggleLike(blogId, user.getUserId());
             response.sendRedirect(request.getContextPath() + "/blog/detail?id=" + blogId);
         } catch (SQLException ex) {
             throw new ServletException("Cannot toggle blog like", ex);
-        }
-    }
-
-    private User getSessionUser(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        return session == null ? null : (User) session.getAttribute("user");
-    }
-
-    private String getRole(User user) {
-        if (user == null || user.getRole() == null || user.getRole().getRoleName() == null) {
-            return "";
-        }
-        return user.getRole().getRoleName().trim().toLowerCase();
-    }
-
-    private UUID toUuid(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return UUID.fromString(value.trim());
-        } catch (IllegalArgumentException ex) {
-            return null;
         }
     }
 }

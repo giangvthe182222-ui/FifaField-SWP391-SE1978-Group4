@@ -48,10 +48,13 @@
             <div class="prose max-w-none text-slate-700 whitespace-pre-line">${blog.content}</div>
 
             <div class="pt-3 flex items-center gap-3">
-                <form method="post" action="${pageContext.request.contextPath}/blog/like/toggle">
-                    <input type="hidden" name="blogId" value="${blog.blogId}">
-                    <button type="submit" class="px-4 py-2 rounded-xl ${blog.likedByCurrentUser ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-700'} text-sm font-black uppercase tracking-wider">${blog.likedByCurrentUser ? 'Đã tym' : 'Thả tym'} (${blog.likeCount})</button>
-                </form>
+                <c:if test="${blog.status == 'approved'}">
+                    <!-- Luong like: POST /blog/like/toggle -> BlogLikeServlet -> redirect ve detail. -->
+                    <form method="post" action="${pageContext.request.contextPath}/blog/like/toggle">
+                        <input type="hidden" name="blogId" value="${blog.blogId}">
+                        <button type="submit" class="px-4 py-2 rounded-xl ${blog.likedByCurrentUser ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-700'} text-sm font-black uppercase tracking-wider">${blog.likedByCurrentUser ? 'Đã tym' : 'Thả tym'} (${blog.likeCount})</button>
+                    </form>
+                </c:if>
                 <span class="text-sm text-slate-500 font-semibold">${blog.commentCount} bình luận</span>
             </div>
         </div>
@@ -60,24 +63,25 @@
     <section class="bg-white rounded-3xl border border-slate-200 p-6 space-y-4">
         <h2 class="text-xl font-black text-slate-900">Bình luận</h2>
 
-        <form method="post" action="${pageContext.request.contextPath}/blog/comment/add" class="space-y-3">
-            <input type="hidden" name="blogId" value="${blog.blogId}">
-            <textarea name="content" rows="3" maxlength="1000" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#008751]" placeholder="Nhập bình luận..."></textarea>
-            <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-wider">Gửi bình luận</button>
-        </form>
+        <c:choose>
+            <c:when test="${blog.status == 'approved'}">
+                <!-- Luong comment moi: gui POST den /blog/comment/add. -->
+                <form method="post" action="${pageContext.request.contextPath}/blog/comment/add" class="space-y-3">
+                    <input type="hidden" name="blogId" value="${blog.blogId}">
+                    <textarea name="content" rows="3" maxlength="1000" class="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#008751]" placeholder="Nhập bình luận..."></textarea>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-xs font-black uppercase tracking-wider">Gửi bình luận</button>
+                </form>
+            </c:when>
+            <c:otherwise>
+                <p class="text-sm font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                    Bai viet dang o trang thai ${blog.status}, tam thoi khong the tym hoac binh luan.
+                </p>
+            </c:otherwise>
+        </c:choose>
 
         <div class="space-y-3">
             <c:forEach var="comment" items="${comments}">
-                <c:set var="indentClass" value="ml-0"/>
-                <c:if test="${comment.depth == 1}"><c:set var="indentClass" value="ml-6"/></c:if>
-                <c:if test="${comment.depth == 2}"><c:set var="indentClass" value="ml-12"/></c:if>
-                <c:if test="${comment.depth == 3}"><c:set var="indentClass" value="ml-16"/></c:if>
-                <c:if test="${comment.depth >= 4}"><c:set var="indentClass" value="ml-20"/></c:if>
-
-                <c:set var="cardClass" value="border border-slate-100 rounded-2xl p-4 space-y-3"/>
-                <c:if test="${comment.depth > 0}"><c:set var="cardClass" value="${cardClass} bg-slate-50"/></c:if>
-
-                <div class="${cardClass} ${indentClass}">
+                <div class="${comment.cardClass} ${comment.indentClass}">
                     <div class="flex items-center justify-between gap-2">
                         <p class="text-sm font-black text-slate-800">${comment.commenterName}</p>
                         <p class="text-xs font-semibold text-slate-400">${fn:substring(comment.createdAt, 0, 10)}</p>
@@ -89,17 +93,21 @@
 
                     <p class="mt-2 text-sm text-slate-600 whitespace-pre-line break-words">${comment.content}</p>
 
-                    <details class="mt-2">
-                        <summary class="cursor-pointer text-xs font-black uppercase tracking-wider text-[#008751]">Trả lời</summary>
-                        <form method="post" action="${pageContext.request.contextPath}/blog/comment/add" class="mt-3 space-y-2">
-                            <input type="hidden" name="blogId" value="${blog.blogId}">
-                            <input type="hidden" name="parentCommentId" value="${comment.commentId}">
-                            <textarea name="content" rows="2" maxlength="1000" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#008751]" placeholder="Trả lời ${comment.commenterName}..."></textarea>
-                            <button type="submit" class="px-3 py-2 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">Gửi phản hồi</button>
-                        </form>
-                    </details>
+                    <c:if test="${blog.status == 'approved'}">
+                        <details class="mt-2">
+                            <summary class="cursor-pointer text-xs font-black uppercase tracking-wider text-[#008751]">Trả lời</summary>
+                            <!-- Luong reply: POST /blog/comment/add kem parentCommentId. -->
+                            <form method="post" action="${pageContext.request.contextPath}/blog/comment/add" class="mt-3 space-y-2">
+                                <input type="hidden" name="blogId" value="${blog.blogId}">
+                                <input type="hidden" name="parentCommentId" value="${comment.commentId}">
+                                <textarea name="content" rows="2" maxlength="1000" class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#008751]" placeholder="Trả lời ${comment.commenterName}..."></textarea>
+                                <button type="submit" class="px-3 py-2 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider">Gửi phản hồi</button>
+                            </form>
+                        </details>
+                    </c:if>
 
                     <c:if test="${isManager || comment.ownedByCurrentUser}">
+                        <!-- Luong xoa: POST /blog/comment/delete, chi manager hoac owner moi duoc xoa. -->
                         <form method="post" action="${pageContext.request.contextPath}/blog/comment/delete" class="mt-3" onsubmit="return confirm('Xóa bình luận này?');">
                             <input type="hidden" name="blogId" value="${blog.blogId}">
                             <input type="hidden" name="commentId" value="${comment.commentId}">

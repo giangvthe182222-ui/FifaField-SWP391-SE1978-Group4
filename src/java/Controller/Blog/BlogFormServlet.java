@@ -6,10 +6,8 @@ import Models.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import jakarta.servlet.http.Part;
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +22,7 @@ import java.util.UUID;
         maxFileSize = 5 * 1024 * 1024,
         maxRequestSize = 6 * 1024 * 1024
 )
-public class BlogFormServlet extends HttpServlet {
+public class BlogFormServlet extends BaseBlogServlet {
 
     private static final long MAX_IMAGE_SIZE = 5L * 1024L * 1024L;
 
@@ -38,7 +36,7 @@ public class BlogFormServlet extends HttpServlet {
         }
 
         String role = getRole(user);
-        if (!"staff".equals(role) && !"manager".equals(role)) {
+        if (!isRoleAllowed(role, ROLE_STAFF, ROLE_MANAGER)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Only staff or manager can manage blogs.");
             return;
         }
@@ -89,7 +87,7 @@ public class BlogFormServlet extends HttpServlet {
         }
 
         String role = getRole(user);
-        if (!"staff".equals(role) && !"manager".equals(role)) {
+        if (!isRoleAllowed(role, ROLE_STAFF, ROLE_MANAGER)) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN, "Only staff or manager can manage blogs.");
             return;
         }
@@ -106,21 +104,17 @@ public class BlogFormServlet extends HttpServlet {
         String submitType = safeTrim(request.getParameter("submitType"));
 
         if (title == null || content == null) {
-            request.setAttribute("error", "Tiêu đề và nội dung là bắt buộc.");
-            request.setAttribute("mode", isEdit ? "edit" : "create");
-            request.setAttribute("roleName", role);
-            request.setAttribute("blog", createFormBlog(request, title, summary, content, existingImageUrl));
-            request.getRequestDispatcher("/View/Blog/blog-form.jsp").forward(request, response);
+            forwardFormWithError(request, response, role, isEdit,
+                    "Tiêu đề và nội dung là bắt buộc.",
+                    title, summary, content, existingImageUrl);
             return;
         }
 
         UploadResult uploadResult = processImageUpload(request);
         if (uploadResult.getError() != null) {
-            request.setAttribute("error", uploadResult.getError());
-            request.setAttribute("mode", isEdit ? "edit" : "create");
-            request.setAttribute("roleName", role);
-            request.setAttribute("blog", createFormBlog(request, title, summary, content, existingImageUrl));
-            request.getRequestDispatcher("/View/Blog/blog-form.jsp").forward(request, response);
+            forwardFormWithError(request, response, role, isEdit,
+                    uploadResult.getError(),
+                    title, summary, content, existingImageUrl);
             return;
         }
 
@@ -135,7 +129,7 @@ public class BlogFormServlet extends HttpServlet {
                 blog.setImageUrl(uploadResult.getSavedPath());
                 blog.setCreatedBy(user.getUserId());
 
-                String status = resolveStatusForCreate(role, submitType);
+                String status = resolveStatusByRoleAndSubmitType(role, submitType);
                 blog.setStatus(status);
 
                 if ("approved".equals(status)) {
@@ -170,7 +164,7 @@ public class BlogFormServlet extends HttpServlet {
             current.setContent(content);
             current.setImageUrl(uploadResult.getSavedPath() != null ? uploadResult.getSavedPath() : current.getImageUrl());
 
-            String status = resolveStatusForEdit(role, submitType);
+            String status = resolveStatusByRoleAndSubmitType(role, submitType);
             current.setStatus(status);
 
             if ("approved".equals(status)) {
@@ -191,10 +185,10 @@ public class BlogFormServlet extends HttpServlet {
     }
 
     private boolean canEdit(String role, UUID userId, Blog blog) {
-        if ("manager".equals(role)) {
+        if (ROLE_MANAGER.equals(role)) {
             return true;
         }
-        if (!"staff".equals(role)) {
+        if (!ROLE_STAFF.equals(role)) {
             return false;
         }
         if (blog.getCreatedBy() == null || !blog.getCreatedBy().equals(userId)) {
@@ -203,63 +197,31 @@ public class BlogFormServlet extends HttpServlet {
         return !"approved".equalsIgnoreCase(blog.getStatus());
     }
 
-    private String resolveStatusForCreate(String role, String submitType) {
-        if ("manager".equals(role)) {
-            if ("save".equalsIgnoreCase(submitType)) {
-                return "draft";
-            }
-            return "approved";
+    private String resolveStatusByRoleAndSubmitType(String role, String submitType) {
+        if (ROLE_MANAGER.equals(role)) {
+            return "save".equalsIgnoreCase(submitType) ? "draft" : "approved";
         }
 
-        if ("submit".equalsIgnoreCase(submitType)) {
-            return "pending";
-        }
-        return "draft";
+        return "submit".equalsIgnoreCase(submitType) ? "pending" : "draft";
     }
 
-    private String resolveStatusForEdit(String role, String submitType) {
-        if ("manager".equals(role)) {
-            if ("save".equalsIgnoreCase(submitType)) {
-                return "draft";
-            }
-            return "approved";
-        }
-
-        if ("submit".equalsIgnoreCase(submitType)) {
-            return "pending";
-        }
-        return "draft";
-    }
-
-    private User getSessionUser(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        return session == null ? null : (User) session.getAttribute("user");
-    }
-
-    private String getRole(User user) {
-        if (user == null || user.getRole() == null || user.getRole().getRoleName() == null) {
-            return "";
-        }
-        return user.getRole().getRoleName().trim().toLowerCase();
-    }
-
-    private UUID toUuid(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return UUID.fromString(value.trim());
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
-    }
-
-    private String safeTrim(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
+    // Gom mot cho de tranh lap lai flow setAttribute + forward khi validate loi.
+    private void forwardFormWithError(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            String role,
+            boolean isEdit,
+            String error,
+            String title,
+            String summary,
+            String content,
+            String existingImageUrl
+    ) throws ServletException, IOException {
+        request.setAttribute("error", error);
+        request.setAttribute("mode", isEdit ? "edit" : "create");
+        request.setAttribute("roleName", role);
+        request.setAttribute("blog", createFormBlog(request, title, summary, content, existingImageUrl));
+        request.getRequestDispatcher("/View/Blog/blog-form.jsp").forward(request, response);
     }
 
     private UploadResult processImageUpload(HttpServletRequest request) throws IOException, ServletException {

@@ -6,17 +6,15 @@ import Models.BlogComment;
 import Models.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
 @WebServlet(name = "BlogDetailServlet", urlPatterns = {"/blog/detail"})
-public class BlogDetailServlet extends HttpServlet {
+public class BlogDetailServlet extends BaseBlogServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -37,6 +35,7 @@ public class BlogDetailServlet extends HttpServlet {
         BlogDAO dao = new BlogDAO();
 
         try {
+            // Luong xu ly: kiem tra quyen xem, load comment dang thread, roi forward ra trang chi tiet.
             Blog blog = dao.getBlogDetailForRole(blogId, user.getUserId(), role);
             if (blog == null) {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND, "Blog not found or inaccessible.");
@@ -51,29 +50,6 @@ public class BlogDetailServlet extends HttpServlet {
             request.getRequestDispatcher("/View/Blog/blog-detail.jsp").forward(request, response);
         } catch (SQLException ex) {
             throw new ServletException("Cannot load blog detail", ex);
-        }
-    }
-
-    private User getSessionUser(HttpServletRequest request) {
-        HttpSession session = request.getSession(false);
-        return session == null ? null : (User) session.getAttribute("user");
-    }
-
-    private String getRole(User user) {
-        if (user == null || user.getRole() == null || user.getRole().getRoleName() == null) {
-            return "";
-        }
-        return user.getRole().getRoleName().trim().toLowerCase();
-    }
-
-    private UUID toUuid(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return UUID.fromString(value.trim());
-        } catch (IllegalArgumentException ex) {
-            return null;
         }
     }
 }

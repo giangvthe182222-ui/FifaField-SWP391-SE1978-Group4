@@ -78,6 +78,7 @@
                     </div>
 
                     <div class="pt-2 flex flex-wrap gap-2">
+                        <!-- Mo trang chi tiet -> BlogDetailServlet.doGet (/blog/detail). -->
                         <a href="${pageContext.request.contextPath}/blog/detail?id=${blog.blogId}" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-black uppercase tracking-wider text-slate-700 hover:border-[#008751] hover:text-[#008751]">Chi tiết</a>
 
                         <c:if test="${roleName == 'manager' || roleName == 'staff'}">
@@ -88,6 +89,7 @@
                     <c:if test="${canManage}">
                         <div class="pt-2 flex flex-wrap gap-2">
                             <c:if test="${blog.status == 'pending' || blog.status == 'draft' || blog.status == 'rejected'}">
+                                <!-- Form duyet/tu choi/xoa se post den servlet quan ly blog tai /manager/blogs. -->
                                 <form method="post" action="${pageContext.request.contextPath}/manager/blogs">
                                     <input type="hidden" name="blogId" value="${blog.blogId}">
                                     <input type="hidden" name="action" value="approve">

@@ -22,7 +22,6 @@
 
 <main class="flex-grow max-w-4xl mx-auto px-6 py-12 w-full space-y-8">
     
-    <!-- Header Section -->
     <div class="space-y-2">
         <div class="flex items-center gap-3">
             <a href="${pageContext.request.contextPath}/staff/locationBookings" class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-gray-400 hover:text-[#008751] transition-colors shadow-sm border border-gray-100">
@@ -35,7 +34,6 @@
         <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.3em] ml-14">Tính tiền riêng, không giới hạn deadline</p>
     </div>
 
-    <!-- Flash Messages -->
     <c:if test="${not empty flashSuccess}">
         <div class="bg-emerald-50 border border-emerald-100 p-5 rounded-3xl flex items-center gap-4">
             <div class="w-10 h-10 bg-[#008751] text-white rounded-xl flex items-center justify-center shadow-lg shadow-[#008751]/20">
@@ -56,9 +54,7 @@
     <c:if test="${not empty booking}">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
-            <!-- Main Info Section -->
             <div class="md:col-span-2 space-y-8">
-                <!-- Original Booking Info -->
                 <section class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-10 space-y-8">
                     <div class="flex items-center gap-4">
                         <div class="w-8 h-1 bg-gray-200 rounded-full"></div>
@@ -90,7 +86,6 @@
                     </div>
                 </section>
 
-                <!-- Equipment Form -->
                 <section class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-10 space-y-8">
                     <div class="flex items-center gap-4">
                         <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
@@ -120,7 +115,7 @@
                                     </c:forEach>
                                 </div>
 
-                                <button type="submit" class="w-full bg-gray-900 hover:bg-[#008751] text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 inline-flex items-center justify-center gap-2 shadow-lg shadow-gray-200">
+                                <button type="submit" class="w-full bg-[#008751] hover:bg-[#006b40] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008751]/20 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-0.5 active:scale-[0.99] inline-flex items-center justify-center gap-2 shadow-lg shadow-emerald-200">
                                     <i data-lucide="package-plus" class="w-4 h-4"></i>
                                     THÊM EQUIPMENT BỔ SUNG
                                 </button>
@@ -135,7 +130,6 @@
                 </section>
             </div>
 
-            <!-- Info Card -->
             <div class="space-y-6">
                 <div class="bg-blue-50 rounded-3xl border border-blue-100 p-8 space-y-4">
                     <div class="flex items-start gap-3">

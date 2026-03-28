@@ -7,7 +7,7 @@ public class DBConnection {
 
     private static final String URL =
         "jdbc:sqlserver://localhost:1433;"
-      + "databaseName=FifaFieldDB;"
+      + "databaseName=FifaFieldDB2;"
       + "encrypt=true;"
       + "trustServerCertificate=true";
 

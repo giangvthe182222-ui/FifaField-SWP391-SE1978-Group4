@@ -90,6 +90,27 @@ public class BlogComment {
         this.depth = depth;
     }
 
+    public String getIndentClass() {
+        if (depth <= 0) {
+            return "ml-0";
+        }
+        if (depth == 1) {
+            return "ml-6";
+        }
+        if (depth == 2) {
+            return "ml-12";
+        }
+        if (depth == 3) {
+            return "ml-16";
+        }
+        return "ml-20";
+    }
+
+    public String getCardClass() {
+        String baseClass = "border border-slate-100 rounded-2xl p-4 space-y-3";
+        return depth > 0 ? baseClass + " bg-slate-50" : baseClass;
+    }
+
     public boolean isOwnedByCurrentUser() {
         return ownedByCurrentUser;
     }
