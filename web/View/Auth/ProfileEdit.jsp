@@ -34,7 +34,7 @@
                 </div>
                 <div>
                     <label class="text-sm font-bold">Số điện thoại</label>
-                    <input type="text" name="phone" value="${sessionScope.user.phone}" class="w-full p-2 border rounded" />
+                    <input type="tel" name="phone" value="${sessionScope.user.phone}" class="w-full p-2 border rounded" inputmode="numeric" pattern="[0-9]*" maxlength="15" oninput="this.value = this.value.replace(/\D/g, '')" title="Chỉ nhập số" />
                 </div>
                 <div>
                     <label class="text-sm font-bold">Địa chỉ</label>

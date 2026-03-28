@@ -51,12 +51,22 @@ public class ProfileEditServlet extends HttpServlet {
             return;
         }
 
+        String normalizedPhone = phone == null ? "" : phone.trim();
+        if (!normalizedPhone.isEmpty() && !normalizedPhone.matches("\\d+")) {
+            request.setAttribute("error", "Số điện thoại chỉ được nhập chữ số.");
+            doGet(request, response);
+            return;
+        }
+        if (normalizedPhone.isEmpty()) {
+            normalizedPhone = null;
+        }
+
         try {
             AuthDAO dao = new AuthDAO();
-            dao.updateUserBasic(user.getUserId().toString(), fullName, phone, address, gender);
+            dao.updateUserBasic(user.getUserId().toString(), fullName, normalizedPhone, address, gender);
             // refresh session user
             user.setFullName(fullName);
-            user.setPhone(phone);
+            user.setPhone(normalizedPhone);
             user.setAddress(address);
             user.setGender(gender);
             session.setAttribute("user", user);
