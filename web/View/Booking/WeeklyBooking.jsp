@@ -32,18 +32,7 @@
 
 <c:set var="roleNameLower" value="${fn:toLowerCase(sessionScope.user.role.roleName)}" />
 
-<%-- Role-aware header --%>
-<c:choose>
-    <c:when test="${roleNameLower eq 'staff'}">
-        <jsp:include page="/View/Layout/HeaderStaff.jsp"/>
-    </c:when>
-    <c:when test="${roleNameLower eq 'manager'}">
-        <jsp:include page="/View/Layout/HeaderManager.jsp"/>
-    </c:when>
-    <c:otherwise>
-        <jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
-    </c:otherwise>
-</c:choose>
+
 
 <main class="flex-grow max-w-7xl mx-auto px-6 py-12 space-y-10 w-full">
 
@@ -617,8 +606,6 @@
 <c:forEach var="sid" items="${anchorScheduleIds}" varStatus="st">"${sid}"<c:if test="${not st.last}">,</c:if></c:forEach>
 ]
 </script>
-
-<jsp:include page="/View/Layout/Footer.jsp"/>
 
 <script>
 (function () {

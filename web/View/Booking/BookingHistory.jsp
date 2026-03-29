@@ -200,7 +200,7 @@
                                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.bookingDate}</p>
                                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.startTime} - ${b.endTime}</p>
                                             <c:if test="${viewMode == 'staff' || viewMode == 'manager'}">
-                                                <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">KH: ${b.customerName}</p>
+                       
                                                 <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">SĐT: ${b.customerPhone}</p>
                                             </c:if>
                                         </div>
