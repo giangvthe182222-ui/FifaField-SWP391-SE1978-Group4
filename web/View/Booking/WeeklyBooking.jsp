@@ -125,7 +125,7 @@
         </div>
     </c:if>
 
-        <%-- Trace flow của weekly booking trên JSP:
+        <%--
             1. Servlet WeeklyBookingServlet forward sang file này cùng toàn bộ request attribute.
             2. JSP render UI chọn sân / tuần / slot / vật tư / voucher.
             3. User đổi filter thì JS gọi lại GET /booking/weekly để WeeklyBookingServlet nạp lại dữ liệu.

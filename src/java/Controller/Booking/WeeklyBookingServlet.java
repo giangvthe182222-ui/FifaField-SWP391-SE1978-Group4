@@ -32,8 +32,7 @@ public class WeeklyBookingServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        // Trace flow:
+        
         // 1. User truy cập GET /booking/weekly.
         // 2. Servlet nạp toàn bộ dữ liệu cần render cho WeeklyBooking.jsp.
         // 3. Nếu hợp lệ thì forward sang JSP; nếu không hợp lệ thì redirect sớm.
