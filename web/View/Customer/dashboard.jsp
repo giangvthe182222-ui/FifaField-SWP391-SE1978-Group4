@@ -1,6 +1,7 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ page import="Models.User" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
 <html lang="vi">
@@ -62,6 +63,50 @@
             <jsp:include page="/View/Layout/CustomerQuickPanel.jsp"/>
         </div>
     </section>
+
+    <c:if test="${not empty refundNotifications}">
+        <section class="bg-emerald-50 rounded-[2rem] border border-emerald-100 p-6 md:p-8 shadow-sm space-y-4">
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-white text-emerald-600 border border-emerald-200 flex items-center justify-center">
+                        <i data-lucide="badge-dollar-sign" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500">Thông báo hoàn tiền</p>
+                        <h2 class="text-xl font-black text-emerald-900 uppercase tracking-tight">Bạn có ${refundNotificationCount} đơn đã refunded</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <c:forEach var="refund" items="${refundNotifications}">
+                    <article class="bg-white rounded-2xl border border-emerald-100 p-5 space-y-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-emerald-600">
+                                Đơn #${fn:toUpperCase(fn:substring(refund.bookingId, 0, 8))}
+                            </p>
+                            <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-emerald-100 text-emerald-700">
+                                Refunded
+                            </span>
+                        </div>
+
+                        <p class="text-sm font-black text-gray-900 uppercase tracking-tight">${refund.fieldName}</p>
+                        <p class="text-xs font-bold text-gray-500">
+                            ${refund.bookingDate} | ${refund.startTime} - ${refund.endTime}
+                        </p>
+                        <p class="text-xs font-black text-emerald-700 uppercase tracking-wider">
+                            Số tiền hoàn: <fmt:formatNumber value="${refund.totalPrice}" pattern="#,##0"/> đ
+                        </p>
+
+                        <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${refund.bookingId}"
+                           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#008751] transition-all">
+                            Xem chi tiết
+                        </a>
+                    </article>
+                </c:forEach>
+            </div>
+        </section>
+    </c:if>
 
     <!-- Locations Section -->
     <section id="locations" class="space-y-8">

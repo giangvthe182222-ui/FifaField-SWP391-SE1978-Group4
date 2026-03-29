@@ -58,6 +58,9 @@ public class BookingServlet extends HttpServlet {
         request.setAttribute("isStaffUser", isStaffUser);
 
         try {
+            LocalDate minBookingDate = LocalDate.now().plusDays(1);
+            request.setAttribute("minBookingDate", minBookingDate);
+
             LocationDAO locationDAO = new LocationDAO();
             List<Location> allLocations = locationDAO.getAllLocations();
             // Filter out inactive locations for customer
@@ -79,7 +82,7 @@ public class BookingServlet extends HttpServlet {
                 UUID locationId = UUID.fromString(locationIdParam);
                 request.setAttribute("selectedLocationId", locationId);
 
-                // Fields of the location, optionally filtered by field type (5, 7, 11)
+                // Fields of the location, optionally filtered by field type (7, 11)
                 FieldDAO fieldDAO = new FieldDAO();
                 List<Field> allFields = fieldDAO.getByLocation(locationId);
                 // Filter out inactive/unavailable fields
@@ -128,17 +131,21 @@ public class BookingServlet extends HttpServlet {
                     String bookingDateParam = request.getParameter("bookingDate");
                     if (bookingDateParam != null && !bookingDateParam.isBlank()) {
                         LocalDate selectedDate = LocalDate.parse(bookingDateParam);
+                        if (selectedDate.isBefore(minBookingDate)) {
+                            selectedDate = minBookingDate;
+                        }
                         allSchedules = scheduleDAO.getScheduleByFieldAndDate(fieldId, selectedDate);
                     } else {
-                        LocalDate fromDate = LocalDate.now();
+                        LocalDate fromDate = minBookingDate;
                         LocalDate toDate = fromDate.plusDays(6);
                         allSchedules = scheduleDAO.getScheduleByFieldInRange(fieldId, fromDate, toDate);
                     }
 
                     LocalDateTime now = LocalDateTime.now();
 
-                        schedules = allSchedules.stream()
-                            // chỉ lấy lịch chưa quá thời gian
+                    schedules = allSchedules.stream()
+                            // Chỉ hiển thị lịch từ ngày mai trở đi và chưa quá thời điểm hiện tại.
+                            .filter(s -> !s.getBookingDate().isBefore(minBookingDate))
                             .filter(s -> {
                                 LocalDateTime scheduleDateTime = LocalDateTime.of(
                                         s.getBookingDate(),

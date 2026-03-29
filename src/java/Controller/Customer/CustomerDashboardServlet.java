@@ -1,6 +1,8 @@
 package Controller.Customer;
 
+import DAO.BookingDAO;
 import DAO.LocationDAO;
+import Models.BookingViewModel;
 import Models.Location;
 import Models.User;
 import jakarta.servlet.ServletException;
@@ -91,6 +93,12 @@ public class CustomerDashboardServlet extends HttpServlet {
             int startIdx = (pageNum - 1) * PAGE_SIZE;
             int endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
             List<Location> pageLocations = new ArrayList<>(filteredLocations.subList(startIdx, endIdx));
+
+                BookingDAO bookingDAO = new BookingDAO();
+                List<BookingViewModel> refundedBookings = bookingDAO.getByBooker(user.getUserId()).stream()
+                    .filter(vm -> vm != null && vm.getStatus() != null && "refunded".equalsIgnoreCase(vm.getStatus().trim()))
+                    .limit(5)
+                    .collect(Collectors.toList());
             
             request.setAttribute("locations", pageLocations);
             request.setAttribute("currentPage", pageNum);
@@ -100,6 +108,8 @@ public class CustomerDashboardServlet extends HttpServlet {
             request.setAttribute("searchAddress", searchAddress);
             request.setAttribute("locationName", selectedLocationName);
             request.setAttribute("locationNameOptions", locationNameOptions);
+            request.setAttribute("refundNotifications", refundedBookings);
+            request.setAttribute("refundNotificationCount", refundedBookings.size());
             request.getRequestDispatcher("/View/Customer/dashboard.jsp").forward(request, response);
         } catch (SQLException ex) {
             request.setAttribute("error", "Khong the tai danh sach cum san. Vui long thu lai sau.");

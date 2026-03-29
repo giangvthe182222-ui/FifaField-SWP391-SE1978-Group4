@@ -36,9 +36,6 @@
         <c:when test="${roleNameLower eq 'manager'}">
             <c:set var="dashboardPath" value="/manager/dashboard" />
         </c:when>
-        <c:when test="${roleNameLower eq 'admin'}">
-            <c:set var="dashboardPath" value="/admin-dashboard" />
-        </c:when>
     </c:choose>
 
     <!-- TOP TITLE & MODES -->
@@ -103,7 +100,7 @@
         
         <!-- INPUTS HIDDEN FOR STATE -->
         <input type="hidden" name="scheduleId" id="scheduleId" value="${param.scheduleId}" />
-        <input type="hidden" name="bookingDate" id="bookingDate" value="${param.bookingDate}" />
+        <input type="hidden" id="bookingDate" value="${param.bookingDate}" />
         <input type="hidden" name="bookingMode" id="bookingMode" value="${empty param.bookingMode ? 'normal' : param.bookingMode}" />
 
         <!-- LEFT PANEL: CONFIGURATION -->
@@ -187,7 +184,7 @@
                         <div class="space-y-4">
                             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Lịch thi đấu theo ngày <span class="text-rose-500">*</span></label>
                             <div class="flex items-center gap-3">
-                                <input type="date" id="scheduleDateFilter" value="${param.bookingDate}" class="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none input-focus">
+                                <input type="date" id="scheduleDateFilter" value="${param.bookingDate}" min="${minBookingDate}" class="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none input-focus">
                                 <button type="button" id="clearScheduleDateFilter" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#008751] hover:border-[#008751] transition-all">
                                     Xóa lọc ngày
                                 </button>
@@ -259,7 +256,7 @@
                         <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"></i>
                         <input type="text" name="bookingPhone" maxlength="20" required
                                placeholder="Nhập số điện thoại liên hệ"
-                               value="${not empty param.bookingPhone ? param.bookingPhone : sessionScope.user.phone}"
+                               value="${not empty param.bookingPhone ? param.bookingPhone : (roleNameLower eq 'staff' ? '' : sessionScope.user.phone)}"
                                class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 input-focus" />
                     </div>
                 </div>

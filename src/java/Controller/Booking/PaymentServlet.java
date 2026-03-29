@@ -3,7 +3,6 @@ package Controller.Booking;
 import DAO.*;
 import Models.*;
 import Utils.PayOSClient;
-import Utils.QRCodeGenerator;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -29,6 +28,10 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 @WebServlet(name = "PaymentServlet", urlPatterns = {"/payment"})
 public class PaymentServlet extends HttpServlet {
+
+    private static final String DEFAULT_BANK_CODE = "BIDV";
+    private static final String DEFAULT_ACCOUNT_NUMBER = "8828154445";
+    private static final String DEFAULT_ACCOUNT_NAME = "FIFA FIELD";
 
     private static String payloadKey(UUID bookingId) {
         return "supp_equipment_payload_" + bookingId;
@@ -174,10 +177,10 @@ public class PaymentServlet extends HttpServlet {
                     : null;
             String storedBankCode = session.getAttribute(bankCodeKey) instanceof String
                     ? (String) session.getAttribute(bankCodeKey)
-                    : QRCodeGenerator.BANK_CODE;
+                    : DEFAULT_BANK_CODE;
             String storedAccountNumber = session.getAttribute(accountNumberKey) instanceof String
                     ? (String) session.getAttribute(accountNumberKey)
-                    : QRCodeGenerator.ACCOUNT_NUMBER;
+                    : DEFAULT_ACCOUNT_NUMBER;
 
             Payment dbPayment = paymentDAO.getPaymentByBookingId(bookingId);
             if (dbPayment == null) {
@@ -211,8 +214,8 @@ public class PaymentServlet extends HttpServlet {
                     if (payOSLink.isSuccess()) {
                         storedQrCode = payOSLink.getQrCode();
                         checkoutUrl = payOSLink.getCheckoutUrl();
-                        storedBankCode = notBlank(payOSLink.getBankCode()) ? payOSLink.getBankCode() : QRCodeGenerator.BANK_CODE;
-                        storedAccountNumber = notBlank(payOSLink.getAccountNumber()) ? payOSLink.getAccountNumber() : QRCodeGenerator.ACCOUNT_NUMBER;
+                        storedBankCode = notBlank(payOSLink.getBankCode()) ? payOSLink.getBankCode() : DEFAULT_BANK_CODE;
+                        storedAccountNumber = notBlank(payOSLink.getAccountNumber()) ? payOSLink.getAccountNumber() : DEFAULT_ACCOUNT_NUMBER;
 
                         session.setAttribute(orderCodeKey, orderCode);
                         session.setAttribute(qrCodeKey, storedQrCode);
@@ -325,7 +328,7 @@ public class PaymentServlet extends HttpServlet {
         }
 
         // Get or generate QR code URL
-        String qrCodeURL = buildQrCodeUrl(payment, qrContent);
+        String qrCodeURL = buildQrCodeUrl(qrContent);
 
         // Get booking details for display
         BookingViewModel bookingVM = bookingDAO.getById(bookingId);
@@ -353,7 +356,7 @@ public class PaymentServlet extends HttpServlet {
         request.setAttribute("bookingDateText", bookingDateText);
         request.setAttribute("bankCode", payment.getBankCode());
         request.setAttribute("accountNumber", payment.getAccountNumber());
-        request.setAttribute("accountName", QRCodeGenerator.ACCOUNT_NAME);
+        request.setAttribute("accountName", DEFAULT_ACCOUNT_NAME);
         request.setAttribute("checkoutUrl", checkoutUrl);
         request.setAttribute("bookingHistoryPath", bookingHistoryPath);
         request.setAttribute("bookingDetailPath", bookingDetailPath);
@@ -491,7 +494,7 @@ public class PaymentServlet extends HttpServlet {
             if (remainingSeconds < 0) remainingSeconds = 0;
         }
 
-        String qrCodeURL = buildQrCodeUrl(payment, qrContent);
+        String qrCodeURL = buildQrCodeUrl(qrContent);
         String paymentDeadlineText = "";
         if (deadline != null) {
             paymentDeadlineText = deadline.format(DateTimeFormatter.ofPattern("HH:mm:ss dd/MM/yyyy"));
@@ -514,7 +517,7 @@ public class PaymentServlet extends HttpServlet {
         request.setAttribute("bookingDateText", bookingDateText);
         request.setAttribute("bankCode", payment.getBankCode());
         request.setAttribute("accountNumber", payment.getAccountNumber());
-        request.setAttribute("accountName", QRCodeGenerator.ACCOUNT_NAME);
+        request.setAttribute("accountName", DEFAULT_ACCOUNT_NAME);
         request.setAttribute("checkoutUrl", checkoutUrl);
         request.setAttribute("bookingHistoryPath", bookingHistoryPath);
         request.setAttribute("bookingDetailPath", bookingDetailPath);
@@ -673,20 +676,17 @@ public class PaymentServlet extends HttpServlet {
         writeStatus(response, paymentStatus, expired, timeRemaining, "OK");
     }
 
-    private String buildQrCodeUrl(Payment payment, String qrContent) throws IOException {
+    private String buildQrCodeUrl(String qrContent) throws IOException {
         if (qrContent == null || qrContent.trim().isEmpty()) {
             return "";
         }
 
-        if ("payOS".equalsIgnoreCase(payment.getPaymentMethod())) {
-            if (qrContent.startsWith("http://") || qrContent.startsWith("https://")) {
-                return qrContent;
-            }
-            return "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data="
-                    + URLEncoder.encode(qrContent, StandardCharsets.UTF_8.name());
+        if (qrContent.startsWith("http://") || qrContent.startsWith("https://")) {
+            return qrContent;
         }
 
-        return QRCodeGenerator.generateQRCodeURL(payment.getAmount(), qrContent);
+        return "https://api.qrserver.com/v1/create-qr-code/?size=320x320&data="
+                + URLEncoder.encode(qrContent, StandardCharsets.UTF_8.name());
     }
 
     private String normalizeProviderStatus(String providerStatus) {
