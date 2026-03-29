@@ -23,7 +23,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 public class PayOSClient {
-
+    
     private static final String API_BASE_URL = "https://api-merchant.payos.vn";
 
     private final String clientId;
@@ -31,7 +31,7 @@ public class PayOSClient {
     private final String checksumKey;
     private final String returnUrl;
     private final String cancelUrl;
-
+    //Env credentials
     public PayOSClient() {
         this.clientId = getConfig("PAYOS_CLIENT_ID", "FFF_PAYOS_CLIENT_ID");
         this.apiKey = getConfig("PAYOS_API_KEY", "FFF_PAYOS_API_KEY");
@@ -39,13 +39,13 @@ public class PayOSClient {
         this.returnUrl = getConfig("PAYOS_RETURN_URL", "FFF_PAYOS_RETURN_URL");
         this.cancelUrl = getConfig("PAYOS_CANCEL_URL", "FFF_PAYOS_CANCEL_URL");
     }
-
+    //check config
     public boolean isConfigured() {
         return notBlank(clientId)
                 && notBlank(apiKey)
                 && notBlank(checksumKey);
     }
-
+    //debug missing config
     public String getMissingConfigSummary() {
         List<String> missing = new ArrayList<>();
         if (!notBlank(clientId)) {
@@ -68,7 +68,7 @@ public class PayOSClient {
         }
         return String.join(", ", missing);
     }
-
+    //create payment link
     public PaymentLinkResponse createPaymentLink(long orderCode,
                                                  BigDecimal amount,
                                                  String description,

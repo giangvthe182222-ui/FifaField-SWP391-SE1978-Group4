@@ -32,8 +32,7 @@ public class WeeklyBookingServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        // Trace flow:
+        
         // 1. User truy cập GET /booking/weekly.
         // 2. Servlet nạp toàn bộ dữ liệu cần render cho WeeklyBooking.jsp.
         // 3. Nếu hợp lệ thì forward sang JSP; nếu không hợp lệ thì redirect sớm.
@@ -228,10 +227,8 @@ public class WeeklyBookingServlet extends HttpServlet {
                 UUID fieldId = UUID.fromString(fieldIdParam);
                 FieldDAO fd = new FieldDAO();
                 request.setAttribute("selectedField", fd.getById(fieldId));
-
+                
                 ScheduleDAO scheduleDAO = new ScheduleDAO();
-                // Query toàn bộ schedule trong toàn khoảng lặp (ví dụ 4-12 tuần),
-                // vì JS cần dữ liệu này để auto chọn các tuần tiếp theo.
                 List<Schedule> allSchedules = scheduleDAO.getScheduleByFieldInRange(fieldId, weekStart, rangeEnd);
                 request.setAttribute("allRangeSchedules", allSchedules);
 
@@ -246,9 +243,7 @@ public class WeeklyBookingServlet extends HttpServlet {
                 // Mỗi startTime sẽ trở thành 1 hàng trong grid. TreeSet giúp tự sort tăng dần.
                 Set<LocalTime> timeSlotSet = new TreeSet<>();
                 for (Schedule s : firstWeekSchedules) timeSlotSet.add(s.getStartTime());
-
-                // Build grid rows: mỗi row là một khung giờ, bên trong có 7 cell tương ứng 7 ngày trong tuần.
-                // Đây là data structure chính mà WeeklyBooking.jsp dùng để vẽ board chọn lịch.
+                
                 List<Map<String, Object>> gridRows = new ArrayList<>();
                 for (LocalTime slot : timeSlotSet) {
                     Map<String, Object> row = new LinkedHashMap<>();

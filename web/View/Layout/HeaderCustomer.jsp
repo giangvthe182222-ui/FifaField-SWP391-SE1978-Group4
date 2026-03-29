@@ -116,3 +116,31 @@
 
     </div>
 </header>
+
+<script>
+    (function ensureCustomerLucide() {
+        function renderIcons() {
+            if (window.lucide && typeof window.lucide.createIcons === "function") {
+                window.lucide.createIcons();
+            }
+        }
+
+        if (window.lucide) {
+            renderIcons();
+            return;
+        }
+
+        var existing = document.querySelector('script[data-lucide-customer="1"]');
+        if (existing) {
+            existing.addEventListener("load", renderIcons, { once: true });
+            return;
+        }
+
+        var script = document.createElement("script");
+        script.src = "https://unpkg.com/lucide@latest";
+        script.defer = true;
+        script.setAttribute("data-lucide-customer", "1");
+        script.addEventListener("load", renderIcons, { once: true });
+        document.head.appendChild(script);
+    })();
+</script>
