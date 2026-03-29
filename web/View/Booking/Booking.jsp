@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -27,14 +28,15 @@
 <main class="flex-grow max-w-7xl mx-auto px-6 py-12 space-y-10 w-full">
 
     <c:set var="dashboardPath" value="/customer/dashboard" />
+    <c:set var="roleNameLower" value="${fn:toLowerCase(sessionScope.user.role.roleName)}" />
     <c:choose>
-        <c:when test="${sessionScope.user.role.roleName eq 'STAFF' or sessionScope.user.role.roleName eq 'staff'}">
+        <c:when test="${roleNameLower eq 'staff'}">
             <c:set var="dashboardPath" value="/staff/dashboard" />
         </c:when>
-        <c:when test="${sessionScope.user.role.roleName eq 'MANAGER' or sessionScope.user.role.roleName eq 'manager'}">
+        <c:when test="${roleNameLower eq 'manager'}">
             <c:set var="dashboardPath" value="/manager/dashboard" />
         </c:when>
-        <c:when test="${sessionScope.user.role.roleName eq 'ADMIN' or sessionScope.user.role.roleName eq 'admin'}">
+        <c:when test="${roleNameLower eq 'admin'}">
             <c:set var="dashboardPath" value="/admin-dashboard" />
         </c:when>
     </c:choose>

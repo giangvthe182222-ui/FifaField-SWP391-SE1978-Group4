@@ -30,12 +30,14 @@
 </head>
 <body class="antialiased text-gray-900 flex flex-col min-h-screen">
 
+<c:set var="roleNameLower" value="${fn:toLowerCase(sessionScope.user.role.roleName)}" />
+
 <%-- Role-aware header --%>
 <c:choose>
-    <c:when test="${sessionScope.user.role.roleName eq 'STAFF' or sessionScope.user.role.roleName eq 'staff'}">
+    <c:when test="${roleNameLower eq 'staff'}">
         <jsp:include page="/View/Layout/HeaderStaff.jsp"/>
     </c:when>
-    <c:when test="${sessionScope.user.role.roleName eq 'MANAGER' or sessionScope.user.role.roleName eq 'manager'}">
+    <c:when test="${roleNameLower eq 'manager'}">
         <jsp:include page="/View/Layout/HeaderManager.jsp"/>
     </c:when>
     <c:otherwise>
@@ -47,13 +49,13 @@
 
     <c:set var="dashboardPath" value="/customer/dashboard" />
     <c:choose>
-        <c:when test="${sessionScope.user.role.roleName eq 'STAFF' or sessionScope.user.role.roleName eq 'staff'}">
+        <c:when test="${roleNameLower eq 'staff'}">
             <c:set var="dashboardPath" value="/staff/dashboard" />
         </c:when>
-        <c:when test="${sessionScope.user.role.roleName eq 'MANAGER' or sessionScope.user.role.roleName eq 'manager'}">
+        <c:when test="${roleNameLower eq 'manager'}">
             <c:set var="dashboardPath" value="/manager/dashboard" />
         </c:when>
-        <c:when test="${sessionScope.user.role.roleName eq 'ADMIN' or sessionScope.user.role.roleName eq 'admin'}">
+        <c:when test="${roleNameLower eq 'admin'}">
             <c:set var="dashboardPath" value="/admin-dashboard" />
         </c:when>
     </c:choose>

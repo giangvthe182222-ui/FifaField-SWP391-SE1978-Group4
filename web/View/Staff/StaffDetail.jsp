@@ -157,16 +157,6 @@
                     <i data-lucide="edit-3" class="w-4 h-4"></i>
                     CHỈNH SỬA HỒ SƠ
                 </a>
-                <form method="post" action="${pageContext.request.contextPath}/staff/delete" 
-                      class="flex-1"
-                      onsubmit="return confirm('Bạn có chắc muốn xóa nhân viên này?');">
-                    <input type="hidden" name="id" value="${staff.userId}" />
-                    <button type="submit" 
-                            class="w-full bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white py-5 rounded-[2rem] font-black text-[10px] uppercase tracking-[0.2em] transition-all hover:-translate-y-1 flex items-center justify-center gap-3 border border-rose-100">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        XÓA NHÂN SỰ
-                    </button>
-                </form>
                 <a href="${pageContext.request.contextPath}/staff/list" 
                    class="w-10 h-10 bg-gray-50 hover:bg-gray-100 text-gray-400 rounded-xl border border-gray-100 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
