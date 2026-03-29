@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -56,6 +57,7 @@
     </c:if>
 
     <c:if test="${not empty booking}">
+        <c:set var="normalizedBookingStatus" value="${fn:toLowerCase(fn:trim(booking.status))}" />
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
             <!-- Main Info Card -->
@@ -153,9 +155,9 @@
                             </div>
                         </div>
 
-                        <c:if test="${booking.status == 'pending' || booking.status == 'pending extra'}">
+                        <c:if test="${normalizedBookingStatus == 'pending' || normalizedBookingStatus == 'pending extra'}">
                             <c:choose>
-                                <c:when test="${booking.status == 'pending extra'}">
+                                <c:when test="${normalizedBookingStatus == 'pending extra'}">
                                     <a href="${pageContext.request.contextPath}/payment?bookingId=${booking.bookingId}&source=supplementary" class="w-full bg-[#008751] hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
                                         <i data-lucide="credit-card" class="w-4 h-4"></i>
                                         TIẾP TỤC THANH TOÁN

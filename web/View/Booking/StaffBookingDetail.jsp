@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>
 
 <!DOCTYPE html>
 <html lang="vi">
@@ -54,6 +55,7 @@
     </c:if>
 
     <c:if test="${not empty booking}">
+        <c:set var="normalizedBookingStatus" value="${fn:toLowerCase(fn:trim(booking.status))}" />
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
             <!-- Main Info Card -->
@@ -225,6 +227,16 @@
                         </div>
                     </div>
                 </div>
+
+                <c:if test="${normalizedBookingStatus == 'pending extra'}">
+                    <div class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-8 space-y-4">
+                        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Hoàn thành đơn</h3>
+                        <a href="${pageContext.request.contextPath}/payment?bookingId=${booking.bookingId}&source=supplementary" class="w-full bg-[#008751] hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                            <i data-lucide="credit-card" class="w-4 h-4"></i>
+                            Tiếp tục thanh toán
+                        </a>
+                    </div>
+                </c:if>
 
                 <a href="${pageContext.request.contextPath}/staff/locationBookings" class="w-10 h-10 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
