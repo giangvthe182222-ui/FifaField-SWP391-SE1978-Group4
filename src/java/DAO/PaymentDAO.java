@@ -306,7 +306,7 @@ public class PaymentDAO {
             payment.setPaymentTime(paymentTime.toLocalDateTime());
         }
 
-        // bank-related info
+        // bank info
         payment.setTransactionCode(rs.getString("transaction_code"));
         payment.setQrContent(rs.getString("qr_content"));
         payment.setBankCode(rs.getString("bank_code"));

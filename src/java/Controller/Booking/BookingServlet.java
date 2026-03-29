@@ -82,7 +82,7 @@ public class BookingServlet extends HttpServlet {
                 UUID locationId = UUID.fromString(locationIdParam);
                 request.setAttribute("selectedLocationId", locationId);
 
-                // Fields of the location, optionally filtered by field type (5, 7, 11)
+                // Fields of the location, optionally filtered by field type (7, 11)
                 FieldDAO fieldDAO = new FieldDAO();
                 List<Field> allFields = fieldDAO.getByLocation(locationId);
                 // Filter out inactive/unavailable fields

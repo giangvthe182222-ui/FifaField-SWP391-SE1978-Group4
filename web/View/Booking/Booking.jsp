@@ -36,9 +36,6 @@
         <c:when test="${roleNameLower eq 'manager'}">
             <c:set var="dashboardPath" value="/manager/dashboard" />
         </c:when>
-        <c:when test="${roleNameLower eq 'admin'}">
-            <c:set var="dashboardPath" value="/admin-dashboard" />
-        </c:when>
     </c:choose>
 
     <!-- TOP TITLE & MODES -->
@@ -259,7 +256,7 @@
                         <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"></i>
                         <input type="text" name="bookingPhone" maxlength="20" required
                                placeholder="Nhập số điện thoại liên hệ"
-                               value="${not empty param.bookingPhone ? param.bookingPhone : sessionScope.user.phone}"
+                               value="${not empty param.bookingPhone ? param.bookingPhone : (roleNameLower eq 'staff' ? '' : sessionScope.user.phone)}"
                                class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl font-bold text-gray-700 input-focus" />
                     </div>
                 </div>

@@ -259,7 +259,7 @@
                                             <c:if test="${b.status == 'pending extra'}">
                                                 <a href="${pageContext.request.contextPath}/payment?bookingId=${b.bookingId}&source=supplementary" class="bg-[#008751] hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors">Tiếp tục thanh toán</a>
                                             </c:if>
-                                            <c:if test="${viewMode == 'staff' && (b.status == 'paid' || b.status == 'checked in')}">
+                                            <c:if test="${viewMode == 'staff' && (b.status == 'checked in')}">
                                                 <a href="${pageContext.request.contextPath}/staff/addSupplementaryEquipment?bookingId=${b.bookingId}" class="bg-[#008751] hover:bg-[#006b40] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008751]/20 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-[0.99] shadow-lg shadow-emerald-200">
                                                     <i data-lucide="plus-circle" class="w-4 h-4"></i>
                                                     THÊM DỤNG CỤ
