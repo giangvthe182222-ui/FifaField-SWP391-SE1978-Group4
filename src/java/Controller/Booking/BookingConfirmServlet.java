@@ -207,7 +207,7 @@ public class BookingConfirmServlet extends HttpServlet {
 
         PayOSClient.PaymentLinkResponse payOSLink = payOSClient.createPaymentLink(
                 orderCode,
-                total,
+                total, 
                 description,
                 booking.getBookingId(),
             paymentDeadline,

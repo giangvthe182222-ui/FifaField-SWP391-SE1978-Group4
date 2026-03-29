@@ -103,7 +103,7 @@
         
         <!-- INPUTS HIDDEN FOR STATE -->
         <input type="hidden" name="scheduleId" id="scheduleId" value="${param.scheduleId}" />
-        <input type="hidden" name="bookingDate" id="bookingDate" value="${param.bookingDate}" />
+        <input type="hidden" id="bookingDate" value="${param.bookingDate}" />
         <input type="hidden" name="bookingMode" id="bookingMode" value="${empty param.bookingMode ? 'normal' : param.bookingMode}" />
 
         <!-- LEFT PANEL: CONFIGURATION -->
@@ -187,7 +187,7 @@
                         <div class="space-y-4">
                             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Lịch thi đấu theo ngày <span class="text-rose-500">*</span></label>
                             <div class="flex items-center gap-3">
-                                <input type="date" id="scheduleDateFilter" value="${param.bookingDate}" class="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none input-focus">
+                                <input type="date" id="scheduleDateFilter" value="${param.bookingDate}" min="${minBookingDate}" class="px-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none input-focus">
                                 <button type="button" id="clearScheduleDateFilter" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-[10px] font-black text-gray-400 uppercase tracking-widest hover:text-[#008751] hover:border-[#008751] transition-all">
                                     Xóa lọc ngày
                                 </button>
