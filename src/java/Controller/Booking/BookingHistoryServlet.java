@@ -1,6 +1,7 @@
 package Controller.Booking;
 
 import Models.BookingViewModel;
+import Models.Feedback;
 import Models.User;
 import DAO.BookingDAO;
 import DAO.FeedbackDAO;
@@ -82,11 +83,14 @@ public class BookingHistoryServlet extends HttpServlet {
         FeedbackDAO feedbackDAO = new FeedbackDAO();
         Set<UUID> feedbackBookingIds = feedbackDAO.getFeedbackBookingIdsByCustomer(userId);
         Map<UUID, Boolean> feedbackBookingMap = new HashMap<>();
+        Map<UUID, Feedback> feedbackMap = new HashMap<>();
         Map<UUID, Boolean> reviewableBookingMap = new HashMap<>();
         LocalDateTime now = LocalDateTime.now();
         for (BookingViewModel booking : pageBookings) {
-            feedbackBookingMap.put(booking.getBookingId(), feedbackBookingIds.contains(booking.getBookingId()));
-                boolean reviewable = "completed".equalsIgnoreCase(booking.getStatus())
+            Feedback feedback = feedbackDAO.getFeedbackByBookingAndCustomer(booking.getBookingId(), userId);
+            feedbackMap.put(booking.getBookingId(), feedback);
+            feedbackBookingMap.put(booking.getBookingId(), feedback != null);
+            boolean reviewable = "completed".equalsIgnoreCase(booking.getStatus())
                     && booking.getBookingDate() != null
                     && booking.getEndTime() != null
                     && !LocalDateTime.of(booking.getBookingDate(), booking.getEndTime()).isAfter(now);
@@ -95,6 +99,7 @@ public class BookingHistoryServlet extends HttpServlet {
 
         request.setAttribute("bookings", pageBookings);
         request.setAttribute("feedbackBookingMap", feedbackBookingMap);
+        request.setAttribute("feedbackMap", feedbackMap);
         request.setAttribute("reviewableBookingMap", reviewableBookingMap);
         request.setAttribute("currentPage", pageNum);
         request.setAttribute("totalPages", totalPages);

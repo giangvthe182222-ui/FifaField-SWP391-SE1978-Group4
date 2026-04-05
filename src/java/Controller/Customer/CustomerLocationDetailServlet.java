@@ -1,6 +1,7 @@
 package Controller.Customer;
 
 import DAO.FieldDAO;
+import DAO.FeedbackDAO;
 import DAO.LocationDAO;
 import Models.Field;
 import Models.Location;
@@ -14,7 +15,9 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -24,6 +27,7 @@ public class CustomerLocationDetailServlet extends HttpServlet {
 
     private final LocationDAO locationDAO = new LocationDAO();
     private final FieldDAO fieldDAO = new FieldDAO();
+    private final FeedbackDAO feedbackDAO = new FeedbackDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -83,8 +87,17 @@ public class CustomerLocationDetailServlet extends HttpServlet {
                 pageFields = new ArrayList<>(fields.subList(startIdx, endIdx));
             }
 
+            Map<UUID, Double> averageRatingMap = new HashMap<>();
+            Map<UUID, Integer> feedbackCountMap = new HashMap<>();
+            for (Field field : pageFields) {
+                averageRatingMap.put(field.getFieldId(), feedbackDAO.getAverageRatingByField(field.getFieldId()));
+                feedbackCountMap.put(field.getFieldId(), feedbackDAO.getFeedbackCountByField(field.getFieldId()));
+            }
+
             request.setAttribute("location", location);
             request.setAttribute("fields", pageFields);
+            request.setAttribute("averageRatingMap", averageRatingMap);
+            request.setAttribute("feedbackCountMap", feedbackCountMap);
             request.setAttribute("currentPage", pageNum);
             request.setAttribute("totalPages", totalPages);
             request.setAttribute("totalFields", totalFields);
