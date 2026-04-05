@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chi tiết sân</title>
+    <title>Chi tiết sân - FIFAFIELD</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -14,9 +14,11 @@
     </style>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-900">
-<jsp:include page="/View/Layout/HeaderAdmin.jsp" />
+<jsp:include page="/View/Layout/HeaderCustomer.jsp" />
 
 <main class="max-w-6xl mx-auto px-6 py-10 space-y-8">
+    <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
+
     <div class="bg-white rounded-[2rem] p-8 shadow-xl shadow-slate-200/60 border border-slate-100">
         <div class="flex flex-col lg:flex-row items-start gap-8">
             <div class="w-full lg:w-80 h-64 lg:h-80 bg-slate-100 rounded-[1.75rem] overflow-hidden shrink-0">
@@ -44,18 +46,18 @@
                     </div>
                     <div class="px-4 py-3 bg-slate-50 rounded-2xl border border-slate-200">
                         <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Thuộc cụm</p>
-                        <a href="${pageContext.request.contextPath}/locations/view?location_id=${field.locationId}" class="font-bold mt-1 inline-block text-[#008751]">Xem chi tiết cụm</a>
+                        <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${field.locationId}" class="font-bold mt-1 inline-block text-[#008751]">Xem chi tiết cụm</a>
                     </div>
                 </div>
 
                 <div class="flex flex-wrap gap-3">
-                    <a href="${pageContext.request.contextPath}/field-schedule?fieldId=${field.fieldId}"
-                       class="px-6 py-3 bg-slate-50 rounded-xl border border-slate-200 font-black">Lịch</a>
+                    <a href="${pageContext.request.contextPath}/customer/field-schedule?fieldId=${field.fieldId}"
+                       class="px-6 py-3 bg-slate-50 rounded-xl border border-slate-200 font-black">Xem lịch sân</a>
 
-                    <a href="${pageContext.request.contextPath}/fields/edit?field_id=${field.fieldId}"
-                       class="px-6 py-3 bg-[#008751] text-white rounded-xl font-black">Sửa sân</a>
+                    <a href="${pageContext.request.contextPath}/booking?locationId=${field.locationId}&fieldId=${field.fieldId}"
+                       class="px-6 py-3 bg-[#008751] text-white rounded-xl font-black">Đặt ngay</a>
 
-                    <a href="${pageContext.request.contextPath}/fields?location_id=${field.locationId}"
+                    <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${field.locationId}"
                        class="w-12 h-12 border rounded-xl text-gray-500 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                     </a>
@@ -92,11 +94,9 @@
         </div>
 
         <div class="bg-white rounded-[2rem] p-7 shadow-lg shadow-slate-200/50 border border-slate-100 lg:col-span-2">
-            <div class="flex items-center justify-between gap-4 flex-wrap">
-                <div>
-                    <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Chi tiết đánh giá</p>
-                    <h2 class="mt-1 text-2xl font-black uppercase">Khách hàng nói gì</h2>
-                </div>
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">Chi tiết đánh giá</p>
+                <h2 class="mt-1 text-2xl font-black uppercase">Khách hàng nói gì</h2>
             </div>
 
             <div class="mt-6 space-y-4">
@@ -135,6 +135,6 @@
     </section>
 </main>
 
-<jsp:include page="/View/Layout/Footer.jsp" />
+<jsp:include page="/View/Layout/Footer.jsp"/>
 </body>
 </html>

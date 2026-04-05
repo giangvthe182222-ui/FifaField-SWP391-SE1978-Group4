@@ -3,7 +3,9 @@ package Controller.Field;
 
 
 import DAO.FieldDAO;
+import DAO.FeedbackDAO;
 import Models.Field;
+import Models.FieldFeedbackViewModel;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -11,6 +13,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.UUID;
 
 @WebServlet(name = "FieldDetailServlet", urlPatterns = {"/fields/view"})
@@ -33,7 +36,15 @@ public class FieldDetailServlet extends HttpServlet {
                 response.sendError(HttpServletResponse.SC_NOT_FOUND, "Field not found");
                 return;
             }
+            FeedbackDAO feedbackDAO = new FeedbackDAO();
+            Double averageRating = feedbackDAO.getAverageRatingByField(uuid);
+            int feedbackCount = feedbackDAO.getFeedbackCountByField(uuid);
+            List<FieldFeedbackViewModel> feedbacks = feedbackDAO.getFeedbacksByField(uuid);
+
             request.setAttribute("field", f);
+            request.setAttribute("averageRating", averageRating);
+            request.setAttribute("feedbackCount", feedbackCount);
+            request.setAttribute("feedbacks", feedbacks);
             request.getRequestDispatcher("/View/Field/field-detail.jsp").forward(request, response);
         } catch (IllegalArgumentException e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid UUID format");
