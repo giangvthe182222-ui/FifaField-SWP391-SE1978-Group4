@@ -64,18 +64,101 @@
             <div>
                 <input type="time" name="time" value="${param.time}" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
             </div>
-            <div>
-                <select name="status" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="pending" ${param.status == 'pending' ? 'selected' : ''}>pending</option>
-                    <option value="paid" ${param.status == 'paid' ? 'selected' : ''}>paid</option>
-                    <option value="checked in" ${param.status == 'checked in' ? 'selected' : ''}>checked in</option>
-                    <option value="completed" ${param.status == 'completed' ? 'selected' : ''}>completed</option>
-                    <option value="pending refund" ${param.status == 'pending refund' ? 'selected' : ''}>pending refund</option>
-                    <option value="cancelled" ${param.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
-                    <option value="refunded" ${param.status == 'refunded' ? 'selected' : ''}>refunded</option>
-                </select>
-            </div>
+            <c:choose>
+                <c:when test="${viewMode == 'staff'}">
+                    <div>
+                        <select name="playStatus" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                            <option value="">Play status</option>
+                            <option value="booked" ${param.playStatus == 'booked' ? 'selected' : ''}>booked</option>
+                            <option value="checked in" ${param.playStatus == 'checked in' ? 'selected' : ''}>checked in</option>
+                            <option value="checked out" ${param.playStatus == 'checked out' ? 'selected' : ''}>checked out</option>
+                            <option value="completed" ${param.playStatus == 'completed' ? 'selected' : ''}>completed</option>
+                            <option value="cancelled" ${param.playStatus == 'cancelled' ? 'selected' : ''}>cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select name="paymentStatus" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                            <option value="">Payment status</option>
+                            <option value="pending" ${param.paymentStatus == 'pending' ? 'selected' : ''}>pending</option>
+                            <option value="deposited" ${param.paymentStatus == 'deposited' ? 'selected' : ''}>deposited</option>
+                            <option value="paid" ${param.paymentStatus == 'paid' ? 'selected' : ''}>paid</option>
+                            <option value="pending refund" ${param.paymentStatus == 'pending refund' ? 'selected' : ''}>pending refund</option>
+                            <option value="refunded" ${param.paymentStatus == 'refunded' ? 'selected' : ''}>refunded</option>
+                            <option value="failed" ${param.paymentStatus == 'failed' ? 'selected' : ''}>failed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select name="extraPaymentStatus" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                            <option value="">Extra status</option>
+                            <option value="none" ${param.extraPaymentStatus == 'none' ? 'selected' : ''}>none</option>
+                            <option value="pending extra" ${param.extraPaymentStatus == 'pending extra' ? 'selected' : ''}>pending extra</option>
+                            <option value="paid extra" ${param.extraPaymentStatus == 'paid extra' ? 'selected' : ''}>paid extra</option>
+                        </select>
+                    </div>
+                </c:when>
+                <c:when test="${viewMode == 'customer'}">
+                    <div>
+                        <select name="playStatus" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                            <option value="">Play status</option>
+                            <option value="booked" ${param.playStatus == 'booked' ? 'selected' : ''}>booked</option>
+                            <option value="checked in" ${param.playStatus == 'checked in' ? 'selected' : ''}>checked in</option>
+                            <option value="checked out" ${param.playStatus == 'checked out' ? 'selected' : ''}>checked out</option>
+                            <option value="completed" ${param.playStatus == 'completed' ? 'selected' : ''}>completed</option>
+                            <option value="cancelled" ${param.playStatus == 'cancelled' ? 'selected' : ''}>cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select name="paymentStatus" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                            <option value="">Payment status</option>
+                            <option value="pending" ${param.paymentStatus == 'pending' ? 'selected' : ''}>pending</option>
+                            <option value="deposited" ${param.paymentStatus == 'deposited' ? 'selected' : ''}>deposited</option>
+                            <option value="paid" ${param.paymentStatus == 'paid' ? 'selected' : ''}>paid</option>
+                            <option value="pending refund" ${param.paymentStatus == 'pending refund' ? 'selected' : ''}>pending refund</option>
+                            <option value="refunded" ${param.paymentStatus == 'refunded' ? 'selected' : ''}>refunded</option>
+                            <option value="failed" ${param.paymentStatus == 'failed' ? 'selected' : ''}>failed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select name="extraPaymentStatus" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                            <option value="">Extra status</option>
+                            <option value="none" ${param.extraPaymentStatus == 'none' ? 'selected' : ''}>none</option>
+                            <option value="pending extra" ${param.extraPaymentStatus == 'pending extra' ? 'selected' : ''}>pending extra</option>
+                            <option value="paid extra" ${param.extraPaymentStatus == 'paid extra' ? 'selected' : ''}>paid extra</option>
+                        </select>
+                    </div>
+                </c:when>
+                <c:otherwise>
+                    <div>
+                        <select name="playStatus" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                            <option value="">Play status</option>
+                            <option value="booked" ${param.playStatus == 'booked' ? 'selected' : ''}>booked</option>
+                            <option value="checked in" ${param.playStatus == 'checked in' ? 'selected' : ''}>checked in</option>
+                            <option value="checked out" ${param.playStatus == 'checked out' ? 'selected' : ''}>checked out</option>
+                            <option value="completed" ${param.playStatus == 'completed' ? 'selected' : ''}>completed</option>
+                            <option value="cancelled" ${param.playStatus == 'cancelled' ? 'selected' : ''}>cancelled</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select name="paymentStatus" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                            <option value="">Payment status</option>
+                            <option value="pending" ${param.paymentStatus == 'pending' ? 'selected' : ''}>pending</option>
+                            <option value="deposited" ${param.paymentStatus == 'deposited' ? 'selected' : ''}>deposited</option>
+                            <option value="paid" ${param.paymentStatus == 'paid' ? 'selected' : ''}>paid</option>
+                            <option value="pending refund" ${param.paymentStatus == 'pending refund' ? 'selected' : ''}>pending refund</option>
+                            <option value="refunded" ${param.paymentStatus == 'refunded' ? 'selected' : ''}>refunded</option>
+                            <option value="failed" ${param.paymentStatus == 'failed' ? 'selected' : ''}>failed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <select name="extraPaymentStatus" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
+                            <option value="">Extra status</option>
+                            <option value="none" ${param.extraPaymentStatus == 'none' ? 'selected' : ''}>none</option>
+                            <option value="pending extra" ${param.extraPaymentStatus == 'pending extra' ? 'selected' : ''}>pending extra</option>
+                            <option value="paid extra" ${param.extraPaymentStatus == 'paid extra' ? 'selected' : ''}>paid extra</option>
+                        </select>
+                    </div>
+                </c:otherwise>
+            </c:choose>
             <c:if test="${viewMode == 'staff' || viewMode == 'manager'}">
                 <div>
                     <input type="text" name="customerKeyword" placeholder="Tên hoặc số điện thoại..." value="${param.customerKeyword}" class="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-xs font-bold text-gray-700 outline-none">
@@ -182,9 +265,16 @@
                                 
                                         <div class="md:hidden flex-grow">
                                             <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight">${b.fieldName}</h3>
-                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' || b.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : b.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
-                                                ${b.status}
-                                            </span>
+                                            <c:if test="${viewMode != 'staff'}">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.playStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.playStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.playStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : b.playStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+                                                        Play: ${empty b.playStatus ? 'booked' : b.playStatus}
+                                                    </span>
+                                                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">
+                                                        Payment: ${empty b.paymentStatus ? 'pending' : b.paymentStatus}
+                                                    </span>
+                                                </div>
+                                            </c:if>
                                         </div>
                                     </div>
 
@@ -192,9 +282,16 @@
                                     <div class="hidden md:block flex-grow space-y-2">
                                         <div class="flex items-center gap-4">
                                             <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight group-hover:text-[#008751] transition-colors">${b.fieldName}</h3>
-                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'cancelled' || b.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : b.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
-                                                ${b.status}
-                                            </span>
+                                            <c:if test="${viewMode != 'staff'}">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.playStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.playStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.playStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : b.playStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+                                                        Play: ${empty b.playStatus ? 'booked' : b.playStatus}
+                                                    </span>
+                                                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">
+                                                        Payment: ${empty b.paymentStatus ? 'pending' : b.paymentStatus}
+                                                    </span>
+                                                </div>
+                                            </c:if>
                                         </div>
                                         <div class="flex items-center gap-6">
                                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">${b.bookingDate}</p>
@@ -215,6 +312,7 @@
                                         <div class="space-y-1 text-right">
                                             <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Tổng cộng</p>
                                             <p class="text-xs font-black text-[#008751]"><fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> VND</p>
+                                            <p class="text-[9px] font-bold text-rose-600">Chưa trả: <fmt:formatNumber value="${empty b.outstandingAmount ? 0 : b.outstandingAmount}" pattern="#,##0"/> VND</p>
                                         </div>
                                     </div>
 
@@ -225,49 +323,78 @@
                                             <p class="text-2xl font-black text-[#008751] tracking-tighter">
                                                 <fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> VND
                                             </p>
+                                            <p class="text-[10px] font-bold text-rose-600 mt-1">Chưa trả: <fmt:formatNumber value="${empty b.outstandingAmount ? 0 : b.outstandingAmount}" pattern="#,##0"/> VND</p>
                                         </div>
                                         <div class="flex items-center gap-2 bg-gray-50 p-2 rounded-2xl border border-gray-100 w-full sm:w-auto">
                                             <c:choose>
                                                 <c:when test="${viewMode == 'staff'}">
-                                                    <c:set var="canStaffUpdate" value="${staffCanCheckInMap[b.bookingId] || staffCanRefundMap[b.bookingId]}"/>
-                                                    <select name="status_${b.bookingId}" ${!canStaffUpdate ? 'disabled' : ''} class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-700 focus:ring-0 cursor-pointer px-3 ${!canStaffUpdate ? 'opacity-60 cursor-not-allowed' : ''}">
-                                                        <option value="${b.status}" selected>${b.status}</option>
-                                                        <c:if test="${staffCanCheckInMap[b.bookingId] && b.status != 'checked in'}">
-                                                            <option value="checked in">checked in</option>
-                                                        </c:if>
-                                                        <c:if test="${staffCanRefundMap[b.bookingId] && b.status != 'refunded'}">
-                                                            <option value="refunded">refunded</option>
-                                                        </c:if>
-                                                    </select>
+                                                    <c:set var="canStaffUpdate" value="${staffCanCheckInMap[b.bookingId] || staffCanCheckOutMap[b.bookingId] || staffCanPendingRefundMap[b.bookingId] || staffCanRefundMap[b.bookingId] || staffCanMarkPaidMap[b.bookingId] || staffCanMarkExtraPaidMap[b.bookingId]}"/>
+                                                    <div class="flex flex-col items-stretch gap-2">
+                                                        <select name="playStatus_${b.bookingId}" data-current="${empty b.playStatus ? 'booked' : b.playStatus}" ${!canStaffUpdate ? 'disabled' : ''} class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${!canStaffUpdate ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${b.playStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border-rose-100' : b.playStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border-sky-100' : b.playStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border-orange-200' : b.playStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-100 text-slate-600 border-slate-200'}">
+                                                            <option value="${empty b.playStatus ? 'booked' : b.playStatus}" selected>${empty b.playStatus ? 'booked' : b.playStatus}</option>
+                                                            <c:if test="${staffCanCheckInMap[b.bookingId] && b.playStatus != 'checked in'}">
+                                                                <option value="checked in">checked in</option>
+                                                            </c:if>
+                                                            <c:if test="${staffCanCheckOutMap[b.bookingId] && b.playStatus != 'checked out'}">
+                                                                <option value="checked out">checked out</option>
+                                                            </c:if>
+                                                        </select>
+
+                                                        <select name="paymentStatus_${b.bookingId}" data-current="${empty b.paymentStatus ? 'paid' : b.paymentStatus}" ${!canStaffUpdate ? 'disabled' : ''} class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${!canStaffUpdate ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${b.paymentStatus == 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'}">
+                                                            <option value="${empty b.paymentStatus ? 'paid' : b.paymentStatus}" selected>${empty b.paymentStatus ? 'paid' : b.paymentStatus}</option>
+                                                            <c:if test="${staffCanMarkPaidMap[b.bookingId] && b.paymentStatus != 'paid'}">
+                                                                <option value="paid">paid</option>
+                                                            </c:if>
+                                                            <c:if test="${staffCanPendingRefundMap[b.bookingId] && b.paymentStatus != 'pending refund'}">
+                                                                <option value="pending refund">pending refund</option>
+                                                            </c:if>
+                                                            <c:if test="${staffCanRefundMap[b.bookingId] && b.paymentStatus != 'refunded'}">
+                                                                <option value="refunded">refunded</option>
+                                                            </c:if>
+                                                        </select>
+
+                                                        <select name="extraPaymentStatus_${b.bookingId}" data-current="${empty b.extraPaymentStatus ? 'none' : b.extraPaymentStatus}" ${!staffCanMarkExtraPaidMap[b.bookingId] ? 'disabled' : ''} class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${!staffCanMarkExtraPaidMap[b.bookingId] ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${b.extraPaymentStatus == 'pending extra' ? 'bg-orange-50 text-orange-700 border-orange-200' : b.extraPaymentStatus == 'paid extra' ? 'bg-emerald-50 text-[#008751] border-emerald-100' : 'bg-gray-100 text-gray-600 border-gray-200'}">
+                                                            <option value="${empty b.extraPaymentStatus ? 'none' : b.extraPaymentStatus}" selected>${empty b.extraPaymentStatus ? 'none' : b.extraPaymentStatus}</option>
+                                                            <c:if test="${staffCanMarkExtraPaidMap[b.bookingId] && b.extraPaymentStatus != 'paid extra'}">
+                                                                <option value="paid extra">paid extra</option>
+                                                            </c:if>
+                                                        </select>
+                                                    </div>
                                                     <button type="button" onclick="updateStatus('${b.bookingId}')" ${!canStaffUpdate ? 'disabled' : ''} class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors ${!canStaffUpdate ? 'opacity-50 cursor-not-allowed hover:bg-gray-900' : ''}">Update</button>
                                                 </c:when>
                                                 <c:otherwise>
-                                                    <select name="status_${b.bookingId}" class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-gray-700 focus:ring-0 cursor-pointer px-3">
-                                                        <option value="pending" ${b.status == 'pending' ? 'selected' : ''}>pending</option>
-                                                        <option value="paid" ${b.status == 'paid' ? 'selected' : ''}>paid</option>
-                                                        <option value="checked in" ${b.status == 'checked in' ? 'selected' : ''}>checked in</option>
-                                                        <option value="completed" ${b.status == 'completed' ? 'selected' : ''}>completed</option>
-                                                        <option value="pending refund" ${b.status == 'pending refund' ? 'selected' : ''}>pending refund</option>
-                                                        <option value="cancelled" ${b.status == 'cancelled' ? 'selected' : ''}>cancelled</option>
-                                                        <option value="refunded" ${b.status == 'refunded' ? 'selected' : ''}>refunded</option>
-                                                    </select>
+                                                    <div class="flex flex-col items-stretch gap-2">
+                                                        <select name="playStatus_${b.bookingId}" data-current="${empty b.playStatus ? 'booked' : b.playStatus}" class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border cursor-pointer ${b.playStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border-rose-100' : b.playStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border-sky-100' : b.playStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border-orange-200' : b.playStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-100 text-slate-600 border-slate-200'}">
+                                                            <option value="booked" ${empty b.playStatus || b.playStatus == 'booked' ? 'selected' : ''}>booked</option>
+                                                            <option value="checked in" ${b.playStatus == 'checked in' ? 'selected' : ''}>checked in</option>
+                                                            <option value="checked out" ${b.playStatus == 'checked out' ? 'selected' : ''}>checked out</option>
+                                                            <option value="completed" ${b.playStatus == 'completed' ? 'selected' : ''}>completed</option>
+                                                            <option value="cancelled" ${b.playStatus == 'cancelled' ? 'selected' : ''}>cancelled</option>
+                                                        </select>
+
+                                                        <select name="paymentStatus_${b.bookingId}" data-current="${empty b.paymentStatus ? 'pending' : b.paymentStatus}" class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border cursor-pointer ${b.paymentStatus == 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'}">
+                                                            <option value="pending" ${empty b.paymentStatus || b.paymentStatus == 'pending' ? 'selected' : ''}>pending</option>
+                                                            <option value="deposited" ${b.paymentStatus == 'deposited' ? 'selected' : ''}>deposited</option>
+                                                            <option value="paid" ${b.paymentStatus == 'paid' ? 'selected' : ''}>paid</option>
+                                                            <option value="pending refund" ${b.paymentStatus == 'pending refund' ? 'selected' : ''}>pending refund</option>
+                                                            <option value="refunded" ${b.paymentStatus == 'refunded' ? 'selected' : ''}>refunded</option>
+                                                            <option value="failed" ${b.paymentStatus == 'failed' ? 'selected' : ''}>failed</option>
+                                                        </select>
+
+                                                        <select name="extraPaymentStatus_${b.bookingId}" data-current="${empty b.extraPaymentStatus ? 'none' : b.extraPaymentStatus}" class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border cursor-pointer ${b.extraPaymentStatus == 'pending extra' ? 'bg-orange-50 text-orange-700 border-orange-200' : b.extraPaymentStatus == 'paid extra' ? 'bg-emerald-50 text-[#008751] border-emerald-100' : 'bg-gray-100 text-gray-600 border-gray-200'}">
+                                                            <option value="none" ${empty b.extraPaymentStatus || b.extraPaymentStatus == 'none' ? 'selected' : ''}>none</option>
+                                                            <option value="pending extra" ${b.extraPaymentStatus == 'pending extra' ? 'selected' : ''}>pending extra</option>
+                                                            <option value="paid extra" ${b.extraPaymentStatus == 'paid extra' ? 'selected' : ''}>paid extra</option>
+                                                        </select>
+                                                    </div>
                                                     <button type="button" onclick="updateStatus('${b.bookingId}')" class="bg-gray-900 text-white p-2 rounded-xl hover:bg-[#008751] transition-colors">Update</button>
                                                 </c:otherwise>
                                             </c:choose>
                                         </div>
                                         <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                                            <c:if test="${b.status == 'pending extra'}">
-                                                <a href="${pageContext.request.contextPath}/payment?bookingId=${b.bookingId}&source=supplementary" class="bg-[#008751] hover:bg-emerald-500 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest transition-colors">Tiếp tục thanh toán</a>
-                                            </c:if>
-                                            <c:if test="${viewMode == 'staff' && (b.status == 'checked in')}">
-                                                <a href="${pageContext.request.contextPath}/staff/addSupplementaryEquipment?bookingId=${b.bookingId}" class="bg-[#008751] hover:bg-[#006b40] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#008751]/20 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all hover:scale-[1.03] active:scale-[0.99] shadow-lg shadow-emerald-200">
-                                                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                                                    THÊM DỤNG CỤ
-                                                </a>
-                                            </c:if>
                                             <c:choose>
                                                 <c:when test="${viewMode == 'staff'}">
-                                                    <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">${b.equipmentBookingAllowed ? 'Chi tiết / thêm equipment' : 'Chi tiết'}</a>
+                                                    <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${b.bookingId}" class="w-full md:w-auto bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-[#008751] transition-all hover:scale-[1.05] active:scale-95 shadow-lg shadow-gray-200">Chi tiết</a>
                                                 </c:when>
                                                 <c:otherwise>
                                                     <span class="w-full md:w-auto bg-gray-100 text-gray-500 px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2">Theo dõi tại lịch sân</span>
@@ -288,9 +415,11 @@
                                 <article class="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-gray-200/30 hover:shadow-xl hover:shadow-[#008751]/10 transition-all p-6 flex flex-col gap-4 min-h-[320px]">
                                     <div class="flex items-start justify-between gap-3">
                                         <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight leading-tight">${b.fieldName}</h3>
-                                        <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest shrink-0 ${b.status == 'cancelled' || b.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : b.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
-                                            ${b.status}
-                                        </span>
+                                        <div class="flex flex-col gap-1 items-end shrink-0">
+                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.playStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.playStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : b.playStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : b.playStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">Play: ${empty b.playStatus ? 'booked' : b.playStatus}</span>
+                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.paymentStatus == 'failed' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Payment: ${empty b.paymentStatus ? 'pending' : b.paymentStatus}</span>
+                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.extraPaymentStatus == 'paid extra' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : b.extraPaymentStatus == 'pending extra' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Extra: ${empty b.extraPaymentStatus ? 'none' : b.extraPaymentStatus}</span>
+                                        </div>
                                     </div>
 
                                     <div class="space-y-2 bg-gray-50 border border-gray-100 rounded-2xl p-4">
@@ -304,13 +433,11 @@
                                         <div>
                                             <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1">Tổng cộng</p>
                                             <p class="text-2xl font-black text-[#008751] tracking-tighter"><fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> VND</p>
+                                            <p class="text-[10px] font-bold text-rose-600 mt-1">Chưa trả: <fmt:formatNumber value="${empty b.outstandingAmount ? 0 : b.outstandingAmount}" pattern="#,##0"/> VND</p>
                                         </div>
 
                                         <div class="flex flex-wrap items-center gap-2">
                                             <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="bg-gray-900 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-colors">Chi tiết</a>
-                                            <c:if test="${b.status == 'pending extra'}">
-                                                <a href="${pageContext.request.contextPath}/payment?bookingId=${b.bookingId}&source=supplementary" class="bg-[#008751] text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 transition-colors">Tiếp tục thanh toán</a>
-                                            </c:if>
                                             <c:if test="${reviewableBookingMap[b.bookingId]}">
                                                 <c:choose>
                                                     <c:when test="${feedbackBookingMap[b.bookingId]}">
@@ -336,11 +463,11 @@
     <c:if test="${totalPages > 1}">
         <div class="flex items-center justify-center gap-2 py-6">
             <c:if test="${currentPage > 1}">
-                     <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=1<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                    <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=1<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${viewMode == 'staff' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'staff' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'staff' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
                    class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
                     ⟨⟨ First
                 </a>
-                     <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${currentPage - 1}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                    <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${currentPage - 1}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${viewMode == 'staff' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'staff' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'staff' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
                    class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
                     ⟨ Prev
                 </a>
@@ -352,7 +479,7 @@
                         <span class="px-3 py-2 rounded-lg bg-[#008751] text-white font-bold text-sm">${i}</span>
                     </c:when>
                     <c:otherwise>
-                        <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${i}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                        <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${i}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${viewMode == 'staff' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'staff' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'staff' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
                            class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
                             ${i}
                         </a>
@@ -361,11 +488,11 @@
             </c:forEach>
 
             <c:if test="${currentPage < totalPages}">
-                <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${currentPage + 1}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${currentPage + 1}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${viewMode == 'staff' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'staff' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'staff' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
                    class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
                     Next ⟩
                 </a>
-                <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${totalPages}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${not empty param.status}">&status=${param.status}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
+                <a href="${pageContext.request.contextPath}${viewMode == 'manager' ? '/manager/locationBookings' : (viewMode == 'staff' ? '/staff/locationBookings' : '/customer/bookings')}?page=${totalPages}<c:if test="${not empty param.date}">&date=${param.date}</c:if><c:if test="${not empty param.time}">&time=${param.time}</c:if><c:if test="${viewMode == 'staff' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'staff' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'staff' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'manager' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.playStatus}">&playStatus=${param.playStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.paymentStatus}">&paymentStatus=${param.paymentStatus}</c:if><c:if test="${viewMode == 'customer' && not empty param.extraPaymentStatus}">&extraPaymentStatus=${param.extraPaymentStatus}</c:if><c:if test="${not empty param.customerKeyword}">&customerKeyword=${param.customerKeyword}</c:if>" 
                    class="px-3 py-2 rounded-lg border border-slate-200 font-semibold text-sm text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors">
                     Last ⟩⟩
                 </a>
@@ -408,23 +535,52 @@
 
 <script>
     function updateStatus(bookingId) {
-        var status = document.getElementsByName('status_' + bookingId)[0].value;
-        var f = document.createElement('form');
-        f.method = 'post';
-        f.action = '${pageContext.request.contextPath}${viewMode == "manager" ? "/manager/locationBookings" : "/staff/locationBookings"}';
+        var playStatus = document.getElementsByName('playStatus_' + bookingId)[0];
+        var paymentStatus = document.getElementsByName('paymentStatus_' + bookingId)[0];
+        var extraPaymentStatus = document.getElementsByName('extraPaymentStatus_' + bookingId)[0];
 
-        var i1 = document.createElement('input');
-        i1.name = 'bookingId';
-        i1.value = bookingId;
-        f.appendChild(i1);
+        if (playStatus && paymentStatus && extraPaymentStatus) {
+            var currentPaymentStatus = (paymentStatus.getAttribute('data-current') || '').toLowerCase();
+            var nextPaymentStatus = (paymentStatus.value || '').toLowerCase();
+            var currentExtraPaymentStatus = (extraPaymentStatus.getAttribute('data-current') || '').toLowerCase();
+            var nextExtraPaymentStatus = (extraPaymentStatus.value || '').toLowerCase();
+            if ((currentPaymentStatus === 'deposited' && nextPaymentStatus === 'paid')
+                    || (currentExtraPaymentStatus === 'pending extra' && nextExtraPaymentStatus === 'paid extra')) {
+                if (!confirm('Xác nhận thanh toán tiền mặt?')) {
+                    return;
+                }
+            }
 
-        var i2 = document.createElement('input');
-        i2.name = 'status';
-        i2.value = status;
-        f.appendChild(i2);
+            var form = document.createElement('form');
+            form.method = 'post';
+            form.action = '${pageContext.request.contextPath}${viewMode == "manager" ? "/manager/locationBookings" : "/staff/locationBookings"}';
 
-        document.body.appendChild(f);
-        f.submit();
+            var bookingInput = document.createElement('input');
+            bookingInput.name = 'bookingId';
+            bookingInput.value = bookingId;
+            form.appendChild(bookingInput);
+
+            var playInput = document.createElement('input');
+            playInput.name = 'playStatus';
+            playInput.value = playStatus.value;
+            form.appendChild(playInput);
+
+            var paymentInput = document.createElement('input');
+            paymentInput.name = 'paymentStatus';
+            paymentInput.value = paymentStatus.value;
+            form.appendChild(paymentInput);
+
+            var extraInput = document.createElement('input');
+            extraInput.name = 'extraPaymentStatus';
+            extraInput.value = extraPaymentStatus.value;
+            form.appendChild(extraInput);
+
+            document.body.appendChild(form);
+            form.submit();
+            return;
+        }
+
+        return;
     }
 </script>
 

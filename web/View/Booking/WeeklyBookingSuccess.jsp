@@ -111,7 +111,9 @@
                     <td class="px-6 py-4 text-right font-black text-[#008751]">
                         <fmt:formatNumber value="${b.totalPrice}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
                     </td>
-                    <td class="px-6 py-4 text-center text-xs font-black uppercase tracking-wide text-amber-600">${b.status}</td>
+                    <td class="px-6 py-4 text-center text-xs font-black uppercase tracking-wide text-amber-600">
+                        ${empty b.playStatus ? 'booked' : b.playStatus} / ${empty b.paymentStatus ? 'pending' : b.paymentStatus}
+                    </td>
                 </tr>
             </c:forEach>
             </tbody>
@@ -131,10 +133,10 @@
 
     <c:if test="${not empty weeklyGroupId and not empty bookings}">
         <div class="text-center">
-            <a href="${pageContext.request.contextPath}/payment?weeklyGroupId=${weeklyGroupId}"
+            <a href="${pageContext.request.contextPath}/payment?weeklyGroupId=${weeklyGroupId}&paymentOption=${empty weeklyPaymentOption ? 'full' : weeklyPaymentOption}"
                class="inline-flex items-center justify-center gap-2 px-10 py-4 bg-[#008751] hover:bg-[#006d41] text-white font-black uppercase tracking-widest text-sm rounded-2xl transition-all shadow-lg shadow-[#008751]/20">
                 <i data-lucide="credit-card" class="w-4 h-4"></i>
-                Thanh toán toàn bộ lịch tuần
+                Thanh toán lịch tuần
             </a>
         </div>
     </c:if>

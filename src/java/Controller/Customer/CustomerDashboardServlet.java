@@ -1,9 +1,7 @@
 package Controller.Customer;
 
 import DAO.BookingDAO;
-import DAO.LocationDAO;
 import Models.BookingViewModel;
-import Models.Location;
 import Models.User;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -12,15 +10,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.ArrayList;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @WebServlet(name = "CustomerDashboardServlet", urlPatterns = {"/customer/dashboard"})
 public class CustomerDashboardServlet extends HttpServlet {
-    private static final int PAGE_SIZE = 10;
-
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -32,87 +29,59 @@ public class CustomerDashboardServlet extends HttpServlet {
         }
 
         try {
-            LocationDAO locationDAO = new LocationDAO();
-            List<Location> allLocations = locationDAO.getAllLocations();
-            
-            // Filter out inactive locations
-            List<Location> activeLocations = allLocations.stream()
-                    .filter(loc -> loc.getStatus() != null && "ACTIVE".equalsIgnoreCase(loc.getStatus()))
-                    .collect(Collectors.toList());
+            BookingDAO bookingDAO = new BookingDAO();
+            List<BookingViewModel> bookings = bookingDAO.getByBooker(user.getUserId());
 
-            String searchName = request.getParameter("searchName");
-            String searchAddress = request.getParameter("searchAddress");
-                String selectedLocationName = request.getParameter("locationName");
+            BigDecimal totalSpent = BigDecimal.ZERO;
+            BigDecimal totalOutstanding = BigDecimal.ZERO;
+            int completedCount = 0;
+            int upcomingCount = 0;
+            LocalDate today = LocalDate.now();
 
-                List<String> locationNameOptions = activeLocations.stream()
-                    .map(Location::getLocationName)
-                    .filter(name -> name != null && !name.trim().isEmpty())
-                    .distinct()
-                    .sorted(String.CASE_INSENSITIVE_ORDER)
-                    .collect(Collectors.toList());
-            
-                List<Location> filteredLocations = activeLocations.stream()
-                    .filter(loc -> {
-                    if (selectedLocationName != null && !selectedLocationName.isBlank()) {
-                        return selectedLocationName.equalsIgnoreCase(loc.getLocationName());
-                    }
-                    return true;
-                    })
-                    .filter(loc -> {
-                        if (searchName != null && !searchName.isBlank()) {
-                            return loc.getLocationName() != null && loc.getLocationName().toLowerCase()
-                                    .contains(searchName.toLowerCase());
-                        }
-                        return true;
-                    })
-                    .filter(loc -> {
-                        if (searchAddress != null && !searchAddress.isBlank()) {
-                            return loc.getAddress() != null && loc.getAddress().toLowerCase()
-                                    .contains(searchAddress.toLowerCase());
-                        }
-                        return true;
-                    })
-                    .collect(Collectors.toList());
-            
-            // Pagination
-            int pageNum = 1;
-            String pageParam = request.getParameter("page");
-            if (pageParam != null && !pageParam.isBlank()) {
-                try {
-                    pageNum = Integer.parseInt(pageParam);
-                    if (pageNum < 1) pageNum = 1;
-                } catch (NumberFormatException e) {
-                    pageNum = 1;
+            for (BookingViewModel booking : bookings) {
+                BigDecimal outstanding = bookingDAO.getOutstandingAmount(booking.getBookingId());
+                booking.setOutstandingAmount(outstanding);
+
+                BigDecimal totalPrice = booking.getTotalPrice() == null ? BigDecimal.ZERO : booking.getTotalPrice();
+                BigDecimal settled = totalPrice.subtract(outstanding == null ? BigDecimal.ZERO : outstanding);
+                if (settled.compareTo(BigDecimal.ZERO) < 0) {
+                    settled = BigDecimal.ZERO;
+                }
+
+                String paymentStatus = booking.getPaymentStatus() == null ? "" : booking.getPaymentStatus().trim().toLowerCase(Locale.ROOT);
+                if (!"refunded".equals(paymentStatus)) {
+                    totalSpent = totalSpent.add(settled);
+                }
+                totalOutstanding = totalOutstanding.add(outstanding == null ? BigDecimal.ZERO : outstanding);
+
+                String playStatus = booking.getPlayStatus() == null ? "" : booking.getPlayStatus().trim().toLowerCase(Locale.ROOT);
+                if ("completed".equals(playStatus)) {
+                    completedCount++;
+                }
+                if ("booked".equals(playStatus) && booking.getBookingDate() != null && !booking.getBookingDate().isBefore(today)) {
+                    upcomingCount++;
                 }
             }
-            
-            int totalItems = filteredLocations.size();
-            int totalPages = (totalItems + PAGE_SIZE - 1) / PAGE_SIZE;
-            if (pageNum > totalPages && totalPages > 0) pageNum = totalPages;
-            
-            int startIdx = (pageNum - 1) * PAGE_SIZE;
-            int endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
-            List<Location> pageLocations = new ArrayList<>(filteredLocations.subList(startIdx, endIdx));
 
-                BookingDAO bookingDAO = new BookingDAO();
-                List<BookingViewModel> refundedBookings = bookingDAO.getByBooker(user.getUserId()).stream()
-                    .filter(vm -> vm != null && vm.getStatus() != null && "refunded".equalsIgnoreCase(vm.getStatus().trim()))
+            List<BookingViewModel> recentBookings = bookings.stream().limit(6).collect(Collectors.toList());
+                List<BookingViewModel> refundedBookings = bookings.stream()
+                    .filter(vm -> vm != null
+                        && vm.getPaymentStatus() != null
+                        && "refunded".equalsIgnoreCase(vm.getPaymentStatus().trim()))
                     .limit(5)
                     .collect(Collectors.toList());
-            
-            request.setAttribute("locations", pageLocations);
-            request.setAttribute("currentPage", pageNum);
-            request.setAttribute("totalPages", totalPages);
-            request.setAttribute("totalItems", totalItems);
-            request.setAttribute("searchName", searchName);
-            request.setAttribute("searchAddress", searchAddress);
-            request.setAttribute("locationName", selectedLocationName);
-            request.setAttribute("locationNameOptions", locationNameOptions);
+
+            request.setAttribute("totalBookings", bookings.size());
+            request.setAttribute("completedBookings", completedCount);
+            request.setAttribute("upcomingBookings", upcomingCount);
+            request.setAttribute("totalSpent", totalSpent);
+            request.setAttribute("totalOutstanding", totalOutstanding);
+            request.setAttribute("recentBookings", recentBookings);
             request.setAttribute("refundNotifications", refundedBookings);
             request.setAttribute("refundNotificationCount", refundedBookings.size());
             request.getRequestDispatcher("/View/Customer/dashboard.jsp").forward(request, response);
-        } catch (SQLException ex) {
-            request.setAttribute("error", "Khong the tai danh sach cum san. Vui long thu lai sau.");
+        } catch (Exception ex) {
+            request.setAttribute("error", "Khong the tai du lieu tong quan khach hang. Vui long thu lai sau.");
             request.getRequestDispatcher("/View/Customer/dashboard.jsp").forward(request, response);
         }
     }

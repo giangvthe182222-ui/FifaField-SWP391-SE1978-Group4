@@ -5,7 +5,6 @@ import Models.PaymentLog;
 import Utils.DBConnection;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.UUID;
 import java.math.BigDecimal;
 
@@ -119,7 +118,7 @@ public class PaymentDAO {
      * Get payment by booking ID
      */
     public Payment getPaymentByBookingId(UUID bookingId) {
-        String sql = "SELECT * FROM Payment WHERE booking_id = ?";
+        String sql = "SELECT TOP 1 * FROM Payment WHERE booking_id = ? ORDER BY payment_time DESC";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -365,6 +364,103 @@ public class PaymentDAO {
             ps.setString(2, bookingId.toString());
 
             return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean markRemainingPending(UUID bookingId,
+                                        BigDecimal amount,
+                                        String paymentMethod,
+                                        String transactionCode,
+                                        String qrContent,
+                                        String bankCode,
+                                        String accountNumber) {
+
+        if (bookingId == null || amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return false;
+        }
+
+        String sql = "UPDATE Payment "
+                + "SET amount = ?, payment_method = ?, payment_status = 'PENDING', payment_time = SYSDATETIME(), "
+                + "transaction_code = ?, qr_content = ?, bank_code = ?, account_number = ? "
+                + "WHERE booking_id = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setBigDecimal(1, amount);
+            ps.setString(2, paymentMethod);
+            ps.setString(3, transactionCode);
+            ps.setString(4, qrContent);
+            ps.setString(5, bankCode);
+            ps.setString(6, accountNumber);
+            ps.setString(7, bookingId.toString());
+
+            return ps.executeUpdate() > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    /**
+     * Upsert one settled payment snapshot for a booking.
+     * This is used after weekly-group payment success so each booking can
+     * continue with its own remaining-payment flow independently.
+     */
+    public boolean upsertSettledBookingPayment(UUID bookingId,
+                                               BigDecimal amount,
+                                               String paymentMethod,
+                                               String paymentStatus) {
+
+        if (bookingId == null || amount == null || amount.compareTo(BigDecimal.ZERO) < 0) {
+            return false;
+        }
+
+        String findSql = "SELECT TOP 1 payment_id FROM Payment WHERE booking_id = ? ORDER BY payment_time DESC";
+        String updateSql = "UPDATE Payment "
+                + "SET amount = ?, payment_method = ?, payment_status = ?, payment_time = SYSDATETIME(), "
+                + "transaction_code = NULL, qr_content = NULL, bank_code = NULL, account_number = NULL "
+                + "WHERE payment_id = ?";
+        String insertSql = "INSERT INTO Payment (payment_id, booking_id, weekly_group_id, amount, payment_method, payment_status, "
+                + "transaction_code, qr_content, bank_code, account_number) VALUES (?, ?, NULL, ?, ?, ?, NULL, NULL, NULL, NULL)";
+
+        try (Connection conn = DBConnection.getConnection()) {
+            UUID existingPaymentId = null;
+            try (PreparedStatement findPs = conn.prepareStatement(findSql)) {
+                findPs.setString(1, bookingId.toString());
+                try (ResultSet rs = findPs.executeQuery()) {
+                    if (rs.next()) {
+                        String paymentIdRaw = rs.getString("payment_id");
+                        if (paymentIdRaw != null && !paymentIdRaw.isBlank()) {
+                            existingPaymentId = UUID.fromString(paymentIdRaw);
+                        }
+                    }
+                }
+            }
+
+            if (existingPaymentId != null) {
+                try (PreparedStatement updatePs = conn.prepareStatement(updateSql)) {
+                    updatePs.setBigDecimal(1, amount);
+                    updatePs.setString(2, paymentMethod);
+                    updatePs.setString(3, paymentStatus);
+                    updatePs.setString(4, existingPaymentId.toString());
+                    return updatePs.executeUpdate() > 0;
+                }
+            }
+
+            try (PreparedStatement insertPs = conn.prepareStatement(insertSql)) {
+                insertPs.setString(1, UUID.randomUUID().toString());
+                insertPs.setString(2, bookingId.toString());
+                insertPs.setBigDecimal(3, amount);
+                insertPs.setString(4, paymentMethod);
+                insertPs.setString(5, paymentStatus);
+                return insertPs.executeUpdate() > 0;
+            }
 
         } catch (Exception e) {
             e.printStackTrace();

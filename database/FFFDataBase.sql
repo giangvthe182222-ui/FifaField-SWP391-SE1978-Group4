@@ -180,12 +180,27 @@ CREATE TABLE Booking (
     voucher_id VARCHAR(36) NULL,
     booking_time DATETIME2 DEFAULT SYSDATETIME(),
     status NVARCHAR(30),
+    play_status NVARCHAR(30) NOT NULL DEFAULT N'booked',
+    payment_status NVARCHAR(30) NOT NULL DEFAULT N'pending',
+    extra_payment_status NVARCHAR(30) NOT NULL DEFAULT N'none',
     total_price DECIMAL(10,2),
     CONSTRAINT FK_Booking_Booker FOREIGN KEY (booker_id) REFERENCES Users(user_id),
     CONSTRAINT FK_Booking_Field FOREIGN KEY (field_id) REFERENCES Field(field_id),
     CONSTRAINT FK_Booking_Schedule FOREIGN KEY (schedule_id) REFERENCES Schedule(schedule_id),
-    CONSTRAINT FK_Booking_Voucher FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id)
+    CONSTRAINT FK_Booking_Voucher FOREIGN KEY (voucher_id) REFERENCES Voucher(voucher_id),
+    CONSTRAINT CK_Booking_PlayStatus_Values CHECK (play_status IN (N'booked', N'checked in', N'checked out', N'completed', N'cancelled')),
+    CONSTRAINT CK_Booking_PaymentStatus_Values CHECK (payment_status IN (N'pending', N'deposited', N'paid', N'pending refund', N'refunded', N'failed')),
+    CONSTRAINT CK_Booking_ExtraPaymentStatus_Values CHECK (extra_payment_status IN (N'none', N'pending extra', N'paid extra'))
 );
+GO
+
+CREATE INDEX IDX_Booking_PlayStatus ON Booking(play_status);
+GO
+
+CREATE INDEX IDX_Booking_PaymentStatus ON Booking(payment_status);
+GO
+
+CREATE INDEX IDX_Booking_ExtraPaymentStatus ON Booking(extra_payment_status);
 GO
 
 CREATE TABLE Booking_Equipment (

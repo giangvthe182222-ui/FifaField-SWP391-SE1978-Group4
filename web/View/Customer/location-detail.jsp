@@ -24,7 +24,7 @@
             <p class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">FIFAFIELD LOCATION</p>
             <h1 class="text-4xl font-black tracking-tight uppercase">Chi tiết <span class="text-[#008751]">Cơ sở</span></h1>
         </div>
-        <a href="${pageContext.request.contextPath}/customer/dashboard#locations" class="w-10 h-10 rounded-xl border border-slate-200 text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+        <a href="${pageContext.request.contextPath}/customer/locations" class="w-10 h-10 rounded-xl border border-slate-200 text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
     </div>

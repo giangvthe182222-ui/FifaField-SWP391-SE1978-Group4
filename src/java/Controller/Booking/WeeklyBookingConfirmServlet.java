@@ -2,11 +2,13 @@ package Controller.Booking;
 
 import DAO.BookingDAO;
 import DAO.LocationEquipmentDAO;
+import DAO.ScheduleDAO;
 import DAO.VoucherDAO;
 import DAO.WeeklyBookingGroupDAO;
 import Models.Booking;
 import Models.BookingEquipment;
 import Models.LocationEquipmentViewModel;
+import Models.Schedule;
 import Models.User;
 import Models.Voucher;
 import Utils.DBConnection;
@@ -32,6 +34,9 @@ import java.util.UUID;
 @WebServlet(name = "WeeklyBookingConfirmServlet", urlPatterns = {"/booking/weekly-confirm"})
 public class WeeklyBookingConfirmServlet extends HttpServlet {
 
+    private static final String PAYMENT_OPTION_FULL = "full";
+    private static final String PAYMENT_OPTION_DEPOSIT = "deposit";
+
     private boolean isStaffUser(User user) {
         return user != null
                 && user.getRole() != null
@@ -45,6 +50,28 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizePaymentOption(String value) {
+        if (value == null) {
+            return PAYMENT_OPTION_FULL;
+        }
+        String normalized = value.trim().toLowerCase();
+        if (PAYMENT_OPTION_DEPOSIT.equals(normalized)) {
+            return PAYMENT_OPTION_DEPOSIT;
+        }
+        return PAYMENT_OPTION_FULL;
+    }
+
+    private String toCsvScheduleIds(List<UUID> scheduleIds) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < scheduleIds.size(); i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(scheduleIds.get(i));
+        }
+        return sb.toString();
     }
 
     @Override
@@ -61,19 +88,21 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
         UUID bookerId = user.getUserId();
         boolean staffUser = isStaffUser(user);
         String requestedPhone = trimToNull(request.getParameter("bookingPhone"));
+        String bookingPaymentOption = normalizePaymentOption(request.getParameter("bookingPaymentOption"));
+        String action = trimToNull(request.getParameter("action"));
         String bookingPhone;
         if (staffUser) {
             bookingPhone = requestedPhone;
             if (bookingPhone == null) {
                 session.setAttribute("flash_error", "Staff booking requires phone number.");
-                response.sendRedirect(buildReturnUrl(request, request.getParameter("locationId"), request.getParameter("fieldId"), request.getParameter("weekStart"), requestedPhone));
+                response.sendRedirect(buildReturnUrl(request, request.getParameter("locationId"), request.getParameter("fieldId"), request.getParameter("weekStart"), requestedPhone, bookingPaymentOption));
                 return;
             }
         } else {
             bookingPhone = requestedPhone != null ? requestedPhone : trimToNull(user.getPhone());
             if (bookingPhone == null) {
                 session.setAttribute("flash_error", "Vui lòng nhập số điện thoại liên hệ trước khi đặt sân.");
-                response.sendRedirect(buildReturnUrl(request, request.getParameter("locationId"), request.getParameter("fieldId"), request.getParameter("weekStart"), requestedPhone));
+                response.sendRedirect(buildReturnUrl(request, request.getParameter("locationId"), request.getParameter("fieldId"), request.getParameter("weekStart"), requestedPhone, bookingPaymentOption));
                 return;
             }
         }
@@ -81,6 +110,7 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
         String fieldIdParam    = request.getParameter("fieldId");
         String locationIdParam = request.getParameter("locationId");
         String weekStartParam  = request.getParameter("weekStart");
+        String weekCountParam  = request.getParameter("weekCount");
         String[] scheduleIdParams = request.getParameterValues("scheduleIds");
 
         // --- Input validation ---
@@ -92,7 +122,7 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
 
         if (scheduleIdParams == null || scheduleIdParams.length == 0) {
             session.setAttribute("flash_error", "Vui lòng chọn ít nhất một khung giờ trong tuần.");
-            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone));
+            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone, bookingPaymentOption));
             return;
         }
 
@@ -113,15 +143,39 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
 
         if (scheduleIds.isEmpty()) {
             session.setAttribute("flash_error", "Dữ liệu khung giờ không hợp lệ.");
-            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone));
+            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone, bookingPaymentOption));
+            return;
+        }
+
+        UUID locationId = null;
+        if (locationIdParam != null && !locationIdParam.isBlank()) {
+            try {
+                locationId = UUID.fromString(locationIdParam);
+            } catch (IllegalArgumentException ignored) {
+                locationId = null;
+            }
+        }
+
+        ScheduleDAO scheduleDAO = new ScheduleDAO();
+        int validScheduleCount = 0;
+        for (UUID sid : scheduleIds) {
+            Schedule sch = scheduleDAO.getById(sid);
+            if (sch == null || sch.getFieldId() == null || !sch.getFieldId().equals(fieldId)) {
+                continue;
+            }
+            validScheduleCount++;
+        }
+
+        if (validScheduleCount == 0) {
+            session.setAttribute("flash_error", "Không tìm thấy lịch hợp lệ để xác nhận.");
+            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, weekCountParam, requestedPhone, bookingPaymentOption, toCsvScheduleIds(scheduleIds)));
             return;
         }
 
         // --- Equipment (optional) ---
         List<BookingEquipment> equipmentList = new ArrayList<>();
-        if (locationIdParam != null && !locationIdParam.isBlank()) {
+        if (locationId != null) {
             try {
-                UUID locationId = UUID.fromString(locationIdParam);
                 LocationEquipmentDAO locEquipDAO = new LocationEquipmentDAO(new DBConnection());
                 List<LocationEquipmentViewModel> availEquip = locEquipDAO.getByLocation(locationId);
                 for (LocationEquipmentViewModel e : availEquip) {
@@ -157,6 +211,10 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
             } catch (Exception ignored) {}
         }
 
+        if (!"confirm".equalsIgnoreCase(action)) {
+            action = "confirm";
+        }
+
         // For weekly bookings give users 2 hours to pay each booking
         LocalDateTime paymentDeadline = LocalDateTime.now().plusHours(2);
         UUID weeklyGroupId = UUID.randomUUID();
@@ -171,7 +229,7 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
 
         if (!weeklyGroupDAO.create(group)) {
             session.setAttribute("flash_error", "Không thể tạo nhóm đặt sân theo tuần.");
-            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone));
+            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone, bookingPaymentOption));
             return;
         }
 
@@ -189,20 +247,35 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
             }
             weeklyGroupDAO.updateTotalAmount(weeklyGroupId, total);
 
-            // Jump straight to weekly payment flow; success/failure will return to role-based booking history.
-            response.sendRedirect(request.getContextPath() + "/payment?weeklyGroupId=" + weeklyGroupId);
+            List<String> createdBookingIds = new ArrayList<>();
+            for (Booking booking : created) {
+                if (booking != null && booking.getBookingId() != null) {
+                    createdBookingIds.add(booking.getBookingId().toString());
+                }
+            }
+
+            session.setAttribute("weeklyBookingIds", createdBookingIds);
+            session.setAttribute("weeklyBookingGroupId", weeklyGroupId.toString());
+            session.setAttribute("weeklyBookingPaymentOption", bookingPaymentOption);
+            response.sendRedirect(request.getContextPath() + "/booking/weekly-success");
 
         } catch (Exception e) {
             weeklyGroupDAO.delete(weeklyGroupId);
             String msg = e.getMessage();
             if (msg == null || msg.isBlank()) msg = "Đặt sân theo tuần thất bại. Vui lòng thử lại.";
             session.setAttribute("flash_error", msg);
-            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, requestedPhone));
+            response.sendRedirect(buildReturnUrl(request, locationIdParam, fieldIdParam, weekStartParam, weekCountParam, requestedPhone, bookingPaymentOption, toCsvScheduleIds(scheduleIds)));
         }
     }
 
     private String buildReturnUrl(HttpServletRequest req,
-                                  String locationId, String fieldId, String weekStart, String bookingPhone) {
+                                  String locationId, String fieldId, String weekStart, String bookingPhone, String bookingPaymentOption) {
+        return buildReturnUrl(req, locationId, fieldId, weekStart, null, bookingPhone, bookingPaymentOption, null);
+    }
+
+    private String buildReturnUrl(HttpServletRequest req,
+                                  String locationId, String fieldId, String weekStart, String weekCount,
+                                  String bookingPhone, String bookingPaymentOption, String selectedIdsCsv) {
         StringBuilder sb = new StringBuilder(req.getContextPath() + "/booking/weekly?");
         if (locationId != null && !locationId.isBlank()) sb.append("locationId=").append(locationId).append("&");
         if (fieldId    != null && !fieldId.isBlank())    sb.append("fieldId=").append(fieldId).append("&");
@@ -215,8 +288,17 @@ public class WeeklyBookingConfirmServlet extends HttpServlet {
                 sb.append("weekStart=").append(weekStart);
             }
         }
+        if (weekCount != null && !weekCount.isBlank()) {
+            sb.append("&weekCount=").append(URLEncoder.encode(weekCount, StandardCharsets.UTF_8));
+        }
         if (bookingPhone != null && !bookingPhone.isBlank()) {
             sb.append("&bookingPhone=").append(URLEncoder.encode(bookingPhone, StandardCharsets.UTF_8));
+        }
+        if (bookingPaymentOption != null && !bookingPaymentOption.isBlank()) {
+            sb.append("&bookingPaymentOption=").append(URLEncoder.encode(bookingPaymentOption, StandardCharsets.UTF_8));
+        }
+        if (selectedIdsCsv != null && !selectedIdsCsv.isBlank()) {
+            sb.append("&selectedIds=").append(URLEncoder.encode(selectedIdsCsv, StandardCharsets.UTF_8));
         }
         return sb.toString();
     }

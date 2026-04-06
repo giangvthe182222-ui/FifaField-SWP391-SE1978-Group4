@@ -13,8 +13,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,6 +31,7 @@ public class PaymentWebhookServlet extends HttpServlet {
     private static final Pattern JSON_STRING_PATTERN_TEMPLATE = Pattern.compile("\"%s\"\\s*:\\s*\"([^\"]*)\"");
     private static final Pattern JSON_NUMBER_PATTERN_TEMPLATE = Pattern.compile("\"%s\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)");
     private static final Pattern JSON_BOOLEAN_PATTERN_TEMPLATE = Pattern.compile("\"%s\"\\s*:\\s*(true|false)", Pattern.CASE_INSENSITIVE);
+    private static final BigDecimal DEPOSIT_RATE = new BigDecimal("0.30");
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -143,10 +146,12 @@ public class PaymentWebhookServlet extends HttpServlet {
         boolean paymentUpdated = paymentDAO.updatePaymentSuccess(payment.getPaymentId());
         boolean bookingUpdated;
         if (payment.getWeeklyGroupId() != null) {
-            bookingUpdated = new BookingDAO().markWeeklyGroupPaid(payment.getWeeklyGroupId());
-            new WeeklyBookingGroupDAO().updateStatus(payment.getWeeklyGroupId(), "paid");
+            BookingDAO bookingDAO = new BookingDAO();
+            WeeklyBookingGroupDAO groupDAO = new WeeklyBookingGroupDAO();
+            List<Models.BookingViewModel> weeklyBookings = bookingDAO.getByWeeklyGroupId(payment.getWeeklyGroupId());
+            bookingUpdated = applyWeeklyGroupPaymentSuccess(payment.getWeeklyGroupId(), payment, weeklyBookings, bookingDAO, paymentDAO, groupDAO);
         } else {
-            bookingUpdated = new BookingDAO().markBookingPaid(payment.getBookingId());
+            bookingUpdated = applySingleBookingPaymentSuccess(new BookingDAO(), payment, payment.getBookingId());
         }
 
         if (!paymentUpdated || !bookingUpdated) {
@@ -188,6 +193,65 @@ public class PaymentWebhookServlet extends HttpServlet {
         }
         String normalized = paymentStatus.trim().toUpperCase();
         return "SUCCESS".equals(normalized) || "SUCCEEDED".equals(normalized) || "00".equals(normalized) || "PAID".equals(normalized);
+    }
+
+    private boolean applySingleBookingPaymentSuccess(BookingDAO bookingDAO, Payment payment, UUID bookingId) {
+        if (bookingDAO == null || payment == null || bookingId == null) {
+            return false;
+        }
+
+        String paymentMethod = payment.getPaymentMethod() == null ? "" : payment.getPaymentMethod().trim().toLowerCase();
+        boolean depositPlan = paymentMethod.contains("|deposit");
+        if (depositPlan) {
+            return bookingDAO.markBookingDeposited(bookingId);
+        }
+        return bookingDAO.markBookingPaid(bookingId);
+    }
+
+    private BigDecimal resolveDepositAmount(BigDecimal totalAmount) {
+        if (totalAmount == null || totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal deposit = totalAmount.multiply(DEPOSIT_RATE).setScale(0, RoundingMode.HALF_UP);
+        if (deposit.compareTo(BigDecimal.ZERO) <= 0) {
+            return totalAmount;
+        }
+        return deposit;
+    }
+
+    private boolean applyWeeklyGroupPaymentSuccess(UUID weeklyGroupId,
+                                                   Payment weeklyPayment,
+                                                   List<Models.BookingViewModel> weeklyBookings,
+                                                   BookingDAO bookingDAO,
+                                                   PaymentDAO paymentDAO,
+                                                   WeeklyBookingGroupDAO groupDAO) {
+        if (weeklyGroupId == null || weeklyPayment == null || weeklyBookings == null || weeklyBookings.isEmpty()) {
+            return false;
+        }
+
+        String paymentMethod = weeklyPayment.getPaymentMethod() == null ? "" : weeklyPayment.getPaymentMethod().trim().toLowerCase();
+        boolean depositPlan = paymentMethod.contains("|deposit");
+        String bookingPaymentMethod = depositPlan ? "payOS|deposit" : "payOS|full";
+
+        for (Models.BookingViewModel vm : weeklyBookings) {
+            if (vm == null || vm.getBookingId() == null) {
+                return false;
+            }
+            BigDecimal bookingTotal = vm.getTotalPrice() == null ? BigDecimal.ZERO : vm.getTotalPrice();
+            BigDecimal paidAmount = depositPlan ? resolveDepositAmount(bookingTotal) : bookingTotal;
+
+            if (!paymentDAO.upsertSettledBookingPayment(vm.getBookingId(), paidAmount, bookingPaymentMethod, "SUCCESS")) {
+                return false;
+            }
+
+            Payment perBookingPayment = new Payment();
+            perBookingPayment.setPaymentMethod(bookingPaymentMethod);
+            if (!applySingleBookingPaymentSuccess(bookingDAO, perBookingPayment, vm.getBookingId())) {
+                return false;
+            }
+        }
+
+        return groupDAO.updateStatus(weeklyGroupId, depositPlan ? "deposited" : "paid");
     }
 
     private String extractJsonString(String json, String fieldName) {

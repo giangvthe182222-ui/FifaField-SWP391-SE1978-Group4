@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @WebServlet("/customer/my-calendar")
 public class CustomerCalendarServlet extends HttpServlet {
@@ -61,6 +62,15 @@ public class CustomerCalendarServlet extends HttpServlet {
         List<BookingViewModel> bookings = bookingDAO.getCustomerCalendarBookings(
             user.getUserId(), weekStart, weekEnd, selectedDate, null, null
         );
+
+        bookings = bookings.stream()
+            .filter(b -> {
+                String playStatus = b.getPlayStatus() == null ? "" : b.getPlayStatus().trim().toLowerCase();
+                return "booked".equals(playStatus)
+                    || "checked in".equals(playStatus)
+                    || "checked out".equals(playStatus);
+            })
+            .collect(Collectors.toList());
 
         Map<LocalDate, List<BookingViewModel>> bookingsByDate = new LinkedHashMap<>();
         for (int i = 0; i < 7; i++) {

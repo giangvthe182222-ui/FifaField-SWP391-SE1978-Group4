@@ -54,8 +54,11 @@ public class BookingDetailServlet extends HttpServlet {
         }
 
         List<BookingEquipmentViewModel> equipments = bookingDAO.getBookingEquipments(bookingId);
+        booking.setOutstandingAmount(bookingDAO.getOutstandingAmount(bookingId));
         boolean canRequestRefund = canRequestRefund(booking);
-        boolean refundBlockedByPolicy = "paid".equalsIgnoreCase(booking.getStatus()) && !canRequestRefund;
+        boolean isRefundEligibleStatus = "paid".equalsIgnoreCase(booking.getPaymentStatus())
+            || "deposited".equalsIgnoreCase(booking.getPaymentStatus());
+        boolean refundBlockedByPolicy = isRefundEligibleStatus && !canRequestRefund;
 
         request.setAttribute("booking", booking);
         request.setAttribute("equipments", equipments);
@@ -94,7 +97,7 @@ public class BookingDetailServlet extends HttpServlet {
             }
 
             if (!canRequestRefund(booking)) {
-                if ("paid".equalsIgnoreCase(booking.getStatus())) {
+                if ("paid".equalsIgnoreCase(booking.getPaymentStatus()) || "deposited".equalsIgnoreCase(booking.getPaymentStatus())) {
                     session.setAttribute("flash_error", "Đơn không được refund vì lịch đấu còn 2 ngày hoặc ít hơn.");
                 } else {
                     session.setAttribute("flash_error", "Đơn hiện tại không thể yêu cầu refund.");
@@ -115,7 +118,7 @@ public class BookingDetailServlet extends HttpServlet {
     }
 
     private boolean canRequestRefund(BookingViewModel booking) {
-        if (booking == null || !"paid".equalsIgnoreCase(booking.getStatus())) {
+        if (booking == null || (!"paid".equalsIgnoreCase(booking.getPaymentStatus()) && !"deposited".equalsIgnoreCase(booking.getPaymentStatus()))) {
             return false;
         }
         if (booking.getBookingDate() == null || booking.getStartTime() == null) {
@@ -125,4 +128,5 @@ public class BookingDetailServlet extends HttpServlet {
         LocalDateTime scheduleStart = LocalDateTime.of(booking.getBookingDate(), booking.getStartTime());
         return scheduleStart.isAfter(LocalDateTime.now().plusDays(2));
     }
+
 }

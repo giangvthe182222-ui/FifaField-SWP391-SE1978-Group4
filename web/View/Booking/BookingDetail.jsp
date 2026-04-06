@@ -57,7 +57,10 @@
     </c:if>
 
     <c:if test="${not empty booking}">
-        <c:set var="normalizedBookingStatus" value="${fn:toLowerCase(fn:trim(booking.status))}" />
+        <c:set var="normalizedPlayStatus" value="${fn:toLowerCase(fn:trim(booking.playStatus))}" />
+        <c:set var="normalizedPaymentStatus" value="${fn:toLowerCase(fn:trim(booking.paymentStatus))}" />
+        <c:set var="normalizedExtraPaymentStatus" value="${fn:toLowerCase(fn:trim(booking.extraPaymentStatus))}" />
+        <c:set var="hasOutstandingAmount" value="${not empty booking.outstandingAmount and booking.outstandingAmount > 0}" />
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
             <!-- Main Info Card -->
@@ -68,9 +71,11 @@
                             <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
                             <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Thông tin trận đấu</h2>
                         </div>
-                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' || booking.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : booking.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : booking.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : booking.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : booking.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
-                            ${booking.status}
-                        </span>
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${normalizedPlayStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : normalizedPlayStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : normalizedPlayStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : normalizedPlayStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">Play: ${empty booking.playStatus ? 'booked' : booking.playStatus}</span>
+                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${normalizedPaymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : normalizedPaymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : normalizedPaymentStatus == 'pending refund' || normalizedPaymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : normalizedPaymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Payment: ${empty booking.paymentStatus ? 'pending' : booking.paymentStatus}</span>
+                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${normalizedExtraPaymentStatus == 'paid extra' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : normalizedExtraPaymentStatus == 'pending extra' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Extra: ${empty booking.extraPaymentStatus ? 'none' : booking.extraPaymentStatus}</span>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-y-8 gap-x-4">
@@ -144,8 +149,16 @@
 
                         <div class="space-y-4">
                             <div class="flex justify-between text-[10px] font-black uppercase tracking-widest opacity-60">
-                                <span>Trạng thái</span>
-                                <span class="text-emerald-300">${booking.status}</span>
+                                <span>Play</span>
+                                <span class="text-emerald-300">${empty booking.playStatus ? 'booked' : booking.playStatus}</span>
+                            </div>
+                            <div class="flex justify-between text-[10px] font-black uppercase tracking-widest opacity-60">
+                                <span>Payment</span>
+                                <span class="text-emerald-300">${empty booking.paymentStatus ? 'pending' : booking.paymentStatus}</span>
+                            </div>
+                            <div class="flex justify-between text-[10px] font-black uppercase tracking-widest opacity-60">
+                                <span>Công nợ còn lại</span>
+                                <span class="text-rose-200"><fmt:formatNumber value="${empty booking.outstandingAmount ? 0 : booking.outstandingAmount}" pattern="#,##0"/> VND</span>
                             </div>
                             <div class="pt-4 border-t border-white/10">
                                 <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400 mb-1">TỔNG CỘNG</p>
@@ -155,24 +168,24 @@
                             </div>
                         </div>
 
-                        <c:if test="${normalizedBookingStatus == 'pending' || normalizedBookingStatus == 'pending extra'}">
+                        <c:if test="${hasOutstandingAmount}">
                             <c:choose>
-                                <c:when test="${normalizedBookingStatus == 'pending extra'}">
-                                    <a href="${pageContext.request.contextPath}/payment?bookingId=${booking.bookingId}&source=supplementary" class="w-full bg-[#008751] hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                                <c:when test="${normalizedPaymentStatus == 'pending'}">
+                                    <a href="${pageContext.request.contextPath}/payment?bookingId=${booking.bookingId}" class="w-full bg-[#008751] hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
                                         <i data-lucide="credit-card" class="w-4 h-4"></i>
                                         TIẾP TỤC THANH TOÁN
                                     </a>
                                 </c:when>
                                 <c:otherwise>
-                                    <a href="${pageContext.request.contextPath}/payment?bookingId=${booking.bookingId}" class="w-full bg-[#008751] hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                                    <a href="${pageContext.request.contextPath}/payment?bookingId=${booking.bookingId}&source=remaining" class="w-full bg-[#008751] hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
                                         <i data-lucide="credit-card" class="w-4 h-4"></i>
-                                        TIẾP TỤC THANH TOÁN
+                                        TRẢ NỐT ĐƠN
                                     </a>
                                 </c:otherwise>
                             </c:choose>
                         </c:if>
 
-                        <c:if test="${booking.status == 'paid' && canRequestRefund}">
+                        <c:if test="${(normalizedPaymentStatus == 'paid' || normalizedPaymentStatus == 'deposited') && canRequestRefund}">
                             <form method="post" action="${pageContext.request.contextPath}/customer/bookingDetail">
                                 <input type="hidden" name="id" value="${booking.bookingId}" />
                                 <input type="hidden" name="action" value="cancel" />

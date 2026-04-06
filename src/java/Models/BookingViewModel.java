@@ -19,9 +19,13 @@ public class BookingViewModel {
     private String customerName;
     private String customerPhone;
     private String status;
+    private String playStatus;
+    private String paymentStatus;
+    private String extraPaymentStatus;
     private BigDecimal fieldPrice;
     private BigDecimal equipmentPrice;
     private BigDecimal totalPrice;
+    private BigDecimal outstandingAmount;
     private boolean equipmentBookingAllowed;
 
     public BookingViewModel() {}
@@ -65,6 +69,15 @@ public class BookingViewModel {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public String getPlayStatus() { return playStatus; }
+    public void setPlayStatus(String playStatus) { this.playStatus = playStatus; }
+
+    public String getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    public String getExtraPaymentStatus() { return extraPaymentStatus; }
+    public void setExtraPaymentStatus(String extraPaymentStatus) { this.extraPaymentStatus = extraPaymentStatus; }
+
     public BigDecimal getFieldPrice() { return fieldPrice; }
     public void setFieldPrice(BigDecimal fieldPrice) { this.fieldPrice = fieldPrice; }
 
@@ -73,6 +86,9 @@ public class BookingViewModel {
 
     public BigDecimal getTotalPrice() { return totalPrice; }
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
+
+    public BigDecimal getOutstandingAmount() { return outstandingAmount; }
+    public void setOutstandingAmount(BigDecimal outstandingAmount) { this.outstandingAmount = outstandingAmount; }
 
     public boolean isEquipmentBookingAllowed() { return equipmentBookingAllowed; }
     public void setEquipmentBookingAllowed(boolean equipmentBookingAllowed) { this.equipmentBookingAllowed = equipmentBookingAllowed; }

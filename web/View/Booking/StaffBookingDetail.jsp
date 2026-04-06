@@ -55,7 +55,9 @@
     </c:if>
 
     <c:if test="${not empty booking}">
-        <c:set var="normalizedBookingStatus" value="${fn:toLowerCase(fn:trim(booking.status))}" />
+        <c:set var="normalizedPlayStatus" value="${empty currentPlayStatus ? fn:toLowerCase(fn:trim(booking.playStatus)) : currentPlayStatus}" />
+        <c:set var="normalizedPaymentStatus" value="${empty currentPaymentStatus ? fn:toLowerCase(fn:trim(booking.paymentStatus)) : currentPaymentStatus}" />
+        <c:set var="normalizedExtraPaymentStatus" value="${empty currentExtraPaymentStatus ? fn:toLowerCase(fn:trim(booking.extraPaymentStatus)) : currentExtraPaymentStatus}" />
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             
             <!-- Main Info Card -->
@@ -66,9 +68,17 @@
                             <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
                             <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Thông tin trận đấu</h2>
                         </div>
-                        <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${booking.status == 'cancelled' || booking.status == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : booking.status == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : booking.status == 'pending' ? 'bg-slate-100 text-slate-600 border border-slate-200' : booking.status == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : booking.status == 'pending extra' ? 'bg-orange-50 text-orange-600 border border-orange-100' : booking.status == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-emerald-50 text-[#008751] border border-emerald-100'}">
-                            ${booking.status}
-                        </span>
+                        <div class="flex flex-wrap items-center justify-end gap-2">
+                            <span class="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${normalizedPlayStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : normalizedPlayStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : normalizedPlayStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : normalizedPlayStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+                                play: ${normalizedPlayStatus}
+                            </span>
+                            <span class="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${normalizedPaymentStatus == 'failed' || normalizedPaymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : normalizedPaymentStatus == 'pending refund' || normalizedPaymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : normalizedPaymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : normalizedPaymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+                                payment: ${normalizedPaymentStatus}
+                            </span>
+                            <span class="px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${normalizedExtraPaymentStatus == 'pending extra' ? 'bg-orange-50 text-orange-700 border border-orange-200' : normalizedExtraPaymentStatus == 'paid extra' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
+                                extra: ${empty normalizedExtraPaymentStatus ? 'none' : normalizedExtraPaymentStatus}
+                            </span>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-y-8 gap-x-4">
@@ -87,6 +97,10 @@
                         <div class="space-y-1">
                             <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Khung giờ</p>
                             <p class="font-bold text-gray-700">${booking.startTime} - ${booking.endTime}</p>
+                        </div>
+                        <div class="space-y-1">
+                            <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Số tiền chưa trả</p>
+                            <p class="font-black text-rose-600"><fmt:formatNumber value="${empty outstandingAmount ? 0 : outstandingAmount}" pattern="#,##0"/> đ</p>
                         </div>
                     </div>
 
@@ -135,7 +149,7 @@
                             <c:when test="${canAddEquipment and not empty availableEquipments}">
                                 <div class="bg-emerald-50 border border-emerald-100 rounded-3xl p-5">
                                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#008751]">Chỉ áp dụng khi booking đã checked in và đang trong khung giờ sử dụng</p>
-                                    <p class="text-sm font-semibold text-emerald-800 mt-2">Khi tạo thêm equipment, booking sẽ chuyển sang pending extra cho đến khi khoản bổ sung được thanh toán.</p>
+                                    <p class="text-sm font-semibold text-emerald-800 mt-2">Tiền dụng cụ phát sinh sẽ được cộng vào phần còn lại để khách thanh toán nốt sau.</p>
                                 </div>
 
                                 <form method="post" action="${pageContext.request.contextPath}/staff/bookingDetail" class="space-y-4">
@@ -195,22 +209,48 @@
                             Cập nhật trạng thái
                         </h2>
 
-                        <form method="post" action="${pageContext.request.contextPath}/staff/bookingDetail" class="space-y-6">
-                            <input type="hidden" name="action" value="updateStatus" />
+                        <form id="statusUpdateForm" method="post" action="${pageContext.request.contextPath}/staff/bookingDetail" class="space-y-6">
                             <input type="hidden" name="id" value="${booking.bookingId}" />
                             
                             <div class="space-y-2">
-                                <label for="status" class="text-[9px] font-black uppercase tracking-widest opacity-60">Chọn trạng thái mới</label>
-                                <c:set var="canUpdate" value="${canCheckIn || canRefund}"/>
-                                <select name="status" id="status" ${!canUpdate ? 'disabled' : ''} class="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:ring-2 focus:ring-emerald-400/50 appearance-none cursor-pointer ${!canUpdate ? 'opacity-60 cursor-not-allowed' : ''}">
-                                    <option value="${booking.status}" selected class="text-gray-900">${booking.status}</option>
-                                    <c:if test="${canCheckIn && booking.status != 'checked in'}">
+                                <label for="playStatus" class="text-[9px] font-black uppercase tracking-widest opacity-60">Play status</label>
+                                <c:set var="canUpdate" value="${canMarkPaid || canCheckIn || canCheckOut || canMarkPendingRefund || canRefund || canMarkExtraPaid}"/>
+                                <select name="playStatus" id="playStatus" ${!canUpdate ? 'disabled' : ''} class="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:ring-2 focus:ring-emerald-400/50 appearance-none cursor-pointer ${!canUpdate ? 'opacity-60 cursor-not-allowed' : ''}">
+                                    <option value="${normalizedPlayStatus}" selected class="text-gray-900">${normalizedPlayStatus}</option>
+                                    <c:if test="${canCheckIn && normalizedPlayStatus != 'checked in'}">
                                         <option value="checked in" class="text-gray-900">checked in</option>
                                     </c:if>
-                                    <c:if test="${canRefund && booking.status != 'refunded'}">
+                                    <c:if test="${canCheckOut && normalizedPlayStatus != 'checked out'}">
+                                        <option value="checked out" class="text-gray-900">checked out</option>
+                                    </c:if>
+                                </select>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label for="paymentStatus" class="text-[9px] font-black uppercase tracking-widest opacity-60">Payment status</label>
+                                <select name="paymentStatus" id="paymentStatus" data-current="${normalizedPaymentStatus}" ${!canUpdate ? 'disabled' : ''} class="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:ring-2 focus:ring-emerald-400/50 appearance-none cursor-pointer ${!canUpdate ? 'opacity-60 cursor-not-allowed' : ''}">
+                                    <option value="${normalizedPaymentStatus}" selected class="text-gray-900">${normalizedPaymentStatus}</option>
+                                    <c:if test="${canMarkPaid && normalizedPaymentStatus != 'paid'}">
+                                        <option value="paid" class="text-gray-900">paid</option>
+                                    </c:if>
+                                    <c:if test="${canMarkPendingRefund && normalizedPaymentStatus != 'pending refund'}">
+                                        <option value="pending refund" class="text-gray-900">pending refund</option>
+                                    </c:if>
+                                    <c:if test="${canRefund && normalizedPaymentStatus != 'refunded'}">
                                         <option value="refunded" class="text-gray-900">refunded</option>
                                     </c:if>
                                 </select>
+                            </div>
+
+                            <div class="space-y-2">
+                                <label for="extraPaymentStatus" class="text-[9px] font-black uppercase tracking-widest opacity-60">Extra payment status</label>
+                                <select name="extraPaymentStatus" id="extraPaymentStatus" data-current="${empty normalizedExtraPaymentStatus ? 'none' : normalizedExtraPaymentStatus}" ${!canMarkExtraPaid ? 'disabled' : ''} class="w-full bg-white/10 border border-white/20 rounded-2xl py-4 px-6 text-xs font-black uppercase tracking-widest text-white ${!canMarkExtraPaid ? 'opacity-60 cursor-not-allowed' : ''}">
+                                    <option value="${empty normalizedExtraPaymentStatus ? 'none' : normalizedExtraPaymentStatus}" selected class="text-gray-900">${empty normalizedExtraPaymentStatus ? 'none' : normalizedExtraPaymentStatus}</option>
+                                    <c:if test="${canMarkExtraPaid && normalizedExtraPaymentStatus != 'paid extra'}">
+                                        <option value="paid extra" class="text-gray-900">paid extra</option>
+                                    </c:if>
+                                </select>
+                                <input type="hidden" name="extraPaymentStatus" value="${empty normalizedExtraPaymentStatus ? 'none' : normalizedExtraPaymentStatus}" />
                             </div>
 
                             <button type="submit" ${!canUpdate ? 'disabled' : ''} class="w-full bg-[#008751] hover:bg-emerald-400 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 shadow-xl shadow-black/20 ${!canUpdate ? 'opacity-60 cursor-not-allowed hover:bg-[#008751] hover:translate-y-0 active:scale-100' : ''}">
@@ -224,19 +264,31 @@
                             <p class="text-2xl font-black tracking-tighter leading-none">
                                 <fmt:formatNumber value="${booking.totalPrice}" pattern="#,##0"/> đ
                             </p>
+                            <p class="text-sm font-black text-rose-300 mt-2">Chưa trả: <fmt:formatNumber value="${empty outstandingAmount ? 0 : outstandingAmount}" pattern="#,##0"/> đ</p>
                         </div>
                     </div>
                 </div>
 
-                <c:if test="${normalizedBookingStatus == 'pending extra'}">
-                    <div class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-8 space-y-4">
-                        <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Hoàn thành đơn</h3>
-                        <a href="${pageContext.request.contextPath}/payment?bookingId=${booking.bookingId}&source=supplementary" class="w-full bg-[#008751] hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
-                            <i data-lucide="credit-card" class="w-4 h-4"></i>
-                            Tiếp tục thanh toán
-                        </a>
-                    </div>
-                </c:if>
+                <div class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-8 space-y-4">
+                    <h3 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Hoàn thành đơn</h3>
+                    <c:set var="hasOutstandingAmount" value="${not empty outstandingAmount and outstandingAmount > 0}" />
+                    <c:if test="${hasOutstandingAmount}">
+                        <form method="get" action="${pageContext.request.contextPath}/payment" class="space-y-3">
+                            <input type="hidden" name="bookingId" value="${booking.bookingId}" />
+                            <input type="hidden" name="source" value="remaining" />
+                            <button type="submit" ${normalizedPlayStatus == 'checked in' ? 'disabled' : ''} class="w-full bg-[#008751] hover:bg-emerald-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 ${normalizedPlayStatus == 'checked in' ? 'opacity-60 cursor-not-allowed hover:bg-[#008751] hover:translate-y-0 active:scale-100' : ''}">
+                                <i data-lucide="credit-card" class="w-4 h-4"></i>
+                                Trả nốt đơn
+                            </button>
+                        </form>
+                    </c:if>
+                    <c:if test="${normalizedPlayStatus == 'checked in'}">
+                        <p class="text-xs font-semibold text-amber-700">Không thể thanh toán khi booking đang checked in. Vui lòng thanh toán trước giờ chơi hoặc sau khi checked out.</p>
+                    </c:if>
+                    <c:if test="${!hasOutstandingAmount}">
+                        <p class="text-xs font-semibold text-emerald-700">Đơn này đã thanh toán đủ, không còn công nợ.</p>
+                    </c:if>
+                </div>
 
                 <a href="${pageContext.request.contextPath}/staff/locationBookings" class="w-10 h-10 bg-white rounded-xl border border-gray-100 text-gray-400 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
                     <i data-lucide="arrow-left" class="w-5 h-5"></i>
@@ -251,6 +303,30 @@
 
 <script>
     lucide.createIcons();
+
+    (function () {
+        var form = document.getElementById('statusUpdateForm');
+        if (!form) {
+            return;
+        }
+
+        form.addEventListener('submit', function (e) {
+            var paymentSelect = document.getElementById('paymentStatus');
+            var extraSelect = document.getElementById('extraPaymentStatus');
+
+            var currentPayment = paymentSelect ? (paymentSelect.getAttribute('data-current') || '').toLowerCase() : '';
+            var nextPayment = paymentSelect ? (paymentSelect.value || '').toLowerCase() : '';
+            var currentExtra = extraSelect ? (extraSelect.getAttribute('data-current') || '').toLowerCase() : '';
+            var nextExtra = extraSelect ? (extraSelect.value || '').toLowerCase() : '';
+
+            if ((currentPayment === 'deposited' && nextPayment === 'paid')
+                    || (currentExtra === 'pending extra' && nextExtra === 'paid extra')) {
+                if (!confirm('Xác nhận thanh toán tiền mặt?')) {
+                    e.preventDefault();
+                }
+            }
+        });
+    })();
 </script>
 </body>
 </html>

@@ -29,10 +29,43 @@ public class BookingDAO {
     private static final String STATUS_PAID = "paid";
     private static final String STATUS_CANCELLED = "cancelled";
     private static final String STATUS_PENDING_REFUND = "pending refund";
+    private static final String STATUS_PENDING_REFUND_CONFIRM = "pending refund confirm";
     private static final String STATUS_REFUNDED = "refunded";
     private static final String STATUS_CHECKED_IN = "checked in";
+    private static final String STATUS_CHECKED_OUT = "checked out";
     private static final String STATUS_PENDING_EXTRA = "pending extra";
+    private static final String STATUS_FINISHED = "finished";
     private static final String STATUS_COMPLETED = "completed";
+    private static final String STATUS_DEPOSITED = "deposited";
+
+    private static final String PLAY_STATUS_BOOKED = "booked";
+    private static final String PLAY_STATUS_CANCELLED = "cancelled";
+    private static final String PAYMENT_STATUS_FAILED = "failed";
+    private static final String EXTRA_PAYMENT_STATUS_NONE = "none";
+    private static final String EXTRA_PAYMENT_STATUS_PAID = "paid extra";
+
+        private static final Set<String> SUPPORTED_PLAY_STATUSES = new HashSet<>(Arrays.asList(
+            PLAY_STATUS_BOOKED,
+            STATUS_CHECKED_IN,
+            STATUS_CHECKED_OUT,
+            STATUS_COMPLETED,
+            PLAY_STATUS_CANCELLED
+        ));
+
+        private static final Set<String> SUPPORTED_PAYMENT_STATUSES = new HashSet<>(Arrays.asList(
+            STATUS_PENDING,
+            STATUS_DEPOSITED,
+            STATUS_PAID,
+            STATUS_PENDING_REFUND,
+            STATUS_REFUNDED,
+            PAYMENT_STATUS_FAILED
+        ));
+
+        private static final Set<String> SUPPORTED_EXTRA_PAYMENT_STATUSES = new HashSet<>(Arrays.asList(
+            EXTRA_PAYMENT_STATUS_NONE,
+            STATUS_PENDING_EXTRA,
+            EXTRA_PAYMENT_STATUS_PAID
+        ));
 
     private static final Set<String> SUPPORTED_STATUSES = new HashSet<>(Arrays.asList(
             STATUS_PENDING,
@@ -41,8 +74,11 @@ public class BookingDAO {
             STATUS_PENDING_REFUND,
             STATUS_REFUNDED,
             STATUS_CHECKED_IN,
+            STATUS_CHECKED_OUT,
             STATUS_PENDING_EXTRA,
-            STATUS_COMPLETED
+            STATUS_FINISHED,
+            STATUS_COMPLETED,
+            STATUS_DEPOSITED
     ));
 
     /**
@@ -150,93 +186,48 @@ public class BookingDAO {
     }
 
     /**
-     * Inserts the booking row and automatically falls back when legacy
-     * databases do not yet contain payment_deadline.
+     * Inserts booking row using the current schema contract.
      */
-    //insert the data retrieved with the migration handled (if its neccesary for the rollback in database)
     private boolean insertBookingRow(Connection conn, Booking booking) throws SQLException {
-        // Booking with payment but rolled back on DB
-        // Booking with phone number but rolled back on DB
-        String sqlWithDeadlineAndPhone = "INSERT INTO Booking (booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        String sqlWithDeadlineNoPhone = "INSERT INTO Booking (booking_id, booker_id, field_id, schedule_id, voucher_id, status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        String sqlWithoutDeadlineAndPhone = "INSERT INTO Booking (booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, status, total_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        String sqlWithoutDeadlineNoPhone = "INSERT INTO Booking (booking_id, booker_id, field_id, schedule_id, voucher_id, status, total_price) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO Booking (booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, play_status, payment_status, extra_payment_status, total_price, payment_deadline) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        String[] sqlAttempts = new String[]{
-            sqlWithDeadlineAndPhone,
-            sqlWithDeadlineNoPhone,
-            sqlWithoutDeadlineAndPhone,
-            sqlWithoutDeadlineNoPhone
-        };
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, booking.getBookingId().toString());
+            ps.setString(2, booking.getBookerId().toString());
 
-        boolean[] includeDeadlineAttempts = new boolean[]{true, true, false, false};
-        boolean[] includePhoneAttempts = new boolean[]{true, false, true, false};
-
-        SQLException lastException = null;
-        for (int i = 0; i < sqlAttempts.length; i++) {
-            try (PreparedStatement ps = conn.prepareStatement(sqlAttempts[i])) {
-                // includeDeadline/includePhone cho biet lan thu nay can bind them cot nao.
-                bindBookingParams(ps, booking, includeDeadlineAttempts[i], includePhoneAttempts[i]);
-                ps.executeUpdate();
-                return true;
-            } catch (SQLException ex) {
-                lastException = ex;
-                // To handle other errors other then migrations related.
-                if (!isMissingColumnError(ex)) {
-                    lastInsertError = "Cannot insert booking record: " + ex.getMessage();
-                    return false;
-                }
-            }
-        }
-
-        lastInsertError = "Cannot insert booking record: "
-                + (lastException != null ? lastException.getMessage() : "unsupported database schema");
-        return false;
-    }
-
-    //Evaluates business conditions in isMissingColumnError and returns a deterministic boolean result used to protect state transitions and payment/booking integrity rules.
-    private boolean isMissingColumnError(SQLException ex) {
-        String message = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
-        return message.contains("invalid column") || message.contains("column name") || message.contains("does not exist");
-    }
-
-    /**
-     * Binds common booking parameters for insert statements.
-     */
-    //Applies normalization/mapping logic in bindBookingParams to keep data format stable across DAO boundaries and reduce duplicate parsing logic in higher layers.
-    private void bindBookingParams(PreparedStatement ps, Booking booking, boolean includeDeadline, boolean includePhone) throws SQLException {
-        ps.setString(1, booking.getBookingId().toString());
-        ps.setString(2, booking.getBookerId().toString());
-
-        // idx is the inital placement of phone field (placement will be increased if phone field exists)
-        int idx = 3;
-        if (includePhone) {
             if (booking.getPhoneNumber() != null && !booking.getPhoneNumber().trim().isEmpty()) {
-                ps.setString(idx++, booking.getPhoneNumber().trim());
+                ps.setString(3, booking.getPhoneNumber().trim());
             } else {
-                // save null value to avoid trash info
-                ps.setNull(idx++, Types.NVARCHAR);
+                ps.setNull(3, Types.NVARCHAR);
             }
-        }
 
-        ps.setString(idx++, booking.getFieldId().toString());
-        ps.setString(idx++, booking.getScheduleId().toString());
-        //same for vouchers
-        if (booking.getVoucherId() != null) {
-            ps.setString(idx++, booking.getVoucherId().toString());
-        } else {
-            ps.setNull(idx++, Types.VARCHAR);
-        }
+            ps.setString(4, booking.getFieldId().toString());
+            ps.setString(5, booking.getScheduleId().toString());
+            if (booking.getVoucherId() != null) {
+                ps.setString(6, booking.getVoucherId().toString());
+            } else {
+                ps.setNull(6, Types.VARCHAR);
+            }
 
-        ps.setString(idx++, booking.getStatus());
-        ps.setBigDecimal(idx++, booking.getTotalPrice());
-        //same to dl
-        if (includeDeadline) {
+            String playStatus = normalizeStatus(booking.getPlayStatus());
+            String paymentStatus = normalizeStatus(booking.getPaymentStatus());
+            String extraPaymentStatus = normalizeStatus(booking.getExtraPaymentStatus());
+            ps.setString(7, playStatus);
+            ps.setString(8, paymentStatus);
+            ps.setString(9, extraPaymentStatus);
+            ps.setBigDecimal(10, booking.getTotalPrice());
+
             if (booking.getPaymentDeadline() != null) {
-                ps.setTimestamp(idx, Timestamp.valueOf(booking.getPaymentDeadline()));
+                ps.setTimestamp(11, Timestamp.valueOf(booking.getPaymentDeadline()));
             } else {
-                ps.setNull(idx, Types.TIMESTAMP);
+                ps.setNull(11, Types.TIMESTAMP);
             }
+
+            ps.executeUpdate();
+            return true;
+        } catch (SQLException ex) {
+            lastInsertError = "Cannot insert booking record: " + ex.getMessage();
+            return false;
         }
     }
 
@@ -249,7 +240,7 @@ public class BookingDAO {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.play_status, b.payment_status, b.extra_payment_status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
                 + "LEFT JOIN Field f ON b.field_id = f.field_id "
@@ -281,7 +272,7 @@ public class BookingDAO {
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setCustomerPhone(rs.getString("customer_phone"));
-                vm.setStatus(rs.getString("status"));
+                applyStateToBookingViewModel(rs, vm);
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 list.add(vm);
             }
@@ -297,11 +288,21 @@ public class BookingDAO {
      */
     //Retrieves and prepares data for getByBookerFiltered by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public List<BookingViewModel> getByBookerFiltered(UUID bookerId, String bookingDateStr, String startTimeStr, String status) {
+        return getByBookerFiltered(bookerId, bookingDateStr, startTimeStr, null, null, null, status);
+    }
+
+    public List<BookingViewModel> getByBookerFiltered(UUID bookerId,
+                                                       String bookingDateStr,
+                                                       String startTimeStr,
+                                                       String playStatus,
+                                                       String paymentStatus,
+                                                       String extraPaymentStatus,
+                                                       String status) {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name ");
+        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.play_status, b.payment_status, b.extra_payment_status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name ");
         sql.append("FROM Booking b ");
         sql.append("LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id ");
         sql.append("LEFT JOIN Field f ON b.field_id = f.field_id ");
@@ -314,8 +315,28 @@ public class BookingDAO {
         if (startTimeStr != null && !startTimeStr.isBlank()) {
             sql.append(" AND s.start_time = ? ");
         }
+        String legacyStatusExpr = legacyStatusExpression("b");
+        boolean filterCheckedOut = "checked out".equalsIgnoreCase(status == null ? "" : status.trim());
+        if (playStatus != null && !playStatus.isBlank()) {
+            boolean playCheckedOut = "checked out".equalsIgnoreCase(playStatus.trim());
+            if (playCheckedOut) {
+                sql.append(" AND LOWER(ISNULL(b.play_status, '')) = 'checked out' ");
+            } else {
+                sql.append(" AND LOWER(ISNULL(b.play_status, '')) = LOWER(?) ");
+            }
+        }
+        if (paymentStatus != null && !paymentStatus.isBlank()) {
+            sql.append(" AND LOWER(ISNULL(b.payment_status, '')) = LOWER(?) ");
+        }
+        if (extraPaymentStatus != null && !extraPaymentStatus.isBlank()) {
+            sql.append(" AND LOWER(ISNULL(b.extra_payment_status, '')) = LOWER(?) ");
+        }
         if (status != null && !status.isBlank()) {
-            sql.append(" AND LOWER(b.status) = LOWER(?) ");
+            if (filterCheckedOut) {
+                sql.append(" AND LOWER(").append(legacyStatusExpr).append(") = 'checked out' ");
+            } else {
+                sql.append(" AND LOWER(").append(legacyStatusExpr).append(") = LOWER(?) ");
+            }
         }
         // field filter removed per requirements
 
@@ -335,7 +356,16 @@ public class BookingDAO {
                     ps.setTime(idx++, null);
                 }
             }
-            if (status != null && !status.isBlank()) {
+            if (playStatus != null && !playStatus.isBlank() && !"checked out".equalsIgnoreCase(playStatus.trim())) {
+                ps.setString(idx++, playStatus);
+            }
+            if (paymentStatus != null && !paymentStatus.isBlank()) {
+                ps.setString(idx++, paymentStatus);
+            }
+            if (extraPaymentStatus != null && !extraPaymentStatus.isBlank()) {
+                ps.setString(idx++, extraPaymentStatus);
+            }
+            if (status != null && !status.isBlank() && !filterCheckedOut) {
                 ps.setString(idx++, status);
             }
 
@@ -360,7 +390,7 @@ public class BookingDAO {
                 }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
-                vm.setStatus(rs.getString("status"));
+                applyStateToBookingViewModel(rs, vm);
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 list.add(vm);
             }
@@ -374,7 +404,7 @@ public class BookingDAO {
     public List<BookingViewModel> getByWeeklyGroupId(UUID weeklyGroupId) {
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, "
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.play_status, b.payment_status, b.extra_payment_status, b.total_price, "
                 + "ISNULL(s.price, 0) AS field_price, "
                 + "ISNULL((SELECT SUM(ISNULL(be.quantity, 0) * ISNULL(e.rental_price, 0)) "
                 + "       FROM Booking_Equipment be "
@@ -411,7 +441,7 @@ public class BookingDAO {
                 }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setLocationName(rs.getString("location_name"));
-                vm.setStatus(rs.getString("status"));
+                applyStateToBookingViewModel(rs, vm);
                 vm.setFieldPrice(rs.getBigDecimal("field_price"));
                 vm.setEquipmentPrice(rs.getBigDecimal("equipment_price"));
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
@@ -433,14 +463,14 @@ public class BookingDAO {
         List<BookingViewModel> list = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, l.location_name, u.full_name AS customer_name ");
+        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.play_status, b.payment_status, b.extra_payment_status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, l.location_name, u.full_name AS customer_name ");
         sql.append("FROM Booking b ");
         sql.append("LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id ");
         sql.append("LEFT JOIN Field f ON b.field_id = f.field_id ");
         sql.append("LEFT JOIN Location l ON f.location_id = l.location_id ");
         sql.append("LEFT JOIN Users u ON b.booker_id = u.user_id ");
         sql.append("WHERE b.booker_id = ? ");
-        sql.append("AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') ");
+        sql.append("AND LOWER(ISNULL(b.play_status, 'booked')) IN ('booked', 'checked in', 'checked out') ");
         sql.append("AND s.booking_date >= ? AND s.booking_date <= ? ");
 
         if (selectedDate != null) {
@@ -495,7 +525,7 @@ public class BookingDAO {
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setLocationName(rs.getString("location_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
-                vm.setStatus(rs.getString("status"));
+                applyStateToBookingViewModel(rs, vm);
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 list.add(vm);
             }
@@ -524,7 +554,7 @@ public class BookingDAO {
         sql.append("FROM Booking b ");
         sql.append("JOIN Field f ON b.field_id = f.field_id ");
         sql.append("WHERE b.booker_id = ? ");
-        sql.append("AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') ");
+        sql.append("AND LOWER(").append(legacyStatusExpression("b")).append(") NOT IN ('cancelled', 'refunded') ");
         if (locationId != null) {
             sql.append("AND f.location_id = ? ");
         }
@@ -569,7 +599,7 @@ public class BookingDAO {
                 + "JOIN Field f ON b.field_id = f.field_id "
                 + "JOIN Location l ON f.location_id = l.location_id "
                 + "WHERE b.booker_id = ? "
-                + "AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') "
+                + "AND LOWER(" + legacyStatusExpression("b") + ") NOT IN ('cancelled', 'refunded') "
                 + "ORDER BY l.location_name";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -595,7 +625,7 @@ public class BookingDAO {
     public BookingViewModel getById(UUID bookingId) {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name "
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.play_status, b.payment_status, b.extra_payment_status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
                 + "LEFT JOIN Field f ON b.field_id = f.field_id "
@@ -630,7 +660,7 @@ public class BookingDAO {
                 }
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
-                vm.setStatus(rs.getString("status"));
+                applyStateToBookingViewModel(rs, vm);
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 return vm;
             }
@@ -646,12 +676,12 @@ public class BookingDAO {
     //Retrieves and prepares data for getByScheduleId by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public BookingViewModel getByScheduleId(UUID scheduleId) {
         synchronizeBookingStates();
-        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
+        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.play_status, b.payment_status, b.extra_payment_status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
                 + "LEFT JOIN Field f ON b.field_id = f.field_id "
                 + "LEFT JOIN Users u ON b.booker_id = u.user_id "
-                + "WHERE b.schedule_id = ? AND LOWER(ISNULL(b.status, '')) NOT IN ('cancelled', 'refunded') "
+            + "WHERE b.schedule_id = ? AND LOWER(" + legacyStatusExpression("b") + ") NOT IN ('cancelled', 'refunded') "
                 + "ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -679,7 +709,7 @@ public class BookingDAO {
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setCustomerPhone(rs.getString("customer_phone"));
-                vm.setStatus(rs.getString("status"));
+                applyStateToBookingViewModel(rs, vm);
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 return vm;
             }
@@ -695,13 +725,13 @@ public class BookingDAO {
     //Retrieves and prepares data for getByScheduleIdForCalendar by applying guard checks, querying mapped tables, transforming result sets into domain objects, and returning a safe fallback when no record is found.
     public BookingViewModel getByScheduleIdForCalendar(UUID scheduleId) {
         synchronizeBookingStates();
-        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
+        String sql = "SELECT TOP 1 b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.play_status, b.payment_status, b.extra_payment_status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
                 + "LEFT JOIN Field f ON b.field_id = f.field_id "
                 + "LEFT JOIN Users u ON b.booker_id = u.user_id "
                 + "WHERE b.schedule_id = ? "
-                + "AND LOWER(ISNULL(b.status, '')) IN ('pending', 'paid', 'checked in', 'pending extra', 'completed') "
+            + "AND LOWER(" + legacyStatusExpression("b") + ") IN ('pending', 'deposited', 'paid', 'checked in', 'checked out', 'completed') "
                 + "ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -729,7 +759,7 @@ public class BookingDAO {
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setCustomerPhone(rs.getString("customer_phone"));
-                vm.setStatus(rs.getString("status"));
+                applyStateToBookingViewModel(rs, vm);
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 return vm;
             }
@@ -769,7 +799,7 @@ public class BookingDAO {
     }
 
     /**
-     * Cancels booking by policy: pending bookings use payment-cancel flow; paid
+     * Cancels booking by policy: pending bookings use payment-cancel flow; deposited
      * bookings may move to pending refund when eligible.
      */
     //Description: Executes the cancelBooking write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
@@ -790,8 +820,8 @@ public class BookingDAO {
                 return cancelBookingForPayment(bookingId);
             }
 
-            // refund request is only possible if booking is paid 
-            if (!STATUS_PAID.equals(snapshot.status) || snapshot.scheduleStart == null) {
+            // refund request is only possible for paid/deposited bookings
+            if ((!STATUS_PAID.equals(snapshot.status) && !STATUS_DEPOSITED.equals(snapshot.status)) || snapshot.scheduleStart == null) {
                 conn.rollback();
                 return false;
             }
@@ -801,9 +831,8 @@ public class BookingDAO {
                 conn.rollback();
                 return false;
             }
-
-            // paid -> pending refund
-            boolean updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_REFUND, STATUS_PAID);
+            
+            boolean updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_REFUND, snapshot.status);
             if (!updated) {
                 conn.rollback();
                 return false;
@@ -861,14 +890,33 @@ public class BookingDAO {
     }
 
     /**
-     * Marks booking as paid (pending -> paid).
+    * Marks booking as paid (pending -> paid).
      */
     //Executes the markBookingPaid write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean markBookingPaid(UUID bookingId) {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
-            // only allows pending -> paid status
             boolean updated = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_PENDING);
+            if (!updated) {
+                updated = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_DEPOSITED);
+            }
+            if (!updated) {
+                conn.rollback();
+                return false;
+            }
+            conn.commit();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public boolean markBookingDeposited(UUID bookingId) {
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+            // only allows pending -> deposited status
+            boolean updated = updateBookingStatus(conn, bookingId, STATUS_DEPOSITED, STATUS_PENDING);
             if (!updated) {
                 conn.rollback();
                 return false;
@@ -884,7 +932,7 @@ public class BookingDAO {
     //Executes the markWeeklyGroupPaid write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean markWeeklyGroupPaid(UUID weeklyGroupId) {
         // To set all the bookings from weekly booking group from pending to paid
-        String sql = "UPDATE Booking SET status = 'paid' WHERE weekly_group_id = ? AND status = 'pending'";
+        String sql = "UPDATE Booking SET payment_status = 'paid' WHERE weekly_group_id = ? AND LOWER(ISNULL(play_status, '')) = 'booked' AND LOWER(ISNULL(payment_status, '')) = 'pending'";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, weeklyGroupId.toString());
             ps.executeUpdate();
@@ -979,7 +1027,7 @@ public class BookingDAO {
     //Executes the cancelWeeklyGroupForPayment write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     public boolean cancelWeeklyGroupForPayment(UUID weeklyGroupId) {
         List<UUID> bookingIds = new ArrayList<>();
-        String sql = "SELECT booking_id FROM Booking WHERE weekly_group_id = ? AND status = 'pending'";
+        String sql = "SELECT booking_id FROM Booking WHERE weekly_group_id = ? AND LOWER(ISNULL(play_status, '')) = 'booked' AND LOWER(ISNULL(payment_status, '')) = 'pending'";
         try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, weeklyGroupId.toString());
             ResultSet rs = ps.executeQuery();
@@ -1004,154 +1052,160 @@ public class BookingDAO {
      * Central status transition API with guarded business rules.
      */
     //Executes the updateStatus write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
-    public boolean updateStatus(UUID bookingId, String newStatus) {
+public boolean updateStatus(UUID bookingId, String newStatus) {
 
-        // Reject null input
-        if (newStatus == null) {
+    if (newStatus == null) return false;
+
+    synchronizeBookingStates();
+    newStatus = normalizeStatus(newStatus);
+    if (STATUS_FINISHED.equals(newStatus)) {
+        newStatus = STATUS_CHECKED_OUT;
+    }
+
+    if (!SUPPORTED_STATUSES.contains(newStatus)) {
+        return false;
+    }
+
+    try (Connection conn = DBConnection.getConnection()) {
+        conn.setAutoCommit(false);
+
+        BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
+        if (snapshot == null) {
+            conn.rollback();
             return false;
         }
 
-        // Normalize and validate status (see if statuses fits only statuses lisst allowed)
-        synchronizeBookingStates();
-        newStatus = normalizeStatus(newStatus);
-        if (!SUPPORTED_STATUSES.contains(newStatus)) {
-            return false;
+        // Idempotent
+        if (newStatus.equals(snapshot.status)) {
+            conn.rollback();
+            return true;
         }
 
-        try (Connection conn = DBConnection.getConnection()) {
-            conn.setAutoCommit(false);
+        boolean success = false;
 
-            // Get current booking information
-            BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
-            if (snapshot == null) {
-                conn.rollback();
-                return false;
-            }
+        switch (newStatus) {
 
-            // ensure idempotent 
-            if (newStatus.equals(snapshot.status)) {
-                conn.rollback();
-                return true;
-            }
-
-            boolean updated;
-
-            switch (newStatus) {
-
-                case STATUS_PAID:
-                    // Only allow: pending → paid
-                    updated = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_PENDING);
-                    break;
-
-                case STATUS_CHECKED_IN:
-                    // Allows bookings to be checked in only if its paid (including extra payment)
-                    if (STATUS_PAID.equals(snapshot.status)) {
-                        updated = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_PAID);
-                    } else if (STATUS_PENDING_EXTRA.equals(snapshot.status)
-                            && isPaymentSuccessful(conn, bookingId)) {
-                        updated = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_PENDING_EXTRA);
-                    } else {
-                        updated = false;
+            case STATUS_PAID:
+                // pending -> paid (full online) OR deposited -> paid (cash settlement at venue)
+                if (STATUS_PENDING.equals(snapshot.status) || STATUS_DEPOSITED.equals(snapshot.status)) {
+                    success = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_PENDING);
+                    if (!success && STATUS_DEPOSITED.equals(snapshot.status)) {
+                        success = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_DEPOSITED);
                     }
-                    break;
+                }
+                break;
 
-                case STATUS_PENDING_EXTRA:
-                    // Only allows checked in bookings to have extra booking
-                    updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_EXTRA, STATUS_CHECKED_IN);
-                    break;
+            case STATUS_DEPOSITED:
+                // pending -> deposited
+                if (STATUS_PENDING.equals(snapshot.status)) {
+                    success = updateBookingStatus(conn, bookingId, STATUS_DEPOSITED, STATUS_PENDING);
+                }
+                break;
 
-                case STATUS_PENDING_REFUND:
-                    // only paid bookings can have refund request
-                    if (!STATUS_PAID.equals(snapshot.status)) {
-                        updated = false;
-                        break;
+            case STATUS_CHECKED_IN:
+                if (STATUS_PAID.equals(snapshot.status) || STATUS_DEPOSITED.equals(snapshot.status)) {
+                    success = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_PAID);
+                    if (!success && STATUS_DEPOSITED.equals(snapshot.status)) {
+                        success = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_DEPOSITED);
                     }
-                    updated = updateBookingStatus(conn, bookingId, STATUS_PENDING_REFUND, STATUS_PAID);
-                    if (updated) {
-                        // Mark payment as refund pending
+                } else if (STATUS_PENDING_EXTRA.equals(snapshot.status)
+                        && isPaymentSuccessful(conn, bookingId)) {
+                    success = updateBookingStatus(conn, bookingId, STATUS_CHECKED_IN, STATUS_PENDING_EXTRA);
+                }
+                break;
+
+            case STATUS_CHECKED_OUT:
+                if (STATUS_CHECKED_IN.equals(snapshot.status)) {
+                    success = updateBookingStatus(conn, bookingId, STATUS_CHECKED_OUT, STATUS_CHECKED_IN);
+                }
+                break;
+
+            case STATUS_PENDING_EXTRA:
+                // checked_in -> pending_extra
+                if (STATUS_CHECKED_IN.equals(snapshot.status)) {
+                    success = updateBookingStatus(conn, bookingId, STATUS_PENDING_EXTRA, STATUS_CHECKED_IN);
+                }
+                break;
+
+            case STATUS_PENDING_REFUND:
+                // paid/deposited -> pending_refund
+                if (STATUS_PAID.equals(snapshot.status) || STATUS_DEPOSITED.equals(snapshot.status)) {
+                    success = updateBookingStatus(conn, bookingId, STATUS_PENDING_REFUND, snapshot.status);
+                    if (success) {
                         updatePaymentStatusByBooking(conn, bookingId, "REFUND_PENDING", false);
                     }
-                    break;
+                }
+                break;
 
-                case STATUS_REFUNDED:
-                    // only pending refund status can be changed to refunded
-                    if (!STATUS_PENDING_REFUND.equals(snapshot.status)) {
-                        updated = false;
-                        break;
-                    }
-                    updated = updateBookingStatus(conn, bookingId, STATUS_REFUNDED, STATUS_PENDING_REFUND);
-                    if (updated) {
-                        // Finalize refund and release resources
+            case STATUS_REFUNDED:
+                // legacy flow: pending_refund -> refunded
+                if (STATUS_PENDING_REFUND.equals(snapshot.status)
+                        || STATUS_PENDING_REFUND_CONFIRM.equals(snapshot.status)) {
+                    success = updateBookingStatus(conn, bookingId, STATUS_REFUNDED, snapshot.status);
+                    if (success) {
                         updatePaymentStatusByBooking(conn, bookingId, "REFUNDED", true);
                         releaseBookingResources(conn, bookingId, snapshot.scheduleId);
                     }
-                    break;
+                }
+                break;
 
-                case STATUS_COMPLETED:
-                    // Only allow if:
-                    // current status is checked in OR pending extra
-                    // booking time has ended
-                    // if pending extra → payment must be completed
-                    if (!(STATUS_CHECKED_IN.equals(snapshot.status)
-                            || STATUS_PENDING_EXTRA.equals(snapshot.status))) {
-                        updated = false;
-                        break;
-                    }
+            case STATUS_COMPLETED:
+                // checked_in OR pending_extra OR checked_out
+                if ((STATUS_CHECKED_IN.equals(snapshot.status)
+                    || STATUS_PENDING_EXTRA.equals(snapshot.status)
+                    || STATUS_CHECKED_OUT.equals(snapshot.status)
+                    || STATUS_FINISHED.equals(snapshot.status))
+                        && !hasOutstandingRemainingAmount(conn, bookingId)
+                        && ((STATUS_CHECKED_IN.equals(snapshot.status) || STATUS_PENDING_EXTRA.equals(snapshot.status))
+                                ? (snapshot.scheduleEnd != null && !LocalDateTime.now().isBefore(snapshot.scheduleEnd))
+                                : true)) {
 
-                    if (snapshot.scheduleEnd == null
-                            || LocalDateTime.now().isBefore(snapshot.scheduleEnd)) {
-                        updated = false;
-                        break;
-                    }
-
+                    // nếu pending_extra phải thanh toán xong
                     if (STATUS_PENDING_EXTRA.equals(snapshot.status)
                             && !isPaymentSuccessful(conn, bookingId)) {
-                        updated = false;
                         break;
                     }
 
-                    updated = updateBookingStatus(conn, bookingId, STATUS_COMPLETED, snapshot.status);
-                    break;
+                    success = updateBookingStatus(conn, bookingId, STATUS_COMPLETED, snapshot.status);
+                }
+                break;
 
-                case STATUS_CANCELLED:
-                    // Only allow cancel from pending or paid
-                    if (!STATUS_PENDING.equals(snapshot.status)
-                            && !STATUS_PAID.equals(snapshot.status)) {
-                        updated = false;
-                        break;
-                    }
+            case STATUS_CANCELLED:
+                // pending / paid / deposited
+                if (STATUS_PENDING.equals(snapshot.status)
+                        || STATUS_PAID.equals(snapshot.status)
+                    || STATUS_DEPOSITED.equals(snapshot.status)
+                    || STATUS_CHECKED_OUT.equals(snapshot.status)
+                    || STATUS_FINISHED.equals(snapshot.status)) {
 
-                    updated = updateBookingStatus(conn, bookingId, STATUS_CANCELLED, snapshot.status);
-                    if (updated) {
-                        // If pending → mark payment failed
+                    success = updateBookingStatus(conn, bookingId, STATUS_CANCELLED, snapshot.status);
+
+                    if (success) {
                         if (STATUS_PENDING.equals(snapshot.status)) {
                             updatePaymentStatusByBooking(conn, bookingId, "FAILED", true);
                         }
-                        // Release slot and equipment
                         releaseBookingResources(conn, bookingId, snapshot.scheduleId);
                     }
-                    break;
+                }
+                break;
 
-                default:
-                    updated = false;
-                    break;
-            }
+            default:
+                success = false;
+        }
 
-            // If update failed → rollback
-            if (!updated) {
-                conn.rollback();
-                return false;
-            }
-
-            // If everything ok → commit
-            conn.commit();
-            return true;
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (!success) {
+            conn.rollback();
             return false;
         }
+
+        conn.commit();
+        return true;
+
+    } catch (Exception e) {
+        e.printStackTrace();
+        return false;
     }
+}
 
     /**
      * Legacy direct supplementary insertion flow. Kept for compatibility;
@@ -1360,10 +1414,9 @@ public class BookingDAO {
                 bookingPs.executeUpdate();
             }
 
-            // After payment success, move status from pending extra to checked in/completed by slot time.
-            String postPaymentStatus = resolvePostSupplementaryStatus(snapshot, LocalDateTime.now());
-            if (!postPaymentStatus.equals(snapshot.status)) {
-                if (!updateBookingStatus(conn, bookingId, postPaymentStatus, snapshot.status)) {
+            // Add supplementary debt marker so staff/customer can settle later in remaining-payment flow.
+            if (STATUS_CHECKED_IN.equals(snapshot.status)) {
+                if (!updateBookingStatus(conn, bookingId, STATUS_PENDING_EXTRA, STATUS_CHECKED_IN)) {
                     conn.rollback();
                     lastInsertError = "Failed to update booking status after supplementary payment.";
                     return false;
@@ -1432,7 +1485,7 @@ public class BookingDAO {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
-        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
+        String sql = "SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.play_status, b.payment_status, b.extra_payment_status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
                 + "LEFT JOIN Field f ON b.field_id = f.field_id "
@@ -1467,7 +1520,7 @@ public class BookingDAO {
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setCustomerPhone(rs.getString("customer_phone"));
-                vm.setStatus(rs.getString("status"));
+                applyStateToBookingViewModel(rs, vm);
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 list.add(vm);
             }
@@ -1487,7 +1540,7 @@ public class BookingDAO {
         synchronizeBookingStates();
         List<BookingViewModel> list = new ArrayList<>();
         StringBuilder sql = new StringBuilder();
-        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone ");
+        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.play_status, b.payment_status, b.extra_payment_status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone ");
         sql.append("FROM Booking b ");
         sql.append("LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id ");
         sql.append("LEFT JOIN Field f ON b.field_id = f.field_id ");
@@ -1497,8 +1550,13 @@ public class BookingDAO {
         if (bookingDateStr != null && !bookingDateStr.isBlank()) {
             sql.append(" AND s.booking_date = ? ");
         }
+        boolean filterCheckedOut = "checked out".equalsIgnoreCase(status == null ? "" : status.trim());
         if (status != null && !status.isBlank()) {
-            sql.append(" AND LOWER(b.status) = LOWER(?) ");
+            if (filterCheckedOut) {
+                sql.append(" AND LOWER(").append(legacyStatusExpression("b")).append(") = 'checked out' ");
+            } else {
+                sql.append(" AND LOWER(").append(legacyStatusExpression("b")).append(") = LOWER(?) ");
+            }
         }
         if (customerKeyword != null && !customerKeyword.isBlank()) {
             sql.append(" AND (LOWER(u.full_name) LIKE LOWER(?) OR b.phone_number LIKE ?) ");
@@ -1512,7 +1570,7 @@ public class BookingDAO {
             if (bookingDateStr != null && !bookingDateStr.isBlank()) {
                 ps.setDate(idx++, Date.valueOf(bookingDateStr));
             }
-            if (status != null && !status.isBlank()) {
+            if (status != null && !status.isBlank() && !filterCheckedOut) {
                 ps.setString(idx++, status);
             }
             if (customerKeyword != null && !customerKeyword.isBlank()) {
@@ -1546,7 +1604,98 @@ public class BookingDAO {
                 vm.setFieldName(rs.getString("field_name"));
                 vm.setCustomerName(rs.getString("customer_name"));
                 vm.setCustomerPhone(rs.getString("customer_phone"));
-                vm.setStatus(rs.getString("status"));
+                applyStateToBookingViewModel(rs, vm);
+                vm.setTotalPrice(rs.getBigDecimal("total_price"));
+                list.add(vm);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
+    }
+
+    public List<BookingViewModel> getByLocationFilteredByState(UUID locationId,
+                                                                String bookingDateStr,
+                                                                String playStatus,
+                                                                String paymentStatus,
+                                                                String extraPaymentStatus,
+                                                                String customerKeyword) {
+        synchronizeBookingStates();
+        List<BookingViewModel> list = new ArrayList<>();
+        StringBuilder sql = new StringBuilder();
+
+        sql.append("SELECT b.booking_id, b.booker_id, b.field_id, b.schedule_id, b.play_status, b.payment_status, b.extra_payment_status, b.total_price, s.booking_date, s.start_time, s.end_time, f.field_name, f.location_id, u.full_name AS customer_name, COALESCE(b.phone_number, u.phone) AS customer_phone ");
+        sql.append("FROM Booking b ");
+        sql.append("LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id ");
+        sql.append("LEFT JOIN Field f ON b.field_id = f.field_id ");
+        sql.append("LEFT JOIN Users u ON b.booker_id = u.user_id ");
+        sql.append("WHERE f.location_id = ? ");
+
+        if (bookingDateStr != null && !bookingDateStr.isBlank()) {
+            sql.append(" AND s.booking_date = ? ");
+        }
+        if (playStatus != null && !playStatus.isBlank()) {
+            sql.append(" AND LOWER(ISNULL(b.play_status, '')) = LOWER(?) ");
+        }
+        if (paymentStatus != null && !paymentStatus.isBlank()) {
+            sql.append(" AND LOWER(ISNULL(b.payment_status, '')) = LOWER(?) ");
+        }
+        if (extraPaymentStatus != null && !extraPaymentStatus.isBlank()) {
+            sql.append(" AND LOWER(ISNULL(b.extra_payment_status, '')) = LOWER(?) ");
+        }
+        if (customerKeyword != null && !customerKeyword.isBlank()) {
+            sql.append(" AND (LOWER(u.full_name) LIKE LOWER(?) OR b.phone_number LIKE ?) ");
+        }
+
+        sql.append(" ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC");
+
+        try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            int idx = 1;
+            ps.setString(idx++, locationId.toString());
+            if (bookingDateStr != null && !bookingDateStr.isBlank()) {
+                ps.setDate(idx++, Date.valueOf(bookingDateStr));
+            }
+            if (playStatus != null && !playStatus.isBlank()) {
+                ps.setString(idx++, playStatus);
+            }
+            if (paymentStatus != null && !paymentStatus.isBlank()) {
+                ps.setString(idx++, paymentStatus);
+            }
+            if (extraPaymentStatus != null && !extraPaymentStatus.isBlank()) {
+                ps.setString(idx++, extraPaymentStatus);
+            }
+            if (customerKeyword != null && !customerKeyword.isBlank()) {
+                ps.setString(idx++, "%" + customerKeyword + "%");
+                ps.setString(idx++, "%" + customerKeyword + "%");
+            }
+
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                BookingViewModel vm = new BookingViewModel();
+                vm.setBookingId(UUID.fromString(rs.getString("booking_id")));
+                vm.setBookerId(UUID.fromString(rs.getString("booker_id")));
+                vm.setFieldId(UUID.fromString(rs.getString("field_id")));
+                String bookingLocationId = rs.getString("location_id");
+                if (bookingLocationId != null) {
+                    vm.setLocationId(UUID.fromString(bookingLocationId));
+                }
+                vm.setScheduleId(UUID.fromString(rs.getString("schedule_id")));
+                Date bd = rs.getDate("booking_date");
+                if (bd != null) {
+                    vm.setBookingDate(bd.toLocalDate());
+                }
+                Time st = rs.getTime("start_time");
+                if (st != null) {
+                    vm.setStartTime(st.toLocalTime());
+                }
+                Time et = rs.getTime("end_time");
+                if (et != null) {
+                    vm.setEndTime(et.toLocalTime());
+                }
+                vm.setFieldName(rs.getString("field_name"));
+                vm.setCustomerName(rs.getString("customer_name"));
+                vm.setCustomerPhone(rs.getString("customer_phone"));
+                applyStateToBookingViewModel(rs, vm);
                 vm.setTotalPrice(rs.getBigDecimal("total_price"));
                 list.add(vm);
             }
@@ -1587,7 +1736,7 @@ public class BookingDAO {
                     booking.setBookingTime(bookingTime.toLocalDateTime());
                 }
 
-                booking.setStatus(rs.getString("status"));
+                applyStateToBookingEntity(rs, booking);
                 booking.setPhoneNumber(rs.getString("phone_number"));
                 booking.setTotalPrice(rs.getBigDecimal("total_price"));
 
@@ -1639,10 +1788,10 @@ public class BookingDAO {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
             // Cron-on-read: he thong tu dong chot cac booking da qua gio cho 2 trang thai paid/checked in.
-            String sql = "SELECT b.booking_id, LOWER(ISNULL(b.status, '')) AS booking_status "
+                String sql = "SELECT b.booking_id, LOWER(" + legacyStatusExpression("b") + ") AS booking_status "
                     + "FROM Booking b "
                     + "INNER JOIN Schedule s ON s.schedule_id = b.schedule_id "
-                    + "WHERE LOWER(ISNULL(b.status, '')) IN ('paid', 'checked in') "
+                    + "WHERE LOWER(" + legacyStatusExpression("b") + ") IN ('paid', 'deposited', 'checked in', 'checked out') "
                     + "AND (s.booking_date < CAST(SYSDATETIME() AS DATE) "
                     + "     OR (s.booking_date = CAST(SYSDATETIME() AS DATE) AND s.end_time <= CAST(SYSDATETIME() AS TIME)))";
 
@@ -1661,13 +1810,24 @@ public class BookingDAO {
                 if (snapshot == null) {
                     continue;
                 }
-                if (STATUS_PAID.equals(snapshot.status)) {
-                    // paid ma qua gio nhung chua check-in -> coi nhu khong su dung, chuyen cancelled.
-                    updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CANCELLED, STATUS_PAID);
+                if (STATUS_PAID.equals(snapshot.status) || STATUS_DEPOSITED.equals(snapshot.status)) {
+                    // paid/deposited ma qua gio nhung chua check-in -> coi nhu khong su dung, chuyen cancelled.
+                    updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CANCELLED, snapshot.status);
                     releaseBookingResources(conn, expiredBooking.bookingId, snapshot.scheduleId);
                 } else if (STATUS_CHECKED_IN.equals(snapshot.status)) {
-                    // checked-in qua gio -> completed.
-                    updateBookingStatus(conn, expiredBooking.bookingId, STATUS_COMPLETED, STATUS_CHECKED_IN);
+                    // checked-in qua gio: doi sang checked out. Thanh toan hoan tat se dua den completed.
+                    updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CHECKED_OUT, STATUS_CHECKED_IN);
+                } else if (STATUS_CHECKED_OUT.equals(snapshot.status) || STATUS_FINISHED.equals(snapshot.status)) {
+                    // Tuong thich du lieu cu finished va cho phep tu dong complete khi da het cong no.
+                    if (STATUS_FINISHED.equals(snapshot.status)) {
+                        updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CHECKED_OUT, STATUS_FINISHED);
+                    }
+                    if (!hasOutstandingRemainingAmount(conn, expiredBooking.bookingId)) {
+                        boolean updated = updateBookingStatus(conn, expiredBooking.bookingId, STATUS_COMPLETED, STATUS_CHECKED_OUT);
+                        if (!updated) {
+                            updateBookingStatus(conn, expiredBooking.bookingId, STATUS_COMPLETED, STATUS_FINISHED);
+                        }
+                    }
                 }
             }
 
@@ -1684,7 +1844,8 @@ public class BookingDAO {
     private BookingSnapshot getBookingSnapshot(Connection conn, UUID bookingId) throws SQLException {
         // Internal Flow: query data source, map database rows to model objects, and return null/empty values safely on edge cases.
         // Snapshot la du lieu toi thieu de quyet dinh transition: khong load du model de giam chi phi.
-        String sql = "SELECT b.schedule_id, b.field_id, b.status, s.booking_date, s.start_time, s.end_time "
+        String sql = "SELECT b.schedule_id, b.field_id, b.play_status, b.payment_status, b.extra_payment_status, "
+            + "s.booking_date, s.start_time, s.end_time "
                 + "FROM Booking b "
                 + "LEFT JOIN Schedule s ON s.schedule_id = b.schedule_id "
                 + "WHERE b.booking_id = ?";
@@ -1701,11 +1862,10 @@ public class BookingDAO {
                 if (scheduleId != null) {
                     snapshot.scheduleId = UUID.fromString(scheduleId);
                 }
-                String fieldId = rs.getString("field_id");
-                if (fieldId != null) {
-                    snapshot.fieldId = UUID.fromString(fieldId);
-                }
-                snapshot.status = normalizeStatus(rs.getString("status"));
+                snapshot.playStatus = normalizeStatus(rs.getString("play_status"));
+                snapshot.paymentStatus = normalizeStatus(rs.getString("payment_status"));
+                snapshot.extraPaymentStatus = normalizeStatus(rs.getString("extra_payment_status"));
+                snapshot.status = resolveLegacyStatus(snapshot.playStatus, snapshot.paymentStatus, snapshot.extraPaymentStatus);
 
                 Date bookingDate = rs.getDate("booking_date");
                 Time startTime = rs.getTime("start_time");
@@ -1769,19 +1929,189 @@ public class BookingDAO {
         }
     }
 
+    private boolean hasOutstandingRemainingAmount(Connection conn, UUID bookingId) throws SQLException {
+        String sql = "SELECT ISNULL(b.total_price, 0) AS total_price, "
+            + "LOWER(ISNULL(b.payment_status, '')) AS booking_payment_status, "
+            + "LOWER(ISNULL(b.extra_payment_status, '')) AS booking_extra_status, "
+            + "ISNULL(p.amount, 0) AS paid_amount, "
+            + "LOWER(ISNULL(p.payment_method, '')) AS payment_method, "
+            + "LOWER(ISNULL(p.payment_status, '')) AS payment_status "
+                + "FROM Booking b "
+                + "OUTER APPLY ("
+                + "    SELECT TOP 1 amount, payment_method, payment_status "
+                + "    FROM Payment p "
+                + "    WHERE p.booking_id = b.booking_id "
+                + "    ORDER BY p.payment_time DESC"
+                + ") p "
+                + "WHERE b.booking_id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, bookingId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return false;
+                }
+
+                BigDecimal totalPrice = rs.getBigDecimal("total_price");
+                BigDecimal paidAmount = rs.getBigDecimal("paid_amount");
+                String paymentMethod = rs.getString("payment_method");
+                String paymentStatus = rs.getString("payment_status");
+                String bookingPaymentStatus = normalizeStatus(rs.getString("booking_payment_status"));
+                String bookingExtraStatus = normalizeStatus(rs.getString("booking_extra_status"));
+
+                if (totalPrice == null) {
+                    totalPrice = BigDecimal.ZERO;
+                }
+                if (paidAmount == null) {
+                    paidAmount = BigDecimal.ZERO;
+                }
+
+                // Business-first settlement rules from split states.
+                if (STATUS_PAID.equals(bookingPaymentStatus)
+                        && (EXTRA_PAYMENT_STATUS_NONE.equals(bookingExtraStatus)
+                        || EXTRA_PAYMENT_STATUS_PAID.equals(bookingExtraStatus))) {
+                    return false;
+                }
+
+                if (STATUS_PAID.equals(bookingPaymentStatus)
+                        && STATUS_PENDING_EXTRA.equals(bookingExtraStatus)) {
+                    return true;
+                }
+
+                if (STATUS_DEPOSITED.equals(bookingPaymentStatus)) {
+                    return true;
+                }
+
+                if (STATUS_PENDING_REFUND.equals(bookingPaymentStatus)
+                    || STATUS_PENDING_REFUND_CONFIRM.equals(bookingPaymentStatus)
+                        || STATUS_REFUNDED.equals(bookingPaymentStatus)
+                        || PAYMENT_STATUS_FAILED.equals(bookingPaymentStatus)) {
+                    return false;
+                }
+
+                if (paymentMethod != null && paymentMethod.contains("|remaining")) {
+                    return !"success".equals(paymentStatus) && !"paid".equals(paymentStatus);
+                }
+
+                if ("success".equals(paymentStatus) || "paid".equals(paymentStatus)) {
+                    return totalPrice.compareTo(paidAmount) > 0;
+                }
+                return false;
+            }
+        }
+    }
+
+    public BigDecimal getOutstandingAmount(UUID bookingId) {
+        if (bookingId == null) {
+            return BigDecimal.ZERO;
+        }
+
+        String sql = "SELECT ISNULL(b.total_price, 0) AS total_price, "
+                + "LOWER(ISNULL(b.payment_status, '')) AS booking_payment_status, "
+                + "LOWER(ISNULL(b.extra_payment_status, '')) AS booking_extra_status, "
+                + "ISNULL(p.amount, 0) AS paid_amount, "
+                + "LOWER(ISNULL(p.payment_method, '')) AS payment_method, "
+                + "LOWER(ISNULL(p.payment_status, '')) AS payment_status "
+                + "FROM Booking b "
+                + "OUTER APPLY ("
+                + "    SELECT TOP 1 amount, payment_method, payment_status "
+                + "    FROM Payment p "
+                + "    WHERE p.booking_id = b.booking_id "
+                + "    ORDER BY p.payment_time DESC"
+                + ") p "
+                + "WHERE b.booking_id = ?";
+
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, bookingId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return BigDecimal.ZERO;
+                }
+
+                BigDecimal totalPrice = rs.getBigDecimal("total_price");
+                BigDecimal paidAmount = rs.getBigDecimal("paid_amount");
+                String paymentMethod = normalizeStatus(rs.getString("payment_method"));
+                String paymentStatus = normalizeStatus(rs.getString("payment_status"));
+                String bookingPaymentStatus = normalizeStatus(rs.getString("booking_payment_status"));
+                String bookingExtraStatus = normalizeStatus(rs.getString("booking_extra_status"));
+
+                if (totalPrice == null || totalPrice.compareTo(BigDecimal.ZERO) <= 0) {
+                    return BigDecimal.ZERO;
+                }
+                if (paidAmount == null) {
+                    paidAmount = BigDecimal.ZERO;
+                }
+
+                // Business-first settlement rules from split states.
+                if ("paid".equals(bookingPaymentStatus)
+                        && ("none".equals(bookingExtraStatus) || "paid extra".equals(bookingExtraStatus))) {
+                    return BigDecimal.ZERO;
+                }
+
+                if ("pending refund".equals(bookingPaymentStatus)
+                    || "pending refund confirm".equals(bookingPaymentStatus)
+                        || "refunded".equals(bookingPaymentStatus)
+                        || "failed".equals(bookingPaymentStatus)) {
+                    return BigDecimal.ZERO;
+                }
+
+                if ("paid".equals(bookingPaymentStatus) && "pending extra".equals(bookingExtraStatus)) {
+                    BigDecimal remaining = totalPrice.subtract(paidAmount);
+                    return remaining.max(BigDecimal.ZERO);
+                }
+
+                if ("deposited".equals(bookingPaymentStatus)) {
+                    BigDecimal remaining = totalPrice.subtract(paidAmount);
+                    return remaining.max(BigDecimal.ZERO);
+                }
+
+                if (paymentMethod.contains("|remaining")) {
+                    if ("success".equals(paymentStatus) || "paid".equals(paymentStatus)) {
+                        return BigDecimal.ZERO;
+                    }
+                    return paidAmount.max(BigDecimal.ZERO);
+                }
+
+                if ("success".equals(paymentStatus) || "paid".equals(paymentStatus)) {
+                    BigDecimal remaining = totalPrice.subtract(paidAmount);
+                    return remaining.max(BigDecimal.ZERO);
+                }
+
+                return totalPrice.max(BigDecimal.ZERO);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return BigDecimal.ZERO;
+        }
+    }
+
 //=============================================================================================STATUS CONTROL===============================================================================================//
     /**
      * Updates booking status only when current status matches expectedStatus.
      */
     //Description: Executes the updateBookingStatus write workflow, including input normalization, transactional SQL updates/inserts, consistency checks, and explicit success/failure signaling for calling services.
     private boolean updateBookingStatus(Connection conn, UUID bookingId, String newStatus, String expectedStatus) throws SQLException {
-        // Internal Flow: validate inputs, run transactional SQL mutations, and propagate a clear commit/rollback result.
-        // Compare-and-set o DB: chi update khi status hien tai dung expectedStatus.
-        String sql = "UPDATE Booking SET status = ? WHERE booking_id = ? AND LOWER(ISNULL(status, '')) = ?";
+        String normalizedExpectedStatus = normalizeStatus(expectedStatus);
+        BookingSnapshot current = getBookingSnapshot(conn, bookingId);
+        if (current == null || !normalizedExpectedStatus.equals(normalizeStatus(current.status))) {
+            return false;
+        }
+
+        BookingSplitState nextState = resolveNextSplitState(current, normalizeStatus(newStatus));
+        String sql = "UPDATE Booking "
+                + "SET play_status = ?, payment_status = ?, extra_payment_status = ? "
+                + "WHERE booking_id = ? "
+                + "AND LOWER(ISNULL(play_status, '')) = ? "
+                + "AND LOWER(ISNULL(payment_status, '')) = ? "
+                + "AND LOWER(ISNULL(extra_payment_status, '')) = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, newStatus);
-            ps.setString(2, bookingId.toString());
-            ps.setString(3, normalizeStatus(expectedStatus));
+            ps.setString(1, nextState.playStatus);
+            ps.setString(2, nextState.paymentStatus);
+            ps.setString(3, nextState.extraPaymentStatus);
+            ps.setString(4, bookingId.toString());
+            ps.setString(5, current.playStatus);
+            ps.setString(6, current.paymentStatus);
+            ps.setString(7, current.extraPaymentStatus);
             return ps.executeUpdate() > 0;
         }
     }
@@ -1845,16 +2175,279 @@ public class BookingDAO {
         return status == null ? "" : status.trim().toLowerCase();
 
     }
+
+    public boolean updateSplitStates(UUID bookingId, String playStatus, String paymentStatus, String extraPaymentStatus) {
+        String normalizedPlayStatus = normalizeStatus(playStatus);
+        String normalizedPaymentStatus = normalizeStatus(paymentStatus);
+        String normalizedExtraPaymentStatus = normalizeStatus(extraPaymentStatus);
+
+        if (!SUPPORTED_PLAY_STATUSES.contains(normalizedPlayStatus)
+                || !SUPPORTED_PAYMENT_STATUSES.contains(normalizedPaymentStatus)
+                || !SUPPORTED_EXTRA_PAYMENT_STATUSES.contains(normalizedExtraPaymentStatus)) {
+            return false;
+        }
+
+        String sql = "UPDATE Booking "
+                + "SET play_status = ?, payment_status = ?, extra_payment_status = ? "
+                + "WHERE booking_id = ?";
+
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, normalizedPlayStatus);
+            ps.setString(2, normalizedPaymentStatus);
+            ps.setString(3, normalizedExtraPaymentStatus);
+            ps.setString(4, bookingId.toString());
+            return ps.executeUpdate() > 0;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean isBookedByStaff(UUID bookingId) {
+        if (bookingId == null) {
+            return false;
+        }
+
+        String sql = "SELECT LOWER(ISNULL(r.role_name, '')) AS booker_role_name "
+                + "FROM Booking b "
+                + "LEFT JOIN Users u ON u.user_id = b.booker_id "
+                + "LEFT JOIN Role r ON r.role_id = u.role_id "
+                + "WHERE b.booking_id = ?";
+
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, bookingId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return false;
+                }
+                return "staff".equals(normalizeStatus(rs.getString("booker_role_name")));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private String legacyStatusExpression(String alias) {
+        String p = alias + ".payment_status";
+        String pl = alias + ".play_status";
+        String ex = alias + ".extra_payment_status";
+        return "CASE "
+                + "WHEN LOWER(ISNULL(" + p + ", '')) = 'pending refund' THEN 'pending refund' "
+            + "WHEN LOWER(ISNULL(" + p + ", '')) = 'pending refund confirm' THEN 'pending refund' "
+                + "WHEN LOWER(ISNULL(" + p + ", '')) = 'refunded' THEN 'refunded' "
+                + "WHEN LOWER(ISNULL(" + p + ", '')) = 'failed' OR LOWER(ISNULL(" + pl + ", '')) = 'cancelled' THEN 'cancelled' "
+                + "WHEN LOWER(ISNULL(" + pl + ", '')) = 'completed' THEN 'completed' "
+                + "WHEN LOWER(ISNULL(" + pl + ", '')) = 'checked out' THEN 'checked out' "
+                + "WHEN LOWER(ISNULL(" + pl + ", '')) = 'checked in' AND LOWER(ISNULL(" + ex + ", 'none')) = 'pending extra' THEN 'pending extra' "
+                + "WHEN LOWER(ISNULL(" + pl + ", '')) = 'checked in' THEN 'checked in' "
+                + "WHEN LOWER(ISNULL(" + p + ", '')) = 'deposited' THEN 'deposited' "
+                + "WHEN LOWER(ISNULL(" + p + ", '')) = 'paid' THEN 'paid' "
+                + "ELSE 'pending' END";
+    }
+
+    private BookingSplitState resolveNextSplitState(BookingSnapshot current, String newStatus) {
+        String currentPlay = normalizeStatus(current.playStatus);
+        String currentPayment = normalizeStatus(current.paymentStatus);
+        String currentExtra = normalizeStatus(current.extraPaymentStatus);
+
+        if (currentPlay.isEmpty()) {
+            currentPlay = PLAY_STATUS_BOOKED;
+        }
+        if (currentPayment.isEmpty()) {
+            currentPayment = STATUS_PENDING;
+        }
+        if (currentExtra.isEmpty()) {
+            currentExtra = EXTRA_PAYMENT_STATUS_NONE;
+        }
+
+        switch (newStatus) {
+            case STATUS_PENDING:
+                return new BookingSplitState(PLAY_STATUS_BOOKED, STATUS_PENDING, EXTRA_PAYMENT_STATUS_NONE);
+            case STATUS_DEPOSITED:
+                return new BookingSplitState(PLAY_STATUS_BOOKED, STATUS_DEPOSITED, currentExtra.isEmpty() ? EXTRA_PAYMENT_STATUS_NONE : currentExtra);
+            case STATUS_PAID:
+                return new BookingSplitState(currentPlay.isEmpty() ? PLAY_STATUS_BOOKED : currentPlay, STATUS_PAID, currentExtra.isEmpty() ? EXTRA_PAYMENT_STATUS_NONE : currentExtra);
+            case STATUS_CHECKED_IN:
+                return new BookingSplitState(
+                        STATUS_CHECKED_IN,
+                        currentPayment.isEmpty() ? STATUS_PAID : currentPayment,
+                        STATUS_PENDING_EXTRA.equals(currentExtra) ? EXTRA_PAYMENT_STATUS_PAID : (currentExtra.isEmpty() ? EXTRA_PAYMENT_STATUS_NONE : currentExtra)
+                );
+            case STATUS_PENDING_EXTRA:
+                return new BookingSplitState(
+                        STATUS_CHECKED_IN,
+                        currentPayment.isEmpty() ? STATUS_PAID : currentPayment,
+                        STATUS_PENDING_EXTRA
+                );
+            case STATUS_CHECKED_OUT:
+                return new BookingSplitState(
+                        STATUS_CHECKED_OUT,
+                        currentPayment.isEmpty() ? STATUS_PAID : currentPayment,
+                        currentExtra.isEmpty() ? EXTRA_PAYMENT_STATUS_NONE : currentExtra
+                );
+            case STATUS_COMPLETED:
+                return new BookingSplitState(
+                        STATUS_COMPLETED,
+                        STATUS_PAID,
+                        STATUS_PENDING_EXTRA.equals(currentExtra) ? EXTRA_PAYMENT_STATUS_PAID : (currentExtra.isEmpty() ? EXTRA_PAYMENT_STATUS_NONE : currentExtra)
+                );
+            case STATUS_PENDING_REFUND:
+                return new BookingSplitState(
+                        PLAY_STATUS_CANCELLED,
+                        STATUS_PENDING_REFUND,
+                        currentExtra.isEmpty() ? EXTRA_PAYMENT_STATUS_NONE : currentExtra
+                );
+            case STATUS_REFUNDED:
+                return new BookingSplitState(
+                        PLAY_STATUS_CANCELLED,
+                        STATUS_REFUNDED,
+                        currentExtra.isEmpty() ? EXTRA_PAYMENT_STATUS_NONE : currentExtra
+                );
+            case STATUS_CANCELLED:
+                return new BookingSplitState(
+                        PLAY_STATUS_CANCELLED,
+                        PAYMENT_STATUS_FAILED,
+                        currentExtra.isEmpty() ? EXTRA_PAYMENT_STATUS_NONE : currentExtra
+                );
+            default:
+                return new BookingSplitState(
+                        resolvePlayStatus(newStatus),
+                        resolvePaymentStatus(newStatus),
+                        resolveExtraPaymentStatus(newStatus)
+                );
+        }
+    }
+
+    private String resolvePlayStatus(String legacyStatus) {
+        String normalized = normalizeStatus(legacyStatus);
+        if (STATUS_CHECKED_IN.equals(normalized) || STATUS_PENDING_EXTRA.equals(normalized)) {
+            return STATUS_CHECKED_IN;
+        }
+        if (STATUS_FINISHED.equals(normalized) || STATUS_CHECKED_OUT.equals(normalized)) {
+            return STATUS_CHECKED_OUT;
+        }
+        if (STATUS_COMPLETED.equals(normalized)) {
+            return STATUS_COMPLETED;
+        }
+        if (STATUS_CANCELLED.equals(normalized)
+                || STATUS_REFUNDED.equals(normalized)
+                || STATUS_PENDING_REFUND.equals(normalized)) {
+            return PLAY_STATUS_CANCELLED;
+        }
+        return PLAY_STATUS_BOOKED;
+    }
+
+    private String resolvePaymentStatus(String legacyStatus) {
+        String normalized = normalizeStatus(legacyStatus);
+        if (STATUS_PENDING.equals(normalized)) {
+            return STATUS_PENDING;
+        }
+        if (STATUS_DEPOSITED.equals(normalized)) {
+            return STATUS_DEPOSITED;
+        }
+        if (STATUS_PENDING_REFUND.equals(normalized)) {
+            return STATUS_PENDING_REFUND;
+        }
+        if (STATUS_PENDING_REFUND_CONFIRM.equals(normalized)) {
+            return STATUS_PENDING_REFUND;
+        }
+        if (STATUS_REFUNDED.equals(normalized)) {
+            return STATUS_REFUNDED;
+        }
+        if (STATUS_CANCELLED.equals(normalized)) {
+            return PAYMENT_STATUS_FAILED;
+        }
+        return STATUS_PAID;
+    }
+
+    private String resolveExtraPaymentStatus(String legacyStatus) {
+        return STATUS_PENDING_EXTRA.equals(normalizeStatus(legacyStatus)) ? STATUS_PENDING_EXTRA : EXTRA_PAYMENT_STATUS_NONE;
+    }
+
+    private String resolveLegacyStatus(String playStatus, String paymentStatus, String extraPaymentStatus) {
+        String normalizedPlay = normalizeStatus(playStatus);
+        String normalizedPayment = normalizeStatus(paymentStatus);
+        String normalizedExtra = normalizeStatus(extraPaymentStatus);
+
+        if (STATUS_PENDING_REFUND.equals(normalizedPayment)) {
+            return STATUS_PENDING_REFUND;
+        }
+        if (STATUS_PENDING_REFUND_CONFIRM.equals(normalizedPayment)) {
+            return STATUS_PENDING_REFUND;
+        }
+        if (STATUS_REFUNDED.equals(normalizedPayment)) {
+            return STATUS_REFUNDED;
+        }
+        if (PAYMENT_STATUS_FAILED.equals(normalizedPayment) || STATUS_CANCELLED.equals(normalizedPlay)) {
+            return STATUS_CANCELLED;
+        }
+        if (STATUS_COMPLETED.equals(normalizedPlay)) {
+            return STATUS_COMPLETED;
+        }
+        if (STATUS_CHECKED_OUT.equals(normalizedPlay)) {
+            return STATUS_CHECKED_OUT;
+        }
+        if (STATUS_CHECKED_IN.equals(normalizedPlay)) {
+            return STATUS_PENDING_EXTRA.equals(normalizedExtra) ? STATUS_PENDING_EXTRA : STATUS_CHECKED_IN;
+        }
+        if (STATUS_DEPOSITED.equals(normalizedPayment)) {
+            return STATUS_DEPOSITED;
+        }
+        if (STATUS_PAID.equals(normalizedPayment)) {
+            return STATUS_PAID;
+        }
+        return STATUS_PENDING;
+    }
+
+    private void applyStateToBookingViewModel(ResultSet rs, BookingViewModel vm) throws SQLException {
+        String playStatus = normalizeStatus(rs.getString("play_status"));
+        String paymentStatus = normalizeStatus(rs.getString("payment_status"));
+        String extraPaymentStatus = normalizeStatus(rs.getString("extra_payment_status"));
+        String legacyStatus = resolveLegacyStatus(playStatus, paymentStatus, extraPaymentStatus);
+
+        vm.setStatus(legacyStatus);
+        vm.setPlayStatus(playStatus);
+        vm.setPaymentStatus(paymentStatus);
+        vm.setExtraPaymentStatus(extraPaymentStatus);
+    }
+
+    private void applyStateToBookingEntity(ResultSet rs, Booking booking) throws SQLException {
+        String playStatus = normalizeStatus(rs.getString("play_status"));
+        String paymentStatus = normalizeStatus(rs.getString("payment_status"));
+        String extraPaymentStatus = normalizeStatus(rs.getString("extra_payment_status"));
+        String legacyStatus = resolveLegacyStatus(playStatus, paymentStatus, extraPaymentStatus);
+
+        booking.setStatus(legacyStatus);
+        booking.setPlayStatus(playStatus);
+        booking.setPaymentStatus(paymentStatus);
+        booking.setExtraPaymentStatus(extraPaymentStatus);
+    }
 //=============================================================================================QUICK MAPPING===============================================================================================//
 
     private static class BookingSnapshot {
 
         private UUID bookingId;
         private UUID scheduleId;
-        private UUID fieldId;
         private String status;
+        private String playStatus;
+        private String paymentStatus;
+        private String extraPaymentStatus;
         private LocalDateTime scheduleStart;
         private LocalDateTime scheduleEnd;
+    }
+
+    private static class BookingSplitState {
+
+        private final String playStatus;
+        private final String paymentStatus;
+        private final String extraPaymentStatus;
+
+        private BookingSplitState(String playStatus, String paymentStatus, String extraPaymentStatus) {
+            this.playStatus = playStatus;
+            this.paymentStatus = paymentStatus;
+            this.extraPaymentStatus = extraPaymentStatus;
+        }
     }
 
     /**
@@ -1977,7 +2570,9 @@ public class BookingDAO {
                     b.setScheduleId(sid);
                     b.setVoucherId(voucherId);
                     b.setBookingTime(now);
-                    b.setStatus("pending");
+                    b.setPlayStatus("booked");
+                    b.setPaymentStatus("pending");
+                    b.setExtraPaymentStatus("none");
                     // pending: cho khach thanh toan trong payment_deadline.
                     b.setTotalPrice(totalPrice);
                     b.setPaymentDeadline(paymentDeadline);
@@ -2014,8 +2609,8 @@ public class BookingDAO {
                 // Ã¢â€â‚¬Ã¢â€â‚¬ Phase 3: insert all booking rows Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
                 String insertSql = "INSERT INTO Booking "
                         + "(booking_id, booker_id, phone_number, field_id, schedule_id, voucher_id, weekly_group_id, "
-                        + " status, total_price, payment_deadline) "
-                        + "VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)";
+                    + " play_status, payment_status, extra_payment_status, total_price, payment_deadline) "
+                    + "VALUES (?, ?, ?, ?, ?, ?, ?, 'booked', 'pending', 'none', ?, ?)";
                 try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
                     for (Booking b : created) {
                         ps.setString(1, b.getBookingId().toString());

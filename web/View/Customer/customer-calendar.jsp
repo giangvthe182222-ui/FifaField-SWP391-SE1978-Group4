@@ -17,7 +17,7 @@
 
     <div class="space-y-2">
         <h1 class="text-4xl font-black uppercase tracking-tight">Lịch chơi <span class="text-[#008751]">cá nhân</span></h1>
-        <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.25em]">Lịch chung hiển thị booking của bạn ở trạng thái pending, paid, completed</p>
+        <p class="text-gray-400 font-bold uppercase text-[10px] tracking-[0.25em]">Chỉ hiển thị booking có play status: booked, checked in, checked out</p>
     </div>
 
     <section class="bg-white border border-gray-100 rounded-3xl p-6 md:p-8 shadow-sm space-y-6">
@@ -60,7 +60,7 @@
                                         <div class="border-2 rounded-[1.5rem] p-4 transition-all border-gray-50 bg-white hover:border-[#008751] hover:shadow-md">
                                             <div class="flex items-start justify-between gap-3 mb-3">
                                                 <p class="text-sm font-black text-gray-900 tracking-tight">${b.startTime} - ${b.endTime}</p>
-                                                <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.status == 'completed' ? 'bg-emerald-50 text-emerald-700' : (b.status == 'paid' ? 'bg-blue-50 text-blue-700' : (b.status == 'checked in' ? 'bg-purple-50 text-purple-700' : 'bg-amber-50 text-amber-700'))}">${b.status}</span>
+                                                <span class="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.playStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.playStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-slate-100 text-slate-600 border border-slate-200'}">${empty b.playStatus ? 'booked' : b.playStatus}</span>
                                             </div>
 
                                             <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Cơ sở</p>
@@ -68,6 +68,11 @@
 
                                             <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sân</p>
                                             <p class="text-sm font-black text-gray-800 uppercase tracking-tight mt-1">${b.fieldName}</p>
+
+                                            <div class="mt-3 flex flex-wrap gap-2">
+                                                <span class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Payment: ${empty b.paymentStatus ? 'pending' : b.paymentStatus}</span>
+                                                <span class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.extraPaymentStatus == 'paid extra' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : b.extraPaymentStatus == 'pending extra' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Extra: ${empty b.extraPaymentStatus ? 'none' : b.extraPaymentStatus}</span>
+                                            </div>
 
                                             <div class="flex items-center justify-between mt-4">
                                                 <span class="text-[10px] font-black text-[#008751] uppercase tracking-widest"><fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> đ</span>

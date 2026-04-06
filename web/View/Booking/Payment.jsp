@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ page import="Models.Booking, Models.Payment, Models.BookingViewModel" %>
+<%@ page import="Models.Booking, Models.Payment, Models.BookingViewModel, java.math.BigDecimal" %>
 <%
     Booking booking = (Booking) request.getAttribute("booking");
     BookingViewModel bookingVM = (BookingViewModel) request.getAttribute("bookingVM");
@@ -15,6 +15,11 @@
     String paymentSource = (String) request.getAttribute("paymentSource");
     String supplementaryRentalId = (String) request.getAttribute("supplementaryRentalId");
     String paymentDescription = (String) request.getAttribute("paymentDescription");
+    String paymentMethodLabel = (String) request.getAttribute("paymentMethodLabel");
+    String remainingPaymentMethodLabel = (String) request.getAttribute("remainingPaymentMethodLabel");
+    BigDecimal bookingTotalAmount = (BigDecimal) request.getAttribute("bookingTotalAmount");
+    BigDecimal remainingAmount = (BigDecimal) request.getAttribute("remainingAmount");
+    Boolean isDepositPayment = (Boolean) request.getAttribute("isDepositPayment");
     Boolean isWeeklyGroupPayment = (Boolean) request.getAttribute("isWeeklyGroupPayment");
     Integer weeklySessionCount = (Integer) request.getAttribute("weeklySessionCount");
     String weeklyGroupId = (String) request.getAttribute("weeklyGroupId");
@@ -60,7 +65,6 @@
     if (paymentDescription == null || paymentDescription.isBlank()) {
         paymentDescription = Boolean.TRUE.equals(isWeeklyGroupPayment) ? "Thanh toán lịch tuần" : "Thanh toán đặt sân";
     }
-
     if (bookingDetailPath == null || bookingDetailPath.isBlank()) {
         bookingDetailPath = "/customer/bookingDetail";
     }
@@ -71,6 +75,19 @@
     if (booking == null || payment == null) {
         response.sendRedirect(request.getContextPath() + "/View/Booking/Booking.jsp?error=payment_not_found");
         return;
+    }
+
+    if (paymentMethodLabel == null || paymentMethodLabel.isBlank()) {
+        paymentMethodLabel = payment.getPaymentMethod() != null ? payment.getPaymentMethod() : "--";
+    }
+    if (bookingTotalAmount == null) {
+        bookingTotalAmount = booking.getTotalPrice() != null ? booking.getTotalPrice() : BigDecimal.ZERO;
+    }
+    if (remainingAmount == null) {
+        remainingAmount = BigDecimal.ZERO;
+    }
+    if (isDepositPayment == null) {
+        isDepositPayment = Boolean.FALSE;
     }
 %>
 <!DOCTYPE html>
@@ -191,7 +208,6 @@
     </head>
     <body>
 
-        <jsp:include page="/View/Layout/HeaderCustomer.jsp" />
 
         <main class="payment-shell px-4 pb-6 pt-4">
             <div class="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6 items-start">
@@ -239,14 +255,20 @@
                             <p class="text-sm text-slate-600 mt-1">Số ca trong tuần: <span class="font-semibold"><%= weeklySessionCount != null ? weeklySessionCount : 0 %></span></p>
                             <% } %>
                             <p class="text-sm text-slate-600 mt-1">Mã giao dịch: <span class="font-semibold"><%= payment.getTransactionCode() != null ? payment.getTransactionCode() : "--" %></span></p>
-                            <p class="text-sm text-slate-600 mt-1">Phương thức thanh toán: <span class="font-semibold"><%= payment.getPaymentMethod() != null ? payment.getPaymentMethod() : "--" %></span></p>
+                            <p class="text-sm text-slate-600 mt-1">Phương thức thanh toán: <span class="font-semibold"><%= paymentMethodLabel %></span></p>
+                            <% if (Boolean.TRUE.equals(isDepositPayment)) { %>
+                            <p class="text-sm text-slate-600 mt-1">Giá trị booking: <span class="font-semibold"><%= String.format("%,d", bookingTotalAmount.longValue()) %>d</span></p>
+                            <p class="text-sm text-slate-600 mt-1">Đã thanh toán online: <span class="font-semibold"><%= String.format("%,d", payment.getAmount().longValue()) %>d</span></p>
+                            <p class="text-sm text-slate-600 mt-1">Còn lại tại sân: <span class="font-semibold"><%= String.format("%,d", remainingAmount.longValue()) %>d</span></p>
+                            <p class="text-sm text-slate-600 mt-1">Phần còn lại: <span class="font-semibold"><%= remainingPaymentMethodLabel != null ? remainingPaymentMethodLabel : "--" %></span></p>
+                            <% } %>
                         </div>
                     </div>
 
                     <div class="timer-box p-4 text-center">
                         <p class="text-[19px] font-semibold text-[#d0467d]">
-                            <%= "supplementary".equalsIgnoreCase(paymentSource)
-                                    ? "Thanh toán equipment bổ sung (không giới hạn thời gian):"
+                            <%= ("supplementary".equalsIgnoreCase(paymentSource) || "remaining".equalsIgnoreCase(paymentSource))
+                                    ? "Thanh toán không giới hạn thời gian:"
                                     : "Đơn hàng sẽ hết hạn sau:" %>
                         </p>
                         <div class="mt-4 flex justify-center gap-4" id="timerWrapper">
@@ -262,7 +284,7 @@
                     </div>
 
                     <div>
-                        <% if ("supplementary".equalsIgnoreCase(paymentSource)) { %>
+                        <% if ("supplementary".equalsIgnoreCase(paymentSource) || "remaining".equalsIgnoreCase(paymentSource)) { %>
                             <% String backPath = staffUser ? staffPaymentBackPath : (request.getContextPath() + bookingHistoryPath); %>
                             <a href="<%= backPath %>" class="block w-full text-center rounded-xl py-3 border border-[var(--brand-border)] bg-[var(--brand-green-soft)] text-[var(--brand-green-dark)] font-semibold hover:bg-[#def4e8] transition">
                                 Quay lại
@@ -341,7 +363,7 @@
                         <ul class="space-y-1 list-disc list-inside">
                             <li>Hệ thống tự động kiểm tra trạng thái thanh toán mỗi 10 giây.</li>
                             <li>Vui lòng chuyển đúng số tiền và đúng nội dung để được xác nhận.</li>
-                            <li>Khi hết thời gian, hệ thống sẽ tự động hủy giữ chỗ.</li>
+                            <li><%= ("supplementary".equalsIgnoreCase(paymentSource) || "remaining".equalsIgnoreCase(paymentSource)) ? "Bạn có thể quay lại thanh toán bất cứ lúc nào." : "Khi hết thời gian, hệ thống sẽ tự động hủy giữ chỗ." %></li>
                         </ul>
                     </div>
                 </section>
@@ -359,23 +381,29 @@
                 : 'Đơn đặt sân đã được xác nhận.';
             const successLink = paymentSource === 'supplementary'
                 ? '${pageContext.request.contextPath}<%= bookingHistoryPath %>'
-                : '${pageContext.request.contextPath}<%= bookingDetailPath %>?id=' + bookingId;
+                : (paymentSource === 'remaining'
+                    ? '${pageContext.request.contextPath}<%= bookingHistoryPath %>'
+                    : '${pageContext.request.contextPath}<%= bookingDetailPath %>?id=' + bookingId);
             const successLinkLabel = paymentSource === 'supplementary'
                 ? 'Quay về danh sách booking'
-                : 'Xem chi tiết booking';
+                : (paymentSource === 'remaining' ? 'Quay về danh sách booking' : 'Xem chi tiết booking');
             const failedMessage = paymentSource === 'supplementary'
                 ? 'Đơn equipment bổ sung đã bị hủy.'
-                : 'Đơn đặt sân đã bị hủy.';
+                : (paymentSource === 'remaining' ? 'Thanh toán phần còn lại chưa thành công.' : 'Đơn đặt sân đã bị hủy.');
             const failedLink = paymentSource === 'supplementary'
                 ? '${pageContext.request.contextPath}<%= bookingHistoryPath %>'
-                : '${pageContext.request.contextPath}/booking';
+                : (paymentSource === 'remaining'
+                    ? '${pageContext.request.contextPath}<%= bookingHistoryPath %>'
+                    : '${pageContext.request.contextPath}/booking');
             const failedLinkLabel = paymentSource === 'supplementary'
                 ? 'Quay về danh sách booking'
-                : 'Quay lại đặt sân';
+                : (paymentSource === 'remaining' ? 'Quay về danh sách booking' : 'Quay lại đặt sân');
             const expiredMessage = paymentSource === 'supplementary'
                 ? 'Hết thời gian thanh toán. Đơn equipment bổ sung đã bị hủy tự động.'
-                : 'Hết thời gian thanh toán. Đơn đặt sân đã bị hủy tự động.';
-            const hasPaymentDeadline = paymentSource !== 'supplementary';
+                : (paymentSource === 'remaining'
+                    ? 'Thanh toán phần còn lại không giới hạn thời gian.'
+                    : 'Hết thời gian thanh toán. Đơn đặt sân đã bị hủy tự động.');
+            const hasPaymentDeadline = paymentSource !== 'supplementary' && paymentSource !== 'remaining';
             const initialTimeRemaining = parseInt(document.getElementById('timeRemainingVal').value || '0', 10);
             let timeRemaining = initialTimeRemaining;
             const checkIntervalMs = 10000;
@@ -514,7 +542,7 @@
                 paymentExpiredHandled = true;
 
                 try {
-                    if (paymentSource === 'supplementary') {
+                    if (paymentSource === 'supplementary' || paymentSource === 'remaining') {
                         await fetch('${pageContext.request.contextPath}/payment', {
                             method: 'POST',
                             headers: {

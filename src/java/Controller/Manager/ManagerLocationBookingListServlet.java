@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @WebServlet("/manager/locationBookings")
 public class ManagerLocationBookingListServlet extends HttpServlet {
@@ -38,14 +39,22 @@ public class ManagerLocationBookingListServlet extends HttpServlet {
             }
 
             String date = request.getParameter("date");
-            String status = request.getParameter("status");
+            String playStatus = request.getParameter("playStatus");
+            String paymentStatus = request.getParameter("paymentStatus");
+            String extraPaymentStatus = request.getParameter("extraPaymentStatus");
             String customerKeyword = request.getParameter("customerKeyword");
             if (customerKeyword == null || customerKeyword.isBlank()) {
                 customerKeyword = request.getParameter("customerName");
             }
 
             BookingDAO bookingDAO = new BookingDAO();
-            List<BookingViewModel> allBookings = bookingDAO.getByLocationFiltered(manager.getLocationId(), date, status, customerKeyword);
+            List<BookingViewModel> allBookings = bookingDAO.getByLocationFilteredByState(
+                    manager.getLocationId(),
+                    date,
+                    playStatus,
+                    paymentStatus,
+                    extraPaymentStatus,
+                    customerKeyword);
 
             int pageNum = 1;
             String pageParam = request.getParameter("page");
@@ -88,17 +97,79 @@ public class ManagerLocationBookingListServlet extends HttpServlet {
         }
 
         String bookingIdParam = request.getParameter("bookingId");
-        String status = request.getParameter("status");
-        if (bookingIdParam == null || bookingIdParam.isBlank() || status == null || status.isBlank()) {
+        if (bookingIdParam == null || bookingIdParam.isBlank()) {
             session.setAttribute("flash_error", "Invalid request.");
             response.sendRedirect(request.getContextPath() + "/manager/locationBookings");
             return;
         }
 
-        boolean ok = new BookingDAO().updateStatus(java.util.UUID.fromString(bookingIdParam), status);
+        UUID bookingId;
+        try {
+            bookingId = UUID.fromString(bookingIdParam);
+        } catch (IllegalArgumentException ex) {
+            session.setAttribute("flash_error", "Invalid booking id.");
+            response.sendRedirect(request.getContextPath() + "/manager/locationBookings");
+            return;
+        }
+
+        BookingDAO bookingDAO = new BookingDAO();
+        String playStatus = normalizeStatus(request.getParameter("playStatus"));
+        String paymentStatus = normalizeStatus(request.getParameter("paymentStatus"));
+        String extraPaymentStatus = normalizeStatus(request.getParameter("extraPaymentStatus"));
+
+        if (!playStatus.isEmpty() || !paymentStatus.isEmpty() || !extraPaymentStatus.isEmpty()) {
+            BookingViewModel current = bookingDAO.getById(bookingId);
+            if (current == null) {
+                session.setAttribute("flash_error", "Booking not found.");
+                response.sendRedirect(request.getContextPath() + "/manager/locationBookings");
+                return;
+            }
+
+            if (playStatus.isEmpty()) {
+                playStatus = normalizeStatus(current.getPlayStatus());
+                if (playStatus.isEmpty()) {
+                    playStatus = "booked";
+                }
+            }
+            if (paymentStatus.isEmpty()) {
+                paymentStatus = normalizeStatus(current.getPaymentStatus());
+                if (paymentStatus.isEmpty()) {
+                    paymentStatus = "pending";
+                }
+            }
+            if (extraPaymentStatus.isEmpty()) {
+                extraPaymentStatus = normalizeStatus(current.getExtraPaymentStatus());
+                if (extraPaymentStatus.isEmpty()) {
+                    extraPaymentStatus = "none";
+                }
+            }
+
+            boolean ok = bookingDAO.updateSplitStates(bookingId, playStatus, paymentStatus, extraPaymentStatus);
+            if (ok) {
+                bookingDAO.updateStatus(bookingId, "completed");
+                session.setAttribute("flash_success", "Updated booking states.");
+            } else {
+                session.setAttribute("flash_error", "Failed to update booking states.");
+            }
+            response.sendRedirect(request.getContextPath() + "/manager/locationBookings");
+            return;
+        }
+
+        String status = request.getParameter("status");
+        if (status == null || status.isBlank()) {
+            session.setAttribute("flash_error", "Invalid request.");
+            response.sendRedirect(request.getContextPath() + "/manager/locationBookings");
+            return;
+        }
+
+        boolean ok = bookingDAO.updateStatus(bookingId, status);
         if (ok) session.setAttribute("flash_success", "Updated booking status.");
         else session.setAttribute("flash_error", "Failed to update status.");
 
         response.sendRedirect(request.getContextPath() + "/manager/locationBookings");
+    }
+
+    private String normalizeStatus(String status) {
+        return status == null ? "" : status.trim().toLowerCase();
     }
 }

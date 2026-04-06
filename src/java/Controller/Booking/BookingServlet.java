@@ -61,6 +61,32 @@ public class BookingServlet extends HttpServlet {
             LocalDate minBookingDate = LocalDate.now().plusDays(1);
             request.setAttribute("minBookingDate", minBookingDate);
 
+            LocalDate selectedWeekStart = minBookingDate;
+            String weekStartParam = request.getParameter("weekStart");
+            if (weekStartParam != null && !weekStartParam.isBlank()) {
+                try {
+                    selectedWeekStart = LocalDate.parse(weekStartParam);
+                } catch (Exception ignored) {
+                    selectedWeekStart = minBookingDate;
+                }
+            }
+            if (selectedWeekStart.isBefore(minBookingDate)) {
+                selectedWeekStart = minBookingDate;
+            }
+
+            LocalDate selectedWeekEnd = selectedWeekStart.plusDays(6);
+            LocalDate prevWeekStart = selectedWeekStart.minusWeeks(1);
+            boolean canGoPrevWeek = !prevWeekStart.isBefore(minBookingDate);
+            if (!canGoPrevWeek) {
+                prevWeekStart = minBookingDate;
+            }
+
+            request.setAttribute("selectedWeekStart", selectedWeekStart);
+            request.setAttribute("selectedWeekEnd", selectedWeekEnd);
+            request.setAttribute("prevWeekStart", prevWeekStart);
+            request.setAttribute("nextWeekStart", selectedWeekStart.plusWeeks(1));
+            request.setAttribute("canGoPrevWeek", canGoPrevWeek);
+
             LocationDAO locationDAO = new LocationDAO();
             List<Location> allLocations = locationDAO.getAllLocations();
             // Filter out inactive locations for customer
@@ -136,8 +162,8 @@ public class BookingServlet extends HttpServlet {
                         }
                         allSchedules = scheduleDAO.getScheduleByFieldAndDate(fieldId, selectedDate);
                     } else {
-                        LocalDate fromDate = minBookingDate;
-                        LocalDate toDate = fromDate.plusDays(6);
+                        LocalDate fromDate = selectedWeekStart;
+                        LocalDate toDate = selectedWeekEnd;
                         allSchedules = scheduleDAO.getScheduleByFieldInRange(fieldId, fromDate, toDate);
                     }
 
