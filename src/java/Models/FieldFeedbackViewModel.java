@@ -7,6 +7,7 @@ import java.util.UUID;
 public class FieldFeedbackViewModel {
     private UUID feedbackId;
     private UUID bookingId;
+    private UUID customerId;
     private String customerName;
     private int rating;
     private String comment;
@@ -26,6 +27,14 @@ public class FieldFeedbackViewModel {
 
     public void setBookingId(UUID bookingId) {
         this.bookingId = bookingId;
+    }
+
+    public UUID getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(UUID customerId) {
+        this.customerId = customerId;
     }
 
     public String getCustomerName() {

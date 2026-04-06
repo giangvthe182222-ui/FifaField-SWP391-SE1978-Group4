@@ -57,7 +57,7 @@
                     <a href="${pageContext.request.contextPath}/booking?locationId=${field.locationId}&fieldId=${field.fieldId}"
                        class="px-6 py-3 bg-[#008751] text-white rounded-xl font-black">Đặt ngay</a>
 
-                    <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${field.locationId}"
+                    <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${field.locationId}" onclick="if (window.history.length > 1) { window.history.back(); return false; }"
                        class="w-12 h-12 border rounded-xl text-gray-500 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
                         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                     </a>
@@ -120,6 +120,20 @@
                                 </div>
                                 <c:if test="${not empty fb.comment}">
                                     <p class="text-sm leading-7 text-slate-700 whitespace-pre-line">${fb.comment}</p>
+                                </c:if>
+                                <c:if test="${not empty currentUserId and not empty fb.customerId and fb.customerId.toString() eq currentUserId}">
+                                    <div class="flex flex-wrap gap-2 pt-2">
+                                        <a href="${pageContext.request.contextPath}/customer/feedback?bookingId=${fb.bookingId}" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 transition-colors">
+                                            Sửa feedback
+                                        </a>
+                                        <form method="post" action="${pageContext.request.contextPath}/customer/feedback" onsubmit="return confirm('Bạn có muốn xóa feedback này không?');">
+                                            <input type="hidden" name="bookingId" value="${fb.bookingId}">
+                                            <input type="hidden" name="action" value="delete">
+                                            <button type="submit" class="px-4 py-2 rounded-xl border border-rose-200 text-rose-600 text-[10px] font-black uppercase tracking-widest hover:bg-rose-50 transition-colors">
+                                                Xóa feedback
+                                            </button>
+                                        </form>
+                                    </div>
                                 </c:if>
                             </article>
                         </c:forEach>

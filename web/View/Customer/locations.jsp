@@ -2,6 +2,7 @@
 <%@ page import="Models.User" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -116,6 +117,19 @@
                                 <div class="flex items-center gap-2 text-gray-400">
                                     <i data-lucide="phone" class="w-3 h-3"></i>
                                     <p class="text-[10px] font-black uppercase tracking-widest">Hotline: ${loc.phoneNumber}</p>
+                                </div>
+                                <div class="flex items-center gap-2 text-gray-500">
+                                    <i data-lucide="star" class="w-3 h-3 text-amber-400"></i>
+                                    <p class="text-[10px] font-black uppercase tracking-widest">
+                                        <c:choose>
+                                            <c:when test="${locationAverageRatingMap[loc.locationId] != null}">
+                                                <fmt:formatNumber value="${locationAverageRatingMap[loc.locationId]}" pattern="0.0"/> sao | ${locationFeedbackCountMap[loc.locationId]} đánh giá
+                                            </c:when>
+                                            <c:otherwise>
+                                                Chưa có đánh giá
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </p>
                                 </div>
                             </div>
 
