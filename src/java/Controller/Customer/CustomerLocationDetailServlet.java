@@ -58,6 +58,9 @@ public class CustomerLocationDetailServlet extends HttpServlet {
                             && ("ACTIVE".equalsIgnoreCase(f.getStatus()) || "AVAILABLE".equalsIgnoreCase(f.getStatus())))
                     .collect(Collectors.toList());
 
+                Double locationAverageRating = feedbackDAO.getAverageRatingByLocation(locationId);
+                int locationFeedbackCount = feedbackDAO.getFeedbackCountByLocation(locationId);
+
             int pageNum = 1;
             String pageParam = request.getParameter("page");
             if (pageParam != null && !pageParam.isBlank()) {
@@ -98,6 +101,8 @@ public class CustomerLocationDetailServlet extends HttpServlet {
             request.setAttribute("fields", pageFields);
             request.setAttribute("averageRatingMap", averageRatingMap);
             request.setAttribute("feedbackCountMap", feedbackCountMap);
+            request.setAttribute("locationAverageRating", locationAverageRating);
+            request.setAttribute("locationFeedbackCount", locationFeedbackCount);
             request.setAttribute("currentPage", pageNum);
             request.setAttribute("totalPages", totalPages);
             request.setAttribute("totalFields", totalFields);

@@ -1,5 +1,6 @@
 package Controller.Customer;
 
+import DAO.FeedbackDAO;
 import DAO.LocationDAO;
 import Models.Location;
 import Models.User;
@@ -12,7 +13,10 @@ import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @WebServlet(name = "CustomerLocationsServlet", urlPatterns = {"/customer/locations"})
@@ -101,7 +105,19 @@ public class CustomerLocationsServlet extends HttpServlet {
                 pageLocations = new ArrayList<>(filteredLocations.subList(startIdx, endIdx));
             }
 
+            FeedbackDAO feedbackDAO = new FeedbackDAO();
+            Map<UUID, Double> locationAverageRatingMap = new HashMap<>();
+            Map<UUID, Integer> locationFeedbackCountMap = new HashMap<>();
+            for (Location loc : pageLocations) {
+                if (loc.getLocationId() != null) {
+                    locationAverageRatingMap.put(loc.getLocationId(), feedbackDAO.getAverageRatingByLocation(loc.getLocationId()));
+                    locationFeedbackCountMap.put(loc.getLocationId(), feedbackDAO.getFeedbackCountByLocation(loc.getLocationId()));
+                }
+            }
+
             request.setAttribute("locations", pageLocations);
+            request.setAttribute("locationAverageRatingMap", locationAverageRatingMap);
+            request.setAttribute("locationFeedbackCountMap", locationFeedbackCountMap);
             request.setAttribute("currentPage", pageNum);
             request.setAttribute("totalPages", totalPages);
             request.setAttribute("totalItems", totalItems);
@@ -114,6 +130,8 @@ public class CustomerLocationsServlet extends HttpServlet {
         } catch (SQLException ex) {
             request.setAttribute("error", "Khong the tai danh sach cum san. Vui long thu lai sau.");
             request.setAttribute("locations", new ArrayList<Location>());
+            request.setAttribute("locationAverageRatingMap", new HashMap<UUID, Double>());
+            request.setAttribute("locationFeedbackCountMap", new HashMap<UUID, Integer>());
             request.setAttribute("currentPage", 1);
             request.setAttribute("totalPages", 1);
             request.setAttribute("totalItems", 0);
