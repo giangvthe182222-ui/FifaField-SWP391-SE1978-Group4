@@ -438,6 +438,13 @@
 
                                         <div class="flex flex-wrap items-center gap-2">
                                             <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="bg-gray-900 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-colors">Chi tiết</a>
+                                            <c:if test="${b.paymentStatus == 'refunded'}">
+                                                <form method="post" action="${pageContext.request.contextPath}/customer/bookingDetail" onsubmit="return confirm('Xác nhận báo cáo chưa nhận được tiền hoàn?');">
+                                                    <input type="hidden" name="id" value="${b.bookingId}">
+                                                    <input type="hidden" name="action" value="report_refund_issue">
+                                                    <button type="submit" class="bg-rose-600 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-500 transition-colors">Báo cáo chưa hoàn tiền</button>
+                                                </form>
+                                            </c:if>
                                             <c:if test="${reviewableBookingMap[b.bookingId]}">
                                                 <c:choose>
                                                     <c:when test="${feedbackBookingMap[b.bookingId]}">
@@ -568,6 +575,13 @@
             if ((currentPaymentStatus === 'deposited' && nextPaymentStatus === 'paid')
                     || (currentExtraPaymentStatus === 'pending extra' && nextExtraPaymentStatus === 'paid extra')) {
                 if (!confirm('Xác nhận thanh toán tiền mặt?')) {
+                    return;
+                }
+            }
+
+            if ((currentPaymentStatus === 'pending refund' || currentPaymentStatus === 'pending refund confirm')
+                    && nextPaymentStatus === 'refunded') {
+                if (!confirm('Xác nhận đã hoàn tiền?')) {
                     return;
                 }
             }

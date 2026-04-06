@@ -206,6 +206,20 @@
                                 </p>
                             </div>
                         </c:if>
+
+                        <c:if test="${normalizedPaymentStatus == 'refunded'}">
+                            <form method="post" action="${pageContext.request.contextPath}/customer/bookingDetail" onsubmit="return confirm('Xác nhận báo cáo chưa nhận được tiền hoàn?');">
+                                <input type="hidden" name="id" value="${booking.bookingId}" />
+                                <input type="hidden" name="action" value="report_refund_issue" />
+                                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                                    BÁO CÁO CHƯA HOÀN TIỀN
+                                </button>
+                            </form>
+                            <p class="text-[8px] text-center font-bold text-rose-200/60 uppercase tracking-widest leading-relaxed">
+                                * Hệ thống sẽ chuyển đơn về pending refund để staff xử lý lại
+                            </p>
+                        </c:if>
                     </div>
                 </div>
 

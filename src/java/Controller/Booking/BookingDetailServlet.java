@@ -1,6 +1,7 @@
 package Controller.Booking;
 
 import DAO.BookingDAO;
+import DAO.PaymentDAO;
 import Models.BookingViewModel;
 import Models.BookingEquipmentViewModel;
 import Models.User;
@@ -111,6 +112,38 @@ public class BookingDetailServlet extends HttpServlet {
                 session.setAttribute("flash_success", "Booking moved to pending refund.");
             } else {
                 session.setAttribute("flash_error", "Could not request refund for this booking.");
+            }
+        }
+
+        if ("report_refund_issue".equalsIgnoreCase(action)) {
+            BookingDAO bookingDAO = new BookingDAO();
+
+            BookingViewModel booking = bookingDAO.getById(bookingId);
+            User user = (User) session.getAttribute("user");
+            if (booking == null || !user.getUserId().equals(booking.getBookerId())) {
+                session.setAttribute("flash_error", "Unauthorized access to booking.");
+                response.sendRedirect(request.getContextPath() + "/customer/bookings");
+                return;
+            }
+
+            String paymentStatus = booking.getPaymentStatus() == null ? "" : booking.getPaymentStatus().trim().toLowerCase();
+            if (!"refunded".equals(paymentStatus)) {
+                session.setAttribute("flash_error", "Chỉ có thể báo cáo khi đơn đang ở trạng thái refunded.");
+                response.sendRedirect(request.getContextPath() + "/customer/bookings");
+                return;
+            }
+
+            boolean bookingUpdated = bookingDAO.updateSplitStates(bookingId, "cancelled", "pending refund", "none");
+            boolean paymentUpdated = new PaymentDAO().updatePaymentRefundPending(bookingId);
+
+            if (bookingUpdated) {
+                if (!paymentUpdated) {
+                    session.setAttribute("flash_success", "Đã báo cáo hoàn tiền chưa thành công. Đơn đã chuyển về pending refund để staff xử lý lại.");
+                } else {
+                    session.setAttribute("flash_success", "Đã báo cáo hoàn tiền chưa thành công. Đơn đã chuyển về pending refund để staff xử lý lại.");
+                }
+            } else {
+                session.setAttribute("flash_error", "Không thể gửi báo cáo hoàn tiền cho đơn này.");
             }
         }
 
