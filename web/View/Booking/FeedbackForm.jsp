@@ -67,6 +67,9 @@
                         <c:otherwise>Gửi đánh giá</c:otherwise>
                     </c:choose>
                 </button>
+                <button type="button" onclick="goBackToPrevious()" class="px-8 py-4 rounded-2xl border border-gray-200 text-gray-700 font-black uppercase text-xs tracking-widest text-center hover:border-[#008751] hover:text-[#008751] transition-colors">
+                    Quay lại
+                </button>
                 <a href="${pageContext.request.contextPath}/customer/bookings" class="px-8 py-4 rounded-2xl border border-gray-200 text-gray-700 font-black uppercase text-xs tracking-widest text-center hover:border-[#008751] hover:text-[#008751] transition-colors">
                     Quay lại lịch sử
                 </a>
@@ -151,6 +154,14 @@
             }
         });
     })();
+
+    function goBackToPrevious() {
+        if (window.history.length > 1) {
+            window.history.back();
+            return;
+        }
+        window.location.href = '${pageContext.request.contextPath}/customer/bookings';
+    }
 </script>
 </body>
 </html>
