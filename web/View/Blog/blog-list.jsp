@@ -19,6 +19,10 @@
 </c:choose>
 
 <main class="max-w-7xl mx-auto px-6 py-8 space-y-6">
+    <c:if test="${roleName == 'customer'}">
+        <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
+    </c:if>
+
     <section class="bg-white rounded-3xl border border-slate-200 p-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -63,15 +67,15 @@
                     <c:set var="isExternalImage" value="${fn:startsWith(blog.imageUrl, 'http://') or fn:startsWith(blog.imageUrl, 'https://') or fn:startsWith(blog.imageUrl, '//')}"/>
                     <img src="${isExternalImage ? blog.imageUrl : pageContext.request.contextPath.concat('/').concat(blog.imageUrl)}" alt="${blog.title}" class="w-full h-48 object-cover">
                 </c:if>
-                <div class="p-5 space-y-3 flex-grow flex flex-col">
+                <div class="p-5 space-y-3 flex-grow flex flex-col min-w-0">
                     <div class="flex items-center justify-between gap-2">
                         <span class="px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-black
                                      ${blog.status == 'approved' ? 'bg-emerald-50 text-[#008751]' : blog.status == 'pending' ? 'bg-amber-50 text-amber-700' : blog.status == 'rejected' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'}">${blog.status}</span>
                         <span class="text-xs text-slate-400 font-semibold">${fn:substring(empty blog.publishedAt ? blog.createdAt : blog.publishedAt, 0, 10)}</span>
                     </div>
-                    <h2 class="text-xl font-black text-slate-900 leading-tight">${blog.title}</h2>
-                    <p class="text-sm text-slate-500 font-semibold line-clamp-3">${blog.summary}</p>
-                    <p class="text-xs text-slate-400">Tác giả: <span class="font-bold">${blog.createdByName}</span></p>
+                    <h2 class="text-xl font-black text-slate-900 leading-tight break-all whitespace-normal">${blog.title}</h2>
+                    <p class="text-sm text-slate-500 font-semibold whitespace-normal break-all leading-relaxed">${blog.summary}</p>
+                    <p class="text-xs text-slate-400 break-all whitespace-normal">Tác giả: <span class="font-bold">${blog.createdByName}</span></p>
                     <div class="flex items-center gap-4 text-xs text-slate-500 font-bold">
                         <span>❤ ${blog.likeCount}</span>
                         <span>💬 ${blog.commentCount}</span>

@@ -36,16 +36,16 @@
             <c:set var="isExternalImage" value="${fn:startsWith(blog.imageUrl, 'http://') or fn:startsWith(blog.imageUrl, 'https://') or fn:startsWith(blog.imageUrl, '//')}"/>
             <img src="${isExternalImage ? blog.imageUrl : pageContext.request.contextPath.concat('/').concat(blog.imageUrl)}" alt="${blog.title}" class="w-full h-80 object-cover">
         </c:if>
-        <div class="p-7 space-y-4">
+        <div class="p-7 space-y-4 min-w-0">
             <div class="flex items-center justify-between gap-3 flex-wrap">
                 <span class="px-3 py-1 rounded-full text-[10px] uppercase tracking-widest font-black
                              ${blog.status == 'approved' ? 'bg-emerald-50 text-[#008751]' : blog.status == 'pending' ? 'bg-amber-50 text-amber-700' : blog.status == 'rejected' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'}">${blog.status}</span>
                 <span class="text-xs font-semibold text-slate-400">Ngày đăng: ${fn:substring(empty blog.publishedAt ? blog.createdAt : blog.publishedAt, 0, 10)}</span>
             </div>
-            <h1 class="text-3xl font-black text-slate-900 leading-tight">${blog.title}</h1>
-            <p class="text-base font-semibold text-slate-500">${blog.summary}</p>
-            <p class="text-sm text-slate-400">Tác giả: <span class="font-bold">${blog.createdByName}</span></p>
-            <div class="prose max-w-none text-slate-700 whitespace-pre-line">${blog.content}</div>
+            <h1 class="text-3xl font-black text-slate-900 leading-tight break-all whitespace-normal">${blog.title}</h1>
+            <p class="text-base font-semibold text-slate-500 break-all whitespace-normal">${blog.summary}</p>
+            <p class="text-sm text-slate-400 break-all whitespace-normal">Tác giả: <span class="font-bold">${blog.createdByName}</span></p>
+            <div class="prose max-w-none text-slate-700 whitespace-pre-line break-all">${blog.content}</div>
 
             <div class="pt-3 flex items-center gap-3">
                 <c:if test="${blog.status == 'approved'}">
