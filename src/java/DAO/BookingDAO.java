@@ -1188,6 +1188,9 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                     }
 
                     success = updateBookingStatus(conn, bookingId, STATUS_COMPLETED, snapshot.status);
+                    if (success) {
+                        releaseBookingResources(conn, bookingId, snapshot.scheduleId, false);
+                    }
                 }
                 break;
 
@@ -1832,8 +1835,10 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                 }
                 if (STATUS_PAID.equals(snapshot.status) || STATUS_DEPOSITED.equals(snapshot.status)) {
                     // paid/deposited ma qua gio nhung chua check-in -> coi nhu khong su dung, chuyen cancelled.
-                    updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CANCELLED, snapshot.status);
-                    releaseBookingResources(conn, expiredBooking.bookingId, snapshot.scheduleId);
+                    boolean updated = updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CANCELLED, snapshot.status);
+                    if (updated) {
+                        releaseBookingResources(conn, expiredBooking.bookingId, snapshot.scheduleId);
+                    }
                 } else if (STATUS_CHECKED_IN.equals(snapshot.status)) {
                     // checked-in qua gio: doi sang checked out. Thanh toan hoan tat se dua den completed.
                     updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CHECKED_OUT, STATUS_CHECKED_IN);
@@ -1845,7 +1850,10 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                     if (!hasOutstandingRemainingAmount(conn, expiredBooking.bookingId)) {
                         boolean updated = updateBookingStatus(conn, expiredBooking.bookingId, STATUS_COMPLETED, STATUS_CHECKED_OUT);
                         if (!updated) {
-                            updateBookingStatus(conn, expiredBooking.bookingId, STATUS_COMPLETED, STATUS_FINISHED);
+                            updated = updateBookingStatus(conn, expiredBooking.bookingId, STATUS_COMPLETED, STATUS_FINISHED);
+                        }
+                        if (updated) {
+                            releaseBookingResources(conn, expiredBooking.bookingId, snapshot.scheduleId, false);
                         }
                     }
                 }
@@ -2159,8 +2167,12 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
      */
     //Description: Implements the releaseBookingResources business routine with validation, database interaction, exception handling, and predictable outputs for upstream controllers/services.
     private void releaseBookingResources(Connection conn, UUID bookingId, UUID scheduleId) throws SQLException {
+        releaseBookingResources(conn, bookingId, scheduleId, true);
+    }
+
+    private void releaseBookingResources(Connection conn, UUID bookingId, UUID scheduleId, boolean releaseSchedule) throws SQLException {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
-        if (scheduleId != null) {
+        if (releaseSchedule && scheduleId != null) {
             // Tra slot lich ve available de cho phep dat lai.
             try (PreparedStatement ps = conn.prepareStatement("UPDATE Schedule SET status = 'available' WHERE schedule_id = ?")) {
                 ps.setString(1, scheduleId.toString());
@@ -2182,6 +2194,18 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
             ps.setString(1, bookingId.toString());
             ps.executeUpdate();
         }
+    }
+
+    private boolean shouldReleaseSchedule(String lifecycleStatus) {
+        String normalized = normalizeStatus(lifecycleStatus);
+        return STATUS_CANCELLED.equals(normalized) || STATUS_REFUNDED.equals(normalized);
+    }
+
+    private boolean shouldReleaseEquipment(String lifecycleStatus) {
+        String normalized = normalizeStatus(lifecycleStatus);
+        return STATUS_CANCELLED.equals(normalized)
+                || STATUS_REFUNDED.equals(normalized)
+                || STATUS_COMPLETED.equals(normalized);
     }
 
     /**
@@ -2209,12 +2233,45 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                 + "SET play_status = ?, payment_status = ?, extra_payment_status = ? "
                 + "WHERE booking_id = ?";
 
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, normalizedPlayStatus);
-            ps.setString(2, normalizedPaymentStatus);
-            ps.setString(3, normalizedExtraPaymentStatus);
-            ps.setString(4, bookingId.toString());
-            return ps.executeUpdate() > 0;
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
+            if (snapshot == null) {
+                conn.rollback();
+                return false;
+            }
+
+            String previousLifecycleStatus = snapshot.status;
+            int updatedRows;
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, normalizedPlayStatus);
+                ps.setString(2, normalizedPaymentStatus);
+                ps.setString(3, normalizedExtraPaymentStatus);
+                ps.setString(4, bookingId.toString());
+                updatedRows = ps.executeUpdate();
+            }
+
+            if (updatedRows <= 0) {
+                conn.rollback();
+                return false;
+            }
+
+            String nextLifecycleStatus = resolveLifecycleStatus(
+                    normalizedPlayStatus,
+                    normalizedPaymentStatus,
+                    normalizedExtraPaymentStatus);
+            boolean releaseSchedule = shouldReleaseSchedule(nextLifecycleStatus)
+                    && !shouldReleaseSchedule(previousLifecycleStatus);
+            boolean releaseEquipment = shouldReleaseEquipment(nextLifecycleStatus)
+                    && !shouldReleaseEquipment(previousLifecycleStatus);
+
+            if (releaseEquipment) {
+                releaseBookingResources(conn, bookingId, snapshot.scheduleId, releaseSchedule);
+            }
+
+            conn.commit();
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
