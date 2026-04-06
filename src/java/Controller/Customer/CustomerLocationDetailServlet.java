@@ -35,13 +35,13 @@ public class CustomerLocationDetailServlet extends HttpServlet {
         HttpSession session = request.getSession(false);
         User user = session == null ? null : (User) session.getAttribute("user");
         if (user == null) {
-            response.sendRedirect(request.getContextPath() + "/login?redirect=customer/dashboard");
+            response.sendRedirect(request.getContextPath() + "/login?redirect=customer/locations");
             return;
         }
 
         String idRaw = request.getParameter("locationId");
         if (idRaw == null || idRaw.isBlank()) {
-            response.sendRedirect(request.getContextPath() + "/customer/dashboard");
+            response.sendRedirect(request.getContextPath() + "/customer/locations");
             return;
         }
 
@@ -49,7 +49,7 @@ public class CustomerLocationDetailServlet extends HttpServlet {
             UUID locationId = UUID.fromString(idRaw);
             Location location = locationDAO.getLocationById(locationId);
             if (location == null || location.getStatus() == null || !"ACTIVE".equalsIgnoreCase(location.getStatus())) {
-                response.sendRedirect(request.getContextPath() + "/customer/dashboard");
+                response.sendRedirect(request.getContextPath() + "/customer/locations");
                 return;
             }
 
@@ -103,7 +103,7 @@ public class CustomerLocationDetailServlet extends HttpServlet {
             request.setAttribute("totalFields", totalFields);
             request.getRequestDispatcher("/View/Customer/location-detail.jsp").forward(request, response);
         } catch (Exception ex) {
-            response.sendRedirect(request.getContextPath() + "/customer/dashboard");
+            response.sendRedirect(request.getContextPath() + "/customer/locations");
         }
     }
 }

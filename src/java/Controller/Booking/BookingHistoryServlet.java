@@ -52,10 +52,19 @@ public class BookingHistoryServlet extends HttpServlet {
 
         String date = request.getParameter("date");
         String time = request.getParameter("time");
-        String status = request.getParameter("status");
+        String playStatus = request.getParameter("playStatus");
+        String paymentStatus = request.getParameter("paymentStatus");
+        String extraPaymentStatus = request.getParameter("extraPaymentStatus");
 
         BookingDAO bookingDAO = new BookingDAO();
-        List<BookingViewModel> allBookings = bookingDAO.getByBookerFiltered(userId, date, time, status);
+        List<BookingViewModel> allBookings = bookingDAO.getByBookerFiltered(
+            userId,
+            date,
+            time,
+            playStatus,
+            paymentStatus,
+            extraPaymentStatus,
+            null);
 
         // Pagination
         int pageNum = 1;
@@ -79,6 +88,10 @@ public class BookingHistoryServlet extends HttpServlet {
         int startIdx = (pageNum - 1) * PAGE_SIZE;
         int endIdx = Math.min(startIdx + PAGE_SIZE, totalItems);
         List<BookingViewModel> pageBookings = new ArrayList<>(allBookings.subList(startIdx, endIdx));
+
+        for (BookingViewModel booking : pageBookings) {
+            booking.setOutstandingAmount(bookingDAO.getOutstandingAmount(booking.getBookingId()));
+        }
 
         FeedbackDAO feedbackDAO = new FeedbackDAO();
         Set<UUID> feedbackBookingIds = feedbackDAO.getFeedbackBookingIdsByCustomer(userId);

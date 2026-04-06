@@ -40,10 +40,10 @@ public class StaffDashboardServlet extends HttpServlet {
 
                 BookingDAO bookingDAO = new BookingDAO();
                 UUID staffLocationId = UUID.fromString(staff.getLocationId());
-                List<BookingViewModel> pendingRefundBookings = bookingDAO.getByLocationFiltered(
-                    staffLocationId, null, "pending refund", null);
-                List<BookingViewModel> pendingExtraBookings = bookingDAO.getByLocationFiltered(
-                    staffLocationId, null, "pending extra", null);
+                List<BookingViewModel> pendingRefundBookings = bookingDAO.getByLocationFilteredByState(
+                    staffLocationId, null, null, "pending refund", null, null);
+                List<BookingViewModel> pendingExtraBookings = bookingDAO.getByLocationFilteredByState(
+                    staffLocationId, null, null, null, "pending extra", null);
 
             request.setAttribute("staff", staff);
             request.setAttribute("refundPendingBookings", pendingRefundBookings);

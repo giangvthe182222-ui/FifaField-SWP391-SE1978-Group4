@@ -108,174 +108,86 @@
         </section>
     </c:if>
 
-    <!-- Locations Section -->
-    <section id="locations" class="space-y-8">
+    <c:if test="${not empty error}">
+        <div class="bg-rose-50 border border-rose-100 p-5 rounded-3xl flex items-center gap-4">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-rose-500"></i>
+            <p class="text-sm font-bold text-rose-700 uppercase tracking-tight">${error}</p>
+        </div>
+    </c:if>
+
+    <section class="space-y-8">
         <div class="flex items-center gap-4">
             <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
-            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Danh sách cơ sở thi đấu</h2>
+            <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Tổng quan tài khoản</h2>
         </div>
 
-        <!-- Filter Form -->
-        <form method="get" action="${pageContext.request.contextPath}/customer/dashboard" class="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-xl shadow-gray-200/30 flex flex-col lg:flex-row gap-4 items-end">
-            <div class="flex-1 w-full">
-                <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-2">Cơ sở</label>
-                <div class="relative mt-2">
-                    <i data-lucide="building-2" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"></i>
-                    <select name="locationName" class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-50 rounded-2xl font-bold text-sm text-gray-700 outline-none focus:bg-white focus:ring-4 focus:ring-[#008751]/5 transition-all">
-                        <option value="">Tất cả cơ sở</option>
-                        <c:forEach var="nameOpt" items="${locationNameOptions}">
-                            <option value="${nameOpt}" ${locationName == nameOpt ? 'selected' : ''}>${nameOpt}</option>
-                        </c:forEach>
-                    </select>
-                </div>
-            </div>
-            <div class="flex-1 w-full">
-                <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-2">Tìm kiếm tên cơ sở</label>
-                <div class="relative mt-2">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"></i>
-                    <input type="text" name="searchName" placeholder="Nhập tên cơ sở..." value="${searchName}" 
-                           class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-50 rounded-2xl font-bold text-sm text-gray-700 outline-none focus:bg-white focus:ring-4 focus:ring-[#008751]/5 transition-all"/>
-                </div>
-            </div>
-            <div class="flex-1 w-full">
-                <label class="text-[9px] font-black uppercase text-gray-400 tracking-widest ml-2">Tìm kiếm địa chỉ</label>
-                <div class="relative mt-2">
-                    <i data-lucide="map-pin" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300"></i>
-                    <input type="text" name="searchAddress" placeholder="Nhập địa chỉ..." value="${searchAddress}"
-                           class="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-50 rounded-2xl font-bold text-sm text-gray-700 outline-none focus:bg-white focus:ring-4 focus:ring-[#008751]/5 transition-all"/>
-                </div>
-            </div>
-            <div class="flex gap-3 w-full lg:w-auto">
-                <button type="submit" class="flex-1 lg:flex-none px-8 py-4 rounded-2xl bg-[#008751] text-white font-black uppercase text-[10px] tracking-widest hover:bg-emerald-400 transition-all shadow-lg shadow-[#008751]/20">
-                    Tìm kiếm
-                </button>
-                <c:if test="${searchName != null || searchAddress != null || locationName != null}">
-                    <a href="${pageContext.request.contextPath}/customer/dashboard" class="flex-1 lg:flex-none px-8 py-4 rounded-2xl border-2 border-gray-100 bg-white text-gray-400 font-black uppercase text-[10px] tracking-widest hover:border-[#008751] hover:text-[#008751] transition-all text-center">
-                        Xóa lọc
-                    </a>
-                </c:if>
-            </div>
-        </form>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            <article class="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-2">
+                <p class="text-[9px] font-black uppercase tracking-widest text-gray-400">Tổng số đơn đã đặt</p>
+                <p class="text-3xl font-black text-gray-900 tracking-tighter">${totalBookings}</p>
+            </article>
+            <article class="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-2">
+                <p class="text-[9px] font-black uppercase tracking-widest text-gray-400">Số tiền đã chi</p>
+                <p class="text-3xl font-black text-[#008751] tracking-tighter"><fmt:formatNumber value="${totalSpent}" pattern="#,##0"/> đ</p>
+            </article>
+            <article class="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-2">
+                <p class="text-[9px] font-black uppercase tracking-widest text-gray-400">Công nợ còn lại</p>
+                <p class="text-3xl font-black text-rose-600 tracking-tighter"><fmt:formatNumber value="${totalOutstanding}" pattern="#,##0"/> đ</p>
+            </article>
+            <article class="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-2">
+                <p class="text-[9px] font-black uppercase tracking-widest text-gray-400">Lịch sắp tới</p>
+                <p class="text-3xl font-black text-gray-900 tracking-tighter">${upcomingBookings}</p>
+            </article>
+        </div>
+    </section>
 
-        <c:if test="${not empty error}">
-            <div class="bg-rose-50 border border-rose-100 p-5 rounded-3xl flex items-center gap-4">
-                <i data-lucide="alert-circle" class="w-5 h-5 text-rose-500"></i>
-                <p class="text-sm font-bold text-rose-700 uppercase tracking-tight">${error}</p>
+    <section class="space-y-8">
+        <div class="flex items-center justify-between gap-4 flex-wrap">
+            <div class="flex items-center gap-4">
+                <div class="w-8 h-1 bg-[#008751] rounded-full"></div>
+                <h2 class="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Đơn gần đây</h2>
             </div>
-        </c:if>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <c:forEach var="loc" items="${locations}">
-                <article class="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 flex flex-col gap-6 group hover:shadow-2xl hover:shadow-[#008751]/10 transition-all">
-                    <div class="w-full h-56 rounded-[2rem] overflow-hidden bg-gray-50 relative">
-                        <c:choose>
-                            <c:when test="${not empty loc.imageUrl}">
-                                <img src="${pageContext.request.contextPath}/${loc.imageUrl}" alt="${loc.locationName}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"/>
-                            </c:when>
-                            <c:otherwise>
-                                <div class="w-full h-full flex items-center justify-center text-gray-200">
-                                    <i data-lucide="image" class="w-12 h-12"></i>
+            <div class="flex items-center gap-3">
+                <a href="${pageContext.request.contextPath}/customer/bookings" class="px-5 py-3 rounded-2xl bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-all">Lịch sử đặt sân</a>
+                <a href="${pageContext.request.contextPath}/customer/my-calendar" class="px-5 py-3 rounded-2xl border border-gray-200 text-gray-600 font-black text-[10px] uppercase tracking-widest hover:border-[#008751] hover:text-[#008751] transition-all">Lịch chơi của tôi</a>
+                <a href="${pageContext.request.contextPath}/customer/locations" class="px-5 py-3 rounded-2xl border border-gray-200 text-gray-600 font-black text-[10px] uppercase tracking-widest hover:border-[#008751] hover:text-[#008751] transition-all">Danh sách cơ sở</a>
+            </div>
+        </div>
+
+        <c:choose>
+            <c:when test="${empty recentBookings}">
+                <div class="bg-white rounded-[2.5rem] border-2 border-dashed border-gray-100 p-16 text-center">
+                    <i data-lucide="calendar-x" class="w-12 h-12 text-gray-200 mx-auto mb-4"></i>
+                    <p class="text-gray-300 font-black uppercase tracking-widest text-[10px]">Bạn chưa có đơn đặt sân nào</p>
+                </div>
+            </c:when>
+            <c:otherwise>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <c:forEach var="b" items="${recentBookings}">
+                        <article class="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-4">
+                            <div class="flex items-start justify-between gap-4">
+                                <div>
+                                    <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">${b.bookingDate} | ${b.startTime} - ${b.endTime}</p>
+                                    <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight mt-1">${b.fieldName}</h3>
                                 </div>
-                            </c:otherwise>
-                        </c:choose>
-                        <div class="absolute top-4 right-4">
-                            <span class="px-4 py-2 bg-white/90 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-[#008751] shadow-sm">
-                                Đang hoạt động
-                            </span>
-                        </div>
-                    </div>
-                    <div class="space-y-3">
-                        <h3 class="text-2xl font-black text-gray-900 tracking-tight uppercase group-hover:text-[#008751] transition-colors">${loc.locationName}</h3>
-                        <div class="flex items-start gap-2 text-gray-500">
-                            <i data-lucide="map-pin" class="w-4 h-4 mt-0.5 shrink-0"></i>
-                            <p class="font-bold text-sm">${loc.address}</p>
-                        </div>
-                        <div class="flex items-center gap-2 text-gray-400">
-                            <i data-lucide="phone" class="w-3 h-3"></i>
-                            <p class="text-[10px] font-black uppercase tracking-widest">Hotline: ${loc.phoneNumber}</p>
-                        </div>
-                    </div>
-                    <div class="rounded-[1.8rem] overflow-hidden border border-gray-100 bg-slate-50">
-                        <iframe
-                            title="Bản đồ ${loc.locationName}"
-                            src="https://maps.google.com/maps?hl=vi&q=${loc.address}&t=&z=15&ie=UTF8&iwloc=B&output=embed"
-                            class="w-full h-56 border-0"
-                            loading="lazy"
-                            referrerpolicy="no-referrer-when-downgrade"></iframe>
-                    </div>
-                    <div class="mt-auto pt-6 border-t border-gray-50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                        <div class="flex -space-x-2">
-                            <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-black">7v7</div>
-                            <div class="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-black">11v11</div>
-                        </div>
-                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <a href="https://www.google.com/maps/search/?api=1&query=${loc.address}"
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               class="px-6 py-4 rounded-2xl border border-blue-100 text-blue-700 font-black text-[10px] uppercase tracking-widest hover:border-blue-500 hover:text-blue-600 transition-all text-center bg-blue-50">
-                                Google Maps
-                            </a>
-                            <a href="${pageContext.request.contextPath}/customer/location-detail?locationId=${loc.locationId}"
-                               class="px-6 py-4 rounded-2xl border border-gray-200 text-gray-700 font-black text-[10px] uppercase tracking-widest hover:border-[#008751] hover:text-[#008751] transition-all text-center">
-                                Xem cơ sở
-                            </a>
-                            <a href="${pageContext.request.contextPath}/booking?locationId=${loc.locationId}"
-                               class="px-6 py-4 rounded-2xl bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-all hover:scale-[1.03] active:scale-95 shadow-lg shadow-gray-200 text-center">
-                                Đặt sân
-                            </a>
-                        </div>
-                    </div>
-                </article>
-            </c:forEach>
-        </div>
+                                <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="px-4 py-2 rounded-xl bg-gray-900 text-white font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-all">Chi tiết</a>
+                            </div>
 
-        <c:if test="${empty locations}">
-            <div class="bg-white rounded-[2.5rem] border-2 border-dashed border-gray-100 p-20 text-center">
-                <i data-lucide="search-x" class="w-12 h-12 text-gray-200 mx-auto mb-4"></i>
-                <p class="text-gray-300 font-black uppercase tracking-widest text-[10px]">Chưa có dữ liệu cơ sở thi đấu</p>
-            </div>
-        </c:if>
+                            <div class="flex flex-wrap gap-2">
+                                <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${b.playStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.playStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : b.playStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : b.playStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">Play: ${empty b.playStatus ? 'booked' : b.playStatus}</span>
+                                <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Payment: ${empty b.paymentStatus ? 'pending' : b.paymentStatus}</span>
+                                <span class="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${b.extraPaymentStatus == 'paid extra' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : b.extraPaymentStatus == 'pending extra' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Extra: ${empty b.extraPaymentStatus ? 'none' : b.extraPaymentStatus}</span>
+                            </div>
 
-        <!-- Pagination -->
-        <c:if test="${totalPages > 1}">
-            <div class="flex items-center justify-center gap-3 py-10">
-                <c:if test="${currentPage > 1}">
-                    <a href="${pageContext.request.contextPath}/customer/dashboard?page=1<c:if test="${not empty locationName}">&locationName=${locationName}</c:if><c:if test="${not empty searchName}">&searchName=${searchName}</c:if><c:if test="${not empty searchAddress}">&searchAddress=${searchAddress}</c:if>"
-                       class="w-10 h-10 rounded-xl border-2 border-gray-50 bg-white flex items-center justify-center text-gray-400 hover:border-[#008751] hover:text-[#008751] transition-all">
-                        <i data-lucide="chevrons-left" class="w-4 h-4"></i>
-                    </a>
-                    <a href="${pageContext.request.contextPath}/customer/dashboard?page=${currentPage - 1}<c:if test="${not empty locationName}">&locationName=${locationName}</c:if><c:if test="${not empty searchName}">&searchName=${searchName}</c:if><c:if test="${not empty searchAddress}">&searchAddress=${searchAddress}</c:if>" 
-                       class="w-10 h-10 rounded-xl border-2 border-gray-50 bg-white flex items-center justify-center text-gray-400 hover:border-[#008751] hover:text-[#008751] transition-all">
-                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
-                    </a>
-                </c:if>
-                
-                <c:forEach begin="1" end="${totalPages}" var="i">
-                    <c:choose>
-                        <c:when test="${i == currentPage}">
-                            <span class="w-10 h-10 rounded-xl bg-[#008751] text-white flex items-center justify-center font-black text-xs shadow-lg shadow-[#008751]/20">${i}</span>
-                        </c:when>
-                        <c:otherwise>
-                            <a href="${pageContext.request.contextPath}/customer/dashboard?page=${i}<c:if test="${not empty locationName}">&locationName=${locationName}</c:if><c:if test="${not empty searchName}">&searchName=${searchName}</c:if><c:if test="${not empty searchAddress}">&searchAddress=${searchAddress}</c:if>" 
-                               class="w-10 h-10 rounded-xl border-2 border-gray-50 bg-white flex items-center justify-center text-gray-400 font-black text-xs hover:border-[#008751] hover:text-[#008751] transition-all">
-                                ${i}
-                            </a>
-                        </c:otherwise>
-                    </c:choose>
-                </c:forEach>
-
-                <c:if test="${currentPage < totalPages}">
-                    <a href="${pageContext.request.contextPath}/customer/dashboard?page=${currentPage + 1}<c:if test="${not empty locationName}">&locationName=${locationName}</c:if><c:if test="${not empty searchName}">&searchName=${searchName}</c:if><c:if test="${not empty searchAddress}">&searchAddress=${searchAddress}</c:if>" 
-                       class="w-10 h-10 rounded-xl border-2 border-gray-50 bg-white flex items-center justify-center text-gray-400 hover:border-[#008751] hover:text-[#008751] transition-all">
-                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
-                    </a>
-                    <a href="${pageContext.request.contextPath}/customer/dashboard?page=${totalPages}<c:if test="${not empty locationName}">&locationName=${locationName}</c:if><c:if test="${not empty searchName}">&searchName=${searchName}</c:if><c:if test="${not empty searchAddress}">&searchAddress=${searchAddress}</c:if>" 
-                       class="w-10 h-10 rounded-xl border-2 border-gray-50 bg-white flex items-center justify-center text-gray-400 hover:border-[#008751] hover:text-[#008751] transition-all">
-                        <i data-lucide="chevrons-right" class="w-4 h-4"></i>
-                    </a>
-                </c:if>
-            </div>
-            <p class="text-center text-[10px] font-black text-gray-400 uppercase tracking-widest">Trang <span class="text-[#008751]">${currentPage}</span> / ${totalPages} (Tổng: ${totalItems} cơ sở)</p>
-        </c:if>
+                            <div class="flex items-center justify-between border-t border-gray-100 pt-3">
+                                <p class="text-sm font-black text-[#008751]"><fmt:formatNumber value="${b.totalPrice}" pattern="#,##0"/> đ</p>
+                                <p class="text-xs font-black text-rose-600 uppercase tracking-widest">Còn lại: <fmt:formatNumber value="${empty b.outstandingAmount ? 0 : b.outstandingAmount}" pattern="#,##0"/> đ</p>
+                            </div>
+                        </article>
+                    </c:forEach>
+                </div>
+            </c:otherwise>
+        </c:choose>
     </section>
 </main>
 

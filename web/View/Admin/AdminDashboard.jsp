@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -109,6 +110,94 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- BOOKING ALERTS -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <section class="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/40 border border-amber-100">
+                <div class="flex items-center justify-between gap-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl border border-amber-100 flex items-center justify-center">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Booking cần theo dõi refund</p>
+                            <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight">Payment status = refund</h3>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-100 text-xs font-black uppercase tracking-widest">
+                        ${refundBookingCount}
+                    </span>
+                </div>
+
+                <c:choose>
+                    <c:when test="${refundBookingCount > 0}">
+                        <div class="space-y-3 max-h-[340px] overflow-auto pr-1">
+                            <c:forEach var="booking" items="${refundBookings}" end="5">
+                                <div class="rounded-2xl border border-amber-100 bg-amber-50/40 p-4">
+                                    <p class="text-sm font-black text-gray-900 uppercase tracking-tight">${booking.fieldName}</p>
+                                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                                        ${booking.bookingDate} | ${booking.startTime} - ${booking.endTime}
+                                    </p>
+                                    <p class="text-[10px] font-black text-amber-700 uppercase tracking-widest mt-2">
+                                        Payment: ${booking.paymentStatus}
+                                    </p>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-6 text-center">
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Không có booking nào ở trạng thái refund</p>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+            </section>
+
+            <section class="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/40 border border-rose-100">
+                <div class="flex items-center justify-between gap-4 mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-rose-50 text-rose-600 rounded-xl border border-rose-100 flex items-center justify-center">
+                            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Booking checked out chưa trả hết</p>
+                            <h3 class="text-xl font-black text-gray-900 uppercase tracking-tight">Play status = checked out</h3>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 border border-rose-100 text-xs font-black uppercase tracking-widest">
+                        ${checkedOutUnpaidCount}
+                    </span>
+                </div>
+
+                <c:choose>
+                    <c:when test="${checkedOutUnpaidCount > 0}">
+                        <div class="space-y-3 max-h-[340px] overflow-auto pr-1">
+                            <c:forEach var="booking" items="${checkedOutUnpaidBookings}" end="5">
+                                <div class="rounded-2xl border border-rose-100 bg-rose-50/40 p-4">
+                                    <p class="text-sm font-black text-gray-900 uppercase tracking-tight">${booking.fieldName}</p>
+                                    <p class="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                                        ${booking.bookingDate} | ${booking.startTime} - ${booking.endTime}
+                                    </p>
+                                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                                        <span class="px-2 py-1 rounded-full bg-orange-50 border border-orange-100 text-orange-700 text-[9px] font-black uppercase tracking-widest">
+                                            Play: ${booking.playStatus}
+                                        </span>
+                                        <span class="px-2 py-1 rounded-full bg-rose-50 border border-rose-100 text-rose-700 text-[9px] font-black uppercase tracking-widest">
+                                            Còn nợ: <fmt:formatNumber value="${booking.outstandingAmount}" pattern="#,##0"/> đ
+                                        </span>
+                                    </div>
+                                </div>
+                            </c:forEach>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-6 text-center">
+                            <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Không có booking checked out nào còn công nợ</p>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+            </section>
         </div>
 
         <!-- RECENT ACTIVITIES & QUICK LINKS -->

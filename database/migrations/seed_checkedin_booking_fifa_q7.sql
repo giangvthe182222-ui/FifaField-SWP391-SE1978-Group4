@@ -1,4 +1,4 @@
-﻿USE FifaFieldDB;
+﻿USE FifaFieldDB2;
 GO
 
 /*
@@ -12,7 +12,7 @@ GO
 SET NOCOUNT ON; 
 SET XACT_ABORT ON;
 
-DECLARE @LocationName NVARCHAR(255) = N'Fifafield Ocean Park';
+DECLARE @LocationName NVARCHAR(255) = N'Fifa Field Cầu Giấy';
 DECLARE @Now DATETIME2 = SYSDATETIME();
 
 DECLARE @LocationId VARCHAR(36);

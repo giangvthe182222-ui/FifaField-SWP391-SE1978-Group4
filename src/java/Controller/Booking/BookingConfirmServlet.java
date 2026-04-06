@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -24,6 +25,10 @@ import java.util.concurrent.ThreadLocalRandom;
 
 @WebServlet(name = "BookingConfirmServlet", urlPatterns = {"/booking-confirm"})
 public class BookingConfirmServlet extends HttpServlet {
+
+    private static final BigDecimal DEPOSIT_RATE = new BigDecimal("0.30");
+    private static final String PAYMENT_OPTION_FULL = "full";
+    private static final String PAYMENT_OPTION_DEPOSIT = "deposit";
 
     private boolean isStaffUser(User user) {
         return user != null
@@ -49,6 +54,38 @@ public class BookingConfirmServlet extends HttpServlet {
         return "/customer/bookings";
     }
 
+    private String normalizePaymentOption(String value) {
+        if (value == null) {
+            return PAYMENT_OPTION_FULL;
+        }
+        String normalized = value.trim().toLowerCase();
+        if (PAYMENT_OPTION_DEPOSIT.equals(normalized)) {
+            return PAYMENT_OPTION_DEPOSIT;
+        }
+        return PAYMENT_OPTION_FULL;
+    }
+
+    private BigDecimal resolveAmountDueNow(BigDecimal totalAmount, String paymentOption) {
+        if (totalAmount == null || totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+        if (PAYMENT_OPTION_DEPOSIT.equals(paymentOption)) {
+            BigDecimal deposit = totalAmount.multiply(DEPOSIT_RATE).setScale(0, RoundingMode.HALF_UP);
+            if (deposit.compareTo(BigDecimal.ZERO) <= 0) {
+                return totalAmount;
+            }
+            return deposit;
+        }
+        return totalAmount;
+    }
+
+    private String buildPaymentMethodMetadata(String paymentOption) {
+        if (PAYMENT_OPTION_DEPOSIT.equals(paymentOption)) {
+            return "payOS|deposit";
+        }
+        return "payOS|full";
+    }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -63,7 +100,9 @@ public class BookingConfirmServlet extends HttpServlet {
         boolean staffUser = isStaffUser(user);
         UUID bookerId = user.getUserId();
         String requestedPhone = trimToNull(request.getParameter("bookingPhone"));
+        String bookingPaymentOption = normalizePaymentOption(request.getParameter("bookingPaymentOption"));
         String bookingHistoryPath = resolveBookingHistoryPath(user);
+
         if (bookerId == null) {
             session.setAttribute("flash_error", "Invalid user session.");
             response.sendRedirect(request.getContextPath() + "/booking");
@@ -74,7 +113,7 @@ public class BookingConfirmServlet extends HttpServlet {
         String fieldIdParam = request.getParameter("fieldId");
         if (scheduleIdParam == null || scheduleIdParam.isBlank() || fieldIdParam == null || fieldIdParam.isBlank()) {
             request.getSession().setAttribute("flash_error", "Please select a location, field and schedule.");
-            response.sendRedirect(buildBookingReturnUrl(request, request.getParameter("locationId"), fieldIdParam, requestedPhone));
+            response.sendRedirect(buildBookingReturnUrl(request, request.getParameter("locationId"), fieldIdParam, requestedPhone, bookingPaymentOption));
             return;
         }
 
@@ -91,7 +130,7 @@ public class BookingConfirmServlet extends HttpServlet {
         }
         if (schedule == null) {
             request.getSession().setAttribute("flash_error", "Selected schedule is not valid.");
-            response.sendRedirect(buildBookingReturnUrl(request, request.getParameter("locationId"), fieldIdParam, requestedPhone));
+            response.sendRedirect(buildBookingReturnUrl(request, request.getParameter("locationId"), fieldIdParam, requestedPhone, bookingPaymentOption));
             return;
         }
 
@@ -149,14 +188,14 @@ public class BookingConfirmServlet extends HttpServlet {
             bookingPhone = requestedPhone;
             if (bookingPhone == null) {
                 session.setAttribute("flash_error", "Staff booking requires phone number.");
-                response.sendRedirect(buildBookingReturnUrl(request, locationIdParam, fieldIdParam, requestedPhone));
+                response.sendRedirect(buildBookingReturnUrl(request, locationIdParam, fieldIdParam, requestedPhone, bookingPaymentOption));
                 return;
             }
         } else {
             bookingPhone = requestedPhone != null ? requestedPhone : trimToNull(user.getPhone());
             if (bookingPhone == null) {
                 session.setAttribute("flash_error", "Please enter a contact phone number before booking.");
-                response.sendRedirect(buildBookingReturnUrl(request, locationIdParam, fieldIdParam, requestedPhone));
+                response.sendRedirect(buildBookingReturnUrl(request, locationIdParam, fieldIdParam, requestedPhone, bookingPaymentOption));
                 return;
             }
         }
@@ -171,7 +210,9 @@ public class BookingConfirmServlet extends HttpServlet {
         booking.setScheduleId(scheduleId);
         booking.setVoucherId(voucherId);
         booking.setBookingTime(LocalDateTime.now());
-        booking.setStatus("pending");
+        booking.setPlayStatus("booked");
+        booking.setPaymentStatus("pending");
+        booking.setExtraPaymentStatus("none");
         booking.setTotalPrice(total);
         booking.setPaymentDeadline(paymentDeadline);
 
@@ -188,13 +229,15 @@ public class BookingConfirmServlet extends HttpServlet {
                 insertError = "Failed to create booking. Please try again.";
             }
             session.setAttribute("flash_error", insertError);
-            response.sendRedirect(buildBookingReturnUrl(request, locationIdParam, fieldIdParam, requestedPhone));
+            response.sendRedirect(buildBookingReturnUrl(request, locationIdParam, fieldIdParam, requestedPhone, bookingPaymentOption));
             return;
         }
 
         // Khoi tao thanh toan payOS sau khi da tao booking va danh sach equipment.
         long orderCode = generateOrderCode();
         String description = buildPayOSDescription(booking.getBookingId());
+        BigDecimal amountDueNow = resolveAmountDueNow(total, bookingPaymentOption);
+        String paymentMethodMetadata = buildPaymentMethodMetadata(bookingPaymentOption);
 
         PayOSClient payOSClient = new PayOSClient();
         if (!payOSClient.isConfigured()) {
@@ -207,7 +250,7 @@ public class BookingConfirmServlet extends HttpServlet {
 
         PayOSClient.PaymentLinkResponse payOSLink = payOSClient.createPaymentLink(
                 orderCode,
-                total, 
+            amountDueNow,
                 description,
                 booking.getBookingId(),
             paymentDeadline,
@@ -224,8 +267,8 @@ public class BookingConfirmServlet extends HttpServlet {
         Payment payment = new Payment();
         payment.setPaymentId(UUID.randomUUID());
         payment.setBookingId(booking.getBookingId());
-        payment.setAmount(total);
-        payment.setPaymentMethod("payOS");
+        payment.setAmount(amountDueNow);
+        payment.setPaymentMethod(paymentMethodMetadata);
         payment.setPaymentStatus("PENDING");
         payment.setBankCode(payOSLink.getBankCode());
         payment.setAccountNumber(payOSLink.getAccountNumber());
@@ -249,7 +292,8 @@ public class BookingConfirmServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + booking.getBookingId().toString());
     }
 
-    private String buildBookingReturnUrl(HttpServletRequest request, String locationId, String fieldId, String bookingPhone) {
+        private String buildBookingReturnUrl(HttpServletRequest request, String locationId, String fieldId, String bookingPhone,
+            String bookingPaymentOption) {
         StringBuilder sb = new StringBuilder(request.getContextPath()).append("/booking?");
         boolean hasAny = false;
 
@@ -265,6 +309,11 @@ public class BookingConfirmServlet extends HttpServlet {
         if (bookingPhone != null && !bookingPhone.isBlank()) {
             if (hasAny) sb.append("&");
             sb.append("bookingPhone=").append(URLEncoder.encode(bookingPhone, StandardCharsets.UTF_8));
+            hasAny = true;
+        }
+        if (bookingPaymentOption != null && !bookingPaymentOption.isBlank()) {
+            if (hasAny) sb.append("&");
+            sb.append("bookingPaymentOption=").append(URLEncoder.encode(bookingPaymentOption, StandardCharsets.UTF_8));
             hasAny = true;
         }
         if (!hasAny) {

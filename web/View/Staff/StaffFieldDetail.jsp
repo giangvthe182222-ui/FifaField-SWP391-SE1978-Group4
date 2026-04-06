@@ -94,6 +94,7 @@
                                                 <c:when test="${not empty booked}">
                                                     <div class="space-y-2">
                                                         <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Khách hàng: <span class="text-gray-700">${booked.customerName}</span></p>
+                                                        <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Trạng thái: <span class="${booked.status == 'deposited' ? 'text-yellow-700' : 'text-gray-700'}">${booked.status}</span></p>
                                                         <a href="${pageContext.request.contextPath}/staff/bookingDetail?id=${booked.bookingId}" class="block text-center px-3 py-2 rounded-xl bg-gray-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-[#008751] transition-all">Booking detail</a>
                                                     </div>
                                                 </c:when>

@@ -2,11 +2,9 @@ package Controller.Booking;
 
 import DAO.BookingDAO;
 import DAO.LocationEquipmentDAO;
-import DAO.PaymentDAO;
 import Models.BookingViewModel;
 import Models.LocationEquipmentViewModel;
 import Models.BookingEquipment;
-import Models.Payment;
 import Utils.DBConnection;
 
 import jakarta.servlet.ServletException;
@@ -24,26 +22,6 @@ import java.util.UUID;
 
 @WebServlet(name = "StaffAddSupplementaryEquipmentServlet", urlPatterns = {"/staff/addSupplementaryEquipment"})
 public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
-
-    private static String payloadKey(UUID bookingId) {
-        return "supp_equipment_payload_" + bookingId;
-    }
-
-    private static String amountKey(UUID bookingId) {
-        return "supp_equipment_amount_" + bookingId;
-    }
-
-    private static String serializeEquipmentPayload(List<BookingEquipment> equipmentList) {
-        StringBuilder sb = new StringBuilder();
-        for (BookingEquipment be : equipmentList) {
-            if (sb.length() > 0) {
-                sb.append(',');
-            }
-            // Format: equipmentId:quantity,equipmentId:quantity
-            sb.append(be.getEquipmentId()).append(':').append(be.getQuantity());
-        }
-        return sb.toString();
-    }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
@@ -176,30 +154,18 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
             return;
         }
 
-        // Step 1: create/update supplementary payment record as PENDING.
-        PaymentDAO paymentDAO = new PaymentDAO();
-        boolean pendingMarked = paymentDAO.markSupplementaryPending(bookingId, totalPrice);
-        if (!pendingMarked) {
-            session.setAttribute("flash_error", "Failed to initialize supplementary payment.");
+        boolean finalized = bookingDAO.finalizeSupplementaryEquipment(bookingId, selectedEquipments, totalPrice);
+        if (!finalized) {
+            String error = bookingDAO.getLastInsertError();
+            session.setAttribute("flash_error", error == null || error.isBlank()
+                    ? "Failed to add supplementary equipment."
+                    : error);
             response.sendRedirect(request.getContextPath() + "/staff/addSupplementaryEquipment?bookingId=" + bookingId);
             return;
         }
 
-        // Step 2: lock booking into PENDING EXTRA so normal state transitions are blocked.
-        if (!bookingDAO.markBookingPendingExtra(bookingId)) {
-            Payment payment = paymentDAO.getPaymentByBookingId(bookingId);
-            if (payment != null && payment.getPaymentId() != null) {
-                paymentDAO.updatePaymentFailed(payment.getPaymentId());
-            }
-            session.setAttribute("flash_error", "Only checked-in bookings in active slot can start supplementary payment.");
-            response.sendRedirect(request.getContextPath() + "/staff/addSupplementaryEquipment?bookingId=" + bookingId);
-            return;
-        }
-
-        // Step 3: store draft in session; PaymentServlet finalizes stock + booking equipment on payment success.
-        session.setAttribute(payloadKey(bookingId), serializeEquipmentPayload(selectedEquipments));
-        session.setAttribute(amountKey(bookingId), totalPrice.toPlainString());
-        response.sendRedirect(request.getContextPath() + "/payment?bookingId=" + bookingId + "&source=supplementary");
+        session.setAttribute("flash_success", "Đã thêm dụng cụ và cộng vào công nợ còn lại của booking.");
+        response.sendRedirect(request.getContextPath() + "/staff/locationBookings");
     }
 
     private boolean isEquipmentBookingAllowed(BookingViewModel booking) {
@@ -207,8 +173,8 @@ public class StaffAddSupplementaryEquipmentServlet extends HttpServlet {
             return false;
         }
 
-        String status = booking.getStatus() == null ? "" : booking.getStatus().trim().toLowerCase();
-        if (!"checked in".equals(status)) {
+        String playStatus = booking.getPlayStatus() == null ? "" : booking.getPlayStatus().trim().toLowerCase();
+        if (!"checked in".equals(playStatus)) {
             return false;
         }
 

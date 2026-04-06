@@ -22,6 +22,9 @@ public class Booking {
     
     private LocalDateTime bookingTime;
     private String status;
+    private String playStatus;
+    private String paymentStatus;
+    private String extraPaymentStatus;
     private BigDecimal totalPrice;
     private LocalDateTime paymentDeadline;
 
@@ -67,6 +70,15 @@ public class Booking {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getPlayStatus() { return playStatus; }
+    public void setPlayStatus(String playStatus) { this.playStatus = playStatus; }
+
+    public String getPaymentStatus() { return paymentStatus; }
+    public void setPaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+
+    public String getExtraPaymentStatus() { return extraPaymentStatus; }
+    public void setExtraPaymentStatus(String extraPaymentStatus) { this.extraPaymentStatus = extraPaymentStatus; }
 
     public BigDecimal getTotalPrice() { return totalPrice; }
     public void setTotalPrice(BigDecimal totalPrice) { this.totalPrice = totalPrice; }
