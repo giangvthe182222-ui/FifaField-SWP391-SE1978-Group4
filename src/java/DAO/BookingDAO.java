@@ -29,7 +29,6 @@ public class BookingDAO {
     private static final String STATUS_PAID = "paid";
     private static final String STATUS_CANCELLED = "cancelled";
     private static final String STATUS_PENDING_REFUND = "pending refund";
-    private static final String STATUS_PENDING_REFUND_CONFIRM = "pending refund confirm";
     private static final String STATUS_REFUNDED = "refunded";
     private static final String STATUS_CHECKED_IN = "checked in";
     private static final String STATUS_CHECKED_OUT = "checked out";
@@ -315,7 +314,7 @@ public class BookingDAO {
         if (startTimeStr != null && !startTimeStr.isBlank()) {
             sql.append(" AND s.start_time = ? ");
         }
-        String legacyStatusExpr = legacyStatusExpression("b");
+        String lifecycleStatusExpr = lifecycleStatusExpression("b");
         boolean filterCheckedOut = "checked out".equalsIgnoreCase(status == null ? "" : status.trim());
         if (playStatus != null && !playStatus.isBlank()) {
             boolean playCheckedOut = "checked out".equalsIgnoreCase(playStatus.trim());
@@ -333,9 +332,9 @@ public class BookingDAO {
         }
         if (status != null && !status.isBlank()) {
             if (filterCheckedOut) {
-                sql.append(" AND LOWER(").append(legacyStatusExpr).append(") = 'checked out' ");
+                sql.append(" AND LOWER(").append(lifecycleStatusExpr).append(") = 'checked out' ");
             } else {
-                sql.append(" AND LOWER(").append(legacyStatusExpr).append(") = LOWER(?) ");
+                sql.append(" AND LOWER(").append(lifecycleStatusExpr).append(") = LOWER(?) ");
             }
         }
         // field filter removed per requirements
@@ -554,7 +553,7 @@ public class BookingDAO {
         sql.append("FROM Booking b ");
         sql.append("JOIN Field f ON b.field_id = f.field_id ");
         sql.append("WHERE b.booker_id = ? ");
-        sql.append("AND LOWER(").append(legacyStatusExpression("b")).append(") NOT IN ('cancelled', 'refunded') ");
+        sql.append("AND LOWER(").append(lifecycleStatusExpression("b")).append(") NOT IN ('cancelled', 'refunded') ");
         if (locationId != null) {
             sql.append("AND f.location_id = ? ");
         }
@@ -599,7 +598,7 @@ public class BookingDAO {
                 + "JOIN Field f ON b.field_id = f.field_id "
                 + "JOIN Location l ON f.location_id = l.location_id "
                 + "WHERE b.booker_id = ? "
-                + "AND LOWER(" + legacyStatusExpression("b") + ") NOT IN ('cancelled', 'refunded') "
+                + "AND LOWER(" + lifecycleStatusExpression("b") + ") NOT IN ('cancelled', 'refunded') "
                 + "ORDER BY l.location_name";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -681,7 +680,7 @@ public class BookingDAO {
                 + "LEFT JOIN Schedule s ON b.schedule_id = s.schedule_id "
                 + "LEFT JOIN Field f ON b.field_id = f.field_id "
                 + "LEFT JOIN Users u ON b.booker_id = u.user_id "
-            + "WHERE b.schedule_id = ? AND LOWER(" + legacyStatusExpression("b") + ") NOT IN ('cancelled', 'refunded') "
+            + "WHERE b.schedule_id = ? AND LOWER(" + lifecycleStatusExpression("b") + ") NOT IN ('cancelled', 'refunded') "
                 + "ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -731,7 +730,7 @@ public class BookingDAO {
                 + "LEFT JOIN Field f ON b.field_id = f.field_id "
                 + "LEFT JOIN Users u ON b.booker_id = u.user_id "
                 + "WHERE b.schedule_id = ? "
-            + "AND LOWER(" + legacyStatusExpression("b") + ") IN ('pending', 'deposited', 'paid', 'checked in', 'checked out', 'completed') "
+            + "AND LOWER(" + lifecycleStatusExpression("b") + ") IN ('pending', 'deposited', 'paid', 'checked in', 'checked out', 'completed') "
                 + "ORDER BY b.booking_time DESC, s.booking_date DESC, s.start_time DESC";
 
         try (Connection con = DBConnection.getConnection(); PreparedStatement ps = con.prepareStatement(sql)) {
@@ -896,10 +895,24 @@ public class BookingDAO {
     public boolean markBookingPaid(UUID bookingId) {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
-            boolean updated = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_PENDING);
-            if (!updated) {
-                updated = updateBookingStatus(conn, bookingId, STATUS_PAID, STATUS_DEPOSITED);
+
+            BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
+            if (snapshot == null) {
+                conn.rollback();
+                return false;
             }
+
+            if (STATUS_PAID.equals(snapshot.paymentStatus)) {
+                conn.rollback();
+                return true;
+            }
+
+            if (!STATUS_PENDING.equals(snapshot.paymentStatus) && !STATUS_DEPOSITED.equals(snapshot.paymentStatus)) {
+                conn.rollback();
+                return false;
+            }
+
+            boolean updated = updateSplitPaymentStatus(conn, bookingId, STATUS_PAID);
             if (!updated) {
                 conn.rollback();
                 return false;
@@ -909,6 +922,15 @@ public class BookingDAO {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    private boolean updateSplitPaymentStatus(Connection conn, UUID bookingId, String paymentStatus) throws SQLException {
+        String sql = "UPDATE Booking SET payment_status = ? WHERE booking_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, normalizeStatus(paymentStatus));
+            ps.setString(2, bookingId.toString());
+            return ps.executeUpdate() > 0;
         }
     }
     
@@ -1138,9 +1160,8 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                 break;
 
             case STATUS_REFUNDED:
-                // legacy flow: pending_refund -> refunded
-                if (STATUS_PENDING_REFUND.equals(snapshot.status)
-                        || STATUS_PENDING_REFUND_CONFIRM.equals(snapshot.status)) {
+                // pending_refund -> refunded
+                if (STATUS_PENDING_REFUND.equals(snapshot.status)) {
                     success = updateBookingStatus(conn, bookingId, STATUS_REFUNDED, snapshot.status);
                     if (success) {
                         updatePaymentStatusByBooking(conn, bookingId, "REFUNDED", true);
@@ -1167,6 +1188,9 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                     }
 
                     success = updateBookingStatus(conn, bookingId, STATUS_COMPLETED, snapshot.status);
+                    if (success) {
+                        releaseBookingResources(conn, bookingId, snapshot.scheduleId, false);
+                    }
                 }
                 break;
 
@@ -1208,9 +1232,8 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
 }
 
     /**
-     * Legacy direct supplementary insertion flow. Kept for compatibility;
-     * current payment-first flow should use finalizeSupplementaryEquipment
-     * after payment success.
+     * Direct supplementary insertion flow. Current payment-first flow should
+     * use finalizeSupplementaryEquipment after payment success.
      */
     public boolean addEquipmentToBooking(UUID bookingId, List<BookingEquipment> equipmentList, BigDecimal additionalAmount) {
         lastInsertError = null;
@@ -1553,9 +1576,9 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
         boolean filterCheckedOut = "checked out".equalsIgnoreCase(status == null ? "" : status.trim());
         if (status != null && !status.isBlank()) {
             if (filterCheckedOut) {
-                sql.append(" AND LOWER(").append(legacyStatusExpression("b")).append(") = 'checked out' ");
+                sql.append(" AND LOWER(").append(lifecycleStatusExpression("b")).append(") = 'checked out' ");
             } else {
-                sql.append(" AND LOWER(").append(legacyStatusExpression("b")).append(") = LOWER(?) ");
+                sql.append(" AND LOWER(").append(lifecycleStatusExpression("b")).append(") = LOWER(?) ");
             }
         }
         if (customerKeyword != null && !customerKeyword.isBlank()) {
@@ -1788,10 +1811,10 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
         try (Connection conn = DBConnection.getConnection()) {
             conn.setAutoCommit(false);
             // Cron-on-read: he thong tu dong chot cac booking da qua gio cho 2 trang thai paid/checked in.
-                String sql = "SELECT b.booking_id, LOWER(" + legacyStatusExpression("b") + ") AS booking_status "
+                String sql = "SELECT b.booking_id, LOWER(" + lifecycleStatusExpression("b") + ") AS booking_status "
                     + "FROM Booking b "
                     + "INNER JOIN Schedule s ON s.schedule_id = b.schedule_id "
-                    + "WHERE LOWER(" + legacyStatusExpression("b") + ") IN ('paid', 'deposited', 'checked in', 'checked out') "
+                    + "WHERE LOWER(" + lifecycleStatusExpression("b") + ") IN ('paid', 'deposited', 'checked in', 'checked out') "
                     + "AND (s.booking_date < CAST(SYSDATETIME() AS DATE) "
                     + "     OR (s.booking_date = CAST(SYSDATETIME() AS DATE) AND s.end_time <= CAST(SYSDATETIME() AS TIME)))";
 
@@ -1812,8 +1835,10 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                 }
                 if (STATUS_PAID.equals(snapshot.status) || STATUS_DEPOSITED.equals(snapshot.status)) {
                     // paid/deposited ma qua gio nhung chua check-in -> coi nhu khong su dung, chuyen cancelled.
-                    updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CANCELLED, snapshot.status);
-                    releaseBookingResources(conn, expiredBooking.bookingId, snapshot.scheduleId);
+                    boolean updated = updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CANCELLED, snapshot.status);
+                    if (updated) {
+                        releaseBookingResources(conn, expiredBooking.bookingId, snapshot.scheduleId);
+                    }
                 } else if (STATUS_CHECKED_IN.equals(snapshot.status)) {
                     // checked-in qua gio: doi sang checked out. Thanh toan hoan tat se dua den completed.
                     updateBookingStatus(conn, expiredBooking.bookingId, STATUS_CHECKED_OUT, STATUS_CHECKED_IN);
@@ -1825,7 +1850,10 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                     if (!hasOutstandingRemainingAmount(conn, expiredBooking.bookingId)) {
                         boolean updated = updateBookingStatus(conn, expiredBooking.bookingId, STATUS_COMPLETED, STATUS_CHECKED_OUT);
                         if (!updated) {
-                            updateBookingStatus(conn, expiredBooking.bookingId, STATUS_COMPLETED, STATUS_FINISHED);
+                            updated = updateBookingStatus(conn, expiredBooking.bookingId, STATUS_COMPLETED, STATUS_FINISHED);
+                        }
+                        if (updated) {
+                            releaseBookingResources(conn, expiredBooking.bookingId, snapshot.scheduleId, false);
                         }
                     }
                 }
@@ -1865,7 +1893,7 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                 snapshot.playStatus = normalizeStatus(rs.getString("play_status"));
                 snapshot.paymentStatus = normalizeStatus(rs.getString("payment_status"));
                 snapshot.extraPaymentStatus = normalizeStatus(rs.getString("extra_payment_status"));
-                snapshot.status = resolveLegacyStatus(snapshot.playStatus, snapshot.paymentStatus, snapshot.extraPaymentStatus);
+                snapshot.status = resolveLifecycleStatus(snapshot.playStatus, snapshot.paymentStatus, snapshot.extraPaymentStatus);
 
                 Date bookingDate = rs.getDate("booking_date");
                 Time startTime = rs.getTime("start_time");
@@ -1983,7 +2011,6 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                 }
 
                 if (STATUS_PENDING_REFUND.equals(bookingPaymentStatus)
-                    || STATUS_PENDING_REFUND_CONFIRM.equals(bookingPaymentStatus)
                         || STATUS_REFUNDED.equals(bookingPaymentStatus)
                         || PAYMENT_STATUS_FAILED.equals(bookingPaymentStatus)) {
                     return false;
@@ -2049,7 +2076,6 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                 }
 
                 if ("pending refund".equals(bookingPaymentStatus)
-                    || "pending refund confirm".equals(bookingPaymentStatus)
                         || "refunded".equals(bookingPaymentStatus)
                         || "failed".equals(bookingPaymentStatus)) {
                     return BigDecimal.ZERO;
@@ -2141,8 +2167,12 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
      */
     //Description: Implements the releaseBookingResources business routine with validation, database interaction, exception handling, and predictable outputs for upstream controllers/services.
     private void releaseBookingResources(Connection conn, UUID bookingId, UUID scheduleId) throws SQLException {
+        releaseBookingResources(conn, bookingId, scheduleId, true);
+    }
+
+    private void releaseBookingResources(Connection conn, UUID bookingId, UUID scheduleId, boolean releaseSchedule) throws SQLException {
         // Internal Flow: apply guard checks, execute core logic, and keep exception handling localized to DAO responsibilities.
-        if (scheduleId != null) {
+        if (releaseSchedule && scheduleId != null) {
             // Tra slot lich ve available de cho phep dat lai.
             try (PreparedStatement ps = conn.prepareStatement("UPDATE Schedule SET status = 'available' WHERE schedule_id = ?")) {
                 ps.setString(1, scheduleId.toString());
@@ -2164,6 +2194,18 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
             ps.setString(1, bookingId.toString());
             ps.executeUpdate();
         }
+    }
+
+    private boolean shouldReleaseSchedule(String lifecycleStatus) {
+        String normalized = normalizeStatus(lifecycleStatus);
+        return STATUS_CANCELLED.equals(normalized) || STATUS_REFUNDED.equals(normalized);
+    }
+
+    private boolean shouldReleaseEquipment(String lifecycleStatus) {
+        String normalized = normalizeStatus(lifecycleStatus);
+        return STATUS_CANCELLED.equals(normalized)
+                || STATUS_REFUNDED.equals(normalized)
+                || STATUS_COMPLETED.equals(normalized);
     }
 
     /**
@@ -2191,12 +2233,45 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
                 + "SET play_status = ?, payment_status = ?, extra_payment_status = ? "
                 + "WHERE booking_id = ?";
 
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, normalizedPlayStatus);
-            ps.setString(2, normalizedPaymentStatus);
-            ps.setString(3, normalizedExtraPaymentStatus);
-            ps.setString(4, bookingId.toString());
-            return ps.executeUpdate() > 0;
+        try (Connection conn = DBConnection.getConnection()) {
+            conn.setAutoCommit(false);
+
+            BookingSnapshot snapshot = getBookingSnapshot(conn, bookingId);
+            if (snapshot == null) {
+                conn.rollback();
+                return false;
+            }
+
+            String previousLifecycleStatus = snapshot.status;
+            int updatedRows;
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, normalizedPlayStatus);
+                ps.setString(2, normalizedPaymentStatus);
+                ps.setString(3, normalizedExtraPaymentStatus);
+                ps.setString(4, bookingId.toString());
+                updatedRows = ps.executeUpdate();
+            }
+
+            if (updatedRows <= 0) {
+                conn.rollback();
+                return false;
+            }
+
+            String nextLifecycleStatus = resolveLifecycleStatus(
+                    normalizedPlayStatus,
+                    normalizedPaymentStatus,
+                    normalizedExtraPaymentStatus);
+            boolean releaseSchedule = shouldReleaseSchedule(nextLifecycleStatus)
+                    && !shouldReleaseSchedule(previousLifecycleStatus);
+            boolean releaseEquipment = shouldReleaseEquipment(nextLifecycleStatus)
+                    && !shouldReleaseEquipment(previousLifecycleStatus);
+
+            if (releaseEquipment) {
+                releaseBookingResources(conn, bookingId, snapshot.scheduleId, releaseSchedule);
+            }
+
+            conn.commit();
+            return true;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -2228,13 +2303,12 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
         }
     }
 
-    private String legacyStatusExpression(String alias) {
+    private String lifecycleStatusExpression(String alias) {
         String p = alias + ".payment_status";
         String pl = alias + ".play_status";
         String ex = alias + ".extra_payment_status";
         return "CASE "
                 + "WHEN LOWER(ISNULL(" + p + ", '')) = 'pending refund' THEN 'pending refund' "
-            + "WHEN LOWER(ISNULL(" + p + ", '')) = 'pending refund confirm' THEN 'pending refund' "
                 + "WHEN LOWER(ISNULL(" + p + ", '')) = 'refunded' THEN 'refunded' "
                 + "WHEN LOWER(ISNULL(" + p + ", '')) = 'failed' OR LOWER(ISNULL(" + pl + ", '')) = 'cancelled' THEN 'cancelled' "
                 + "WHEN LOWER(ISNULL(" + pl + ", '')) = 'completed' THEN 'completed' "
@@ -2319,8 +2393,8 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
         }
     }
 
-    private String resolvePlayStatus(String legacyStatus) {
-        String normalized = normalizeStatus(legacyStatus);
+    private String resolvePlayStatus(String lifecycleStatus) {
+        String normalized = normalizeStatus(lifecycleStatus);
         if (STATUS_CHECKED_IN.equals(normalized) || STATUS_PENDING_EXTRA.equals(normalized)) {
             return STATUS_CHECKED_IN;
         }
@@ -2338,8 +2412,8 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
         return PLAY_STATUS_BOOKED;
     }
 
-    private String resolvePaymentStatus(String legacyStatus) {
-        String normalized = normalizeStatus(legacyStatus);
+    private String resolvePaymentStatus(String lifecycleStatus) {
+        String normalized = normalizeStatus(lifecycleStatus);
         if (STATUS_PENDING.equals(normalized)) {
             return STATUS_PENDING;
         }
@@ -2347,9 +2421,6 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
             return STATUS_DEPOSITED;
         }
         if (STATUS_PENDING_REFUND.equals(normalized)) {
-            return STATUS_PENDING_REFUND;
-        }
-        if (STATUS_PENDING_REFUND_CONFIRM.equals(normalized)) {
             return STATUS_PENDING_REFUND;
         }
         if (STATUS_REFUNDED.equals(normalized)) {
@@ -2361,19 +2432,16 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
         return STATUS_PAID;
     }
 
-    private String resolveExtraPaymentStatus(String legacyStatus) {
-        return STATUS_PENDING_EXTRA.equals(normalizeStatus(legacyStatus)) ? STATUS_PENDING_EXTRA : EXTRA_PAYMENT_STATUS_NONE;
+    private String resolveExtraPaymentStatus(String lifecycleStatus) {
+        return STATUS_PENDING_EXTRA.equals(normalizeStatus(lifecycleStatus)) ? STATUS_PENDING_EXTRA : EXTRA_PAYMENT_STATUS_NONE;
     }
 
-    private String resolveLegacyStatus(String playStatus, String paymentStatus, String extraPaymentStatus) {
+    private String resolveLifecycleStatus(String playStatus, String paymentStatus, String extraPaymentStatus) {
         String normalizedPlay = normalizeStatus(playStatus);
         String normalizedPayment = normalizeStatus(paymentStatus);
         String normalizedExtra = normalizeStatus(extraPaymentStatus);
 
         if (STATUS_PENDING_REFUND.equals(normalizedPayment)) {
-            return STATUS_PENDING_REFUND;
-        }
-        if (STATUS_PENDING_REFUND_CONFIRM.equals(normalizedPayment)) {
             return STATUS_PENDING_REFUND;
         }
         if (STATUS_REFUNDED.equals(normalizedPayment)) {
@@ -2404,9 +2472,9 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
         String playStatus = normalizeStatus(rs.getString("play_status"));
         String paymentStatus = normalizeStatus(rs.getString("payment_status"));
         String extraPaymentStatus = normalizeStatus(rs.getString("extra_payment_status"));
-        String legacyStatus = resolveLegacyStatus(playStatus, paymentStatus, extraPaymentStatus);
+        String lifecycleStatus = resolveLifecycleStatus(playStatus, paymentStatus, extraPaymentStatus);
 
-        vm.setStatus(legacyStatus);
+        vm.setStatus(lifecycleStatus);
         vm.setPlayStatus(playStatus);
         vm.setPaymentStatus(paymentStatus);
         vm.setExtraPaymentStatus(extraPaymentStatus);
@@ -2416,9 +2484,9 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
         String playStatus = normalizeStatus(rs.getString("play_status"));
         String paymentStatus = normalizeStatus(rs.getString("payment_status"));
         String extraPaymentStatus = normalizeStatus(rs.getString("extra_payment_status"));
-        String legacyStatus = resolveLegacyStatus(playStatus, paymentStatus, extraPaymentStatus);
+        String lifecycleStatus = resolveLifecycleStatus(playStatus, paymentStatus, extraPaymentStatus);
 
-        booking.setStatus(legacyStatus);
+        booking.setStatus(lifecycleStatus);
         booking.setPlayStatus(playStatus);
         booking.setPaymentStatus(paymentStatus);
         booking.setExtraPaymentStatus(extraPaymentStatus);

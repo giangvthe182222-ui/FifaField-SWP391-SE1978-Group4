@@ -102,8 +102,7 @@ public class StaffBookingDetailServlet extends HttpServlet {
         boolean canMarkPendingRefund = "booked".equals(currentPlayStatus)
             && ("paid".equals(currentPaymentStatus) || "deposited".equals(currentPaymentStatus))
             && isRefundAllowedByTime(booking);
-        boolean canRefund = ("pending refund".equals(currentPaymentStatus)
-            || "pending refund confirm".equals(currentPaymentStatus))
+        boolean canRefund = "pending refund".equals(currentPaymentStatus)
             && isRefundAllowedByTime(booking);
         boolean canMarkPaid = "deposited".equals(currentPaymentStatus)
             && !"checked in".equals(currentPlayStatus);
@@ -417,8 +416,7 @@ public class StaffBookingDetailServlet extends HttpServlet {
             return null;
         }
 
-        if (!"pending refund".equals(currentPaymentStatus)
-                && !"pending refund confirm".equals(currentPaymentStatus)) {
+        if (!"pending refund".equals(currentPaymentStatus)) {
             return "Refunded is only available for bookings in pending refund state.";
         }
         if (!isRefundAllowedByTime(booking)) {
@@ -546,8 +544,7 @@ public class StaffBookingDetailServlet extends HttpServlet {
             }
 
             if ("refunded".equals(requestedPaymentStatus)) {
-                if (!"pending refund".equals(currentPaymentStatus)
-                        && !"pending refund confirm".equals(currentPaymentStatus)) {
+                if (!"pending refund".equals(currentPaymentStatus)) {
                     resolution.error = "Refunded is only available for bookings in pending refund state.";
                     return resolution;
                 }

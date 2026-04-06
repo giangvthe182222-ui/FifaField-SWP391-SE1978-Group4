@@ -80,7 +80,7 @@ public class FeedbackDAO {
     public boolean canCustomerManageFeedback(UUID bookingId, UUID customerId) {
         String sql = "SELECT b.booking_id FROM Booking b "
                 + "INNER JOIN Schedule s ON s.schedule_id = b.schedule_id "
-                + "WHERE b.booking_id = ? AND b.booker_id = ? AND LOWER(b.status) = 'completed' "
+                + "WHERE b.booking_id = ? AND b.booker_id = ? AND LOWER(ISNULL(b.play_status, '')) = 'completed' "
                 + "AND (s.booking_date < CAST(SYSDATETIME() AS DATE) "
                 + "     OR (s.booking_date = CAST(SYSDATETIME() AS DATE) AND s.end_time <= CAST(SYSDATETIME() AS TIME)))";
 

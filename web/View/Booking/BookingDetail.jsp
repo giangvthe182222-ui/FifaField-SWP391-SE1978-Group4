@@ -73,7 +73,7 @@
                         </div>
                         <div class="flex flex-col items-end gap-1">
                             <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${normalizedPlayStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : normalizedPlayStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : normalizedPlayStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : normalizedPlayStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">Play: ${empty booking.playStatus ? 'booked' : booking.playStatus}</span>
-                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${normalizedPaymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : normalizedPaymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : normalizedPaymentStatus == 'pending refund' || normalizedPaymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : normalizedPaymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Payment: ${empty booking.paymentStatus ? 'pending' : booking.paymentStatus}</span>
+                            <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${normalizedPaymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : normalizedPaymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : normalizedPaymentStatus == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : normalizedPaymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Payment: ${empty booking.paymentStatus ? 'pending' : booking.paymentStatus}</span>
                             <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${normalizedExtraPaymentStatus == 'paid extra' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : normalizedExtraPaymentStatus == 'pending extra' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Extra: ${empty booking.extraPaymentStatus ? 'none' : booking.extraPaymentStatus}</span>
                         </div>
                     </div>
@@ -205,6 +205,20 @@
                                     Đơn không được refund vì lịch đấu còn 2 ngày hoặc ít hơn.
                                 </p>
                             </div>
+                        </c:if>
+
+                        <c:if test="${normalizedPaymentStatus == 'refunded'}">
+                            <form method="post" action="${pageContext.request.contextPath}/customer/bookingDetail" onsubmit="return confirm('Xác nhận báo cáo chưa nhận được tiền hoàn?');">
+                                <input type="hidden" name="id" value="${booking.bookingId}" />
+                                <input type="hidden" name="action" value="report_refund_issue" />
+                                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2">
+                                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                                    BÁO CÁO CHƯA HOÀN TIỀN
+                                </button>
+                            </form>
+                            <p class="text-[8px] text-center font-bold text-rose-200/60 uppercase tracking-widest leading-relaxed">
+                                * Hệ thống sẽ chuyển đơn về pending refund để staff xử lý lại
+                            </p>
                         </c:if>
                     </div>
                 </div>

@@ -378,7 +378,9 @@
             const supplementaryRentalId = '<%= supplementaryRentalId != null ? supplementaryRentalId : "" %>';
             const successMessage = paymentSource === 'supplementary'
                 ? 'Thanh toán equipment bổ sung đã được xác nhận.'
-                : 'Đơn đặt sân đã được xác nhận.';
+                : (paymentSource === 'remaining'
+                    ? 'Thanh toán phần còn lại đã được xác nhận.'
+                    : 'Thanh toán đặt sân đã được xác nhận.');
             const successLink = paymentSource === 'supplementary'
                 ? '${pageContext.request.contextPath}<%= bookingHistoryPath %>'
                 : (paymentSource === 'remaining'
@@ -389,7 +391,9 @@
                 : (paymentSource === 'remaining' ? 'Quay về danh sách booking' : 'Xem chi tiết booking');
             const failedMessage = paymentSource === 'supplementary'
                 ? 'Đơn equipment bổ sung đã bị hủy.'
-                : (paymentSource === 'remaining' ? 'Thanh toán phần còn lại chưa thành công.' : 'Đơn đặt sân đã bị hủy.');
+                : (paymentSource === 'remaining'
+                    ? 'Thanh toán phần còn lại chưa thành công.'
+                    : 'Thanh toán đặt sân chưa thành công. Bạn có thể thử lại trước khi hết hạn.');
             const failedLink = paymentSource === 'supplementary'
                 ? '${pageContext.request.contextPath}<%= bookingHistoryPath %>'
                 : (paymentSource === 'remaining'
@@ -410,6 +414,7 @@
             const timerInterval = 1000;
             let paymentChecked = false;
             let paymentExpiredHandled = false;
+            let isCheckingPayment = false;
 
             function parseKeyValueResponse(rawText) {
                 const data = {};
@@ -451,25 +456,28 @@
                 }
             }
 
-            function checkPaymentStatus() {
-                if (paymentChecked) {
+            async function checkPaymentStatus() {
+                if (paymentChecked || isCheckingPayment) {
                     return;
                 }
 
-                fetch('${pageContext.request.contextPath}/payment', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        'action': 'check_payment',
-                        'bookingId': bookingId,
-                        'source': paymentSource,
-                        'rentalId': supplementaryRentalId
-                    })
-                })
-                .then(response => response.text())
-                .then(rawText => {
+                isCheckingPayment = true;
+
+                try {
+                    const response = await fetch('${pageContext.request.contextPath}/payment', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            'action': 'check_payment',
+                            'bookingId': bookingId,
+                            'source': paymentSource,
+                            'rentalId': supplementaryRentalId
+                        })
+                    });
+
+                    const rawText = await response.text();
                     const data = parseKeyValueResponse(rawText);
                     const paymentStatus = (data.paymentStatus || '').toUpperCase();
                     const expired = (data.expired || '').toLowerCase() === 'true';
@@ -493,10 +501,11 @@
                         paymentChecked = true;
                         showPaymentExpired();
                     }
-                })
-                .catch(() => {
+                } catch (e) {
                     // Ignore polling errors and continue polling on next cycle.
-                });
+                } finally {
+                    isCheckingPayment = false;
+                }
             }
 
             function showPaymentSuccess() {
@@ -535,48 +544,36 @@
                 statusDiv.classList.add('bg-red-50', 'border', 'border-red-200', 'rounded-xl');
             }
 
-            async function showPaymentExpired() {
+            function showPaymentExpired() {
                 if (paymentExpiredHandled) {
                     return;
                 }
                 paymentExpiredHandled = true;
 
-                try {
-                    if (paymentSource === 'supplementary' || paymentSource === 'remaining') {
-                        await fetch('${pageContext.request.contextPath}/payment', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: new URLSearchParams({
-                                action: 'check_payment',
-                                bookingId: bookingId,
-                                source: paymentSource,
-                                rentalId: supplementaryRentalId
-                            })
-                        });
-                    } else {
-                        await fetch('${pageContext.request.contextPath}/payment-cancel', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: new URLSearchParams({
-                                bookingId: bookingId
-                            })
-                        });
-                    }
-                } catch (error) {
-                    // Ignore cancellation request errors; redirect still occurs below.
-                }
+                const statusDiv = document.getElementById('paymentStatusDiv');
+                statusDiv.innerHTML = `
+                    <div class="flex items-center justify-center gap-3 mb-1">
+                        <svg class="w-7 h-7 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        <p class="text-lg font-bold text-red-700">Đã hết hạn thanh toán</p>
+                    </div>
+                    <p class="text-sm text-red-600 mb-3">` + expiredMessage + `</p>
+                    <a href="${pageContext.request.contextPath}<%= bookingHistoryPath %>" class="inline-block bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition">Quay về danh sách booking</a>
+                `;
+                statusDiv.classList.remove('hidden');
+                statusDiv.classList.remove('status-card');
+                statusDiv.classList.add('bg-red-50', 'border', 'border-red-200', 'rounded-xl');
 
-                alert(expiredMessage);
-                window.location.href = '${pageContext.request.contextPath}<%= bookingHistoryPath %>';
+                setTimeout(() => {
+                    window.location.href = '${pageContext.request.contextPath}<%= bookingHistoryPath %>';
+                }, 1800);
             }
 
             document.addEventListener('DOMContentLoaded', () => {
                 lucide.createIcons();
                 updateTimerDisplay();
+                checkPaymentStatus();
 
                 if (!hasPaymentDeadline) {
                     const checkIntervalId = setInterval(() => {
@@ -593,8 +590,7 @@
                     updateTimerDisplay();
 
                     if (!paymentChecked && timeRemaining === 0) {
-                        paymentChecked = true;
-                        showPaymentExpired();
+                        checkPaymentStatus();
                     }
                 }, timerInterval);
 

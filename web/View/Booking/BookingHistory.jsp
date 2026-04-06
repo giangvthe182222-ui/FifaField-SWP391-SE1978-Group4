@@ -270,7 +270,7 @@
                                                     <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.playStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.playStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.playStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : b.playStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
                                                         Play: ${empty b.playStatus ? 'booked' : b.playStatus}
                                                     </span>
-                                                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">
+                                                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.paymentStatus == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">
                                                         Payment: ${empty b.paymentStatus ? 'pending' : b.paymentStatus}
                                                     </span>
                                                 </div>
@@ -287,7 +287,7 @@
                                                     <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.playStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.playStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.playStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : b.playStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">
                                                         Play: ${empty b.playStatus ? 'booked' : b.playStatus}
                                                     </span>
-                                                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">
+                                                    <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.paymentStatus == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">
                                                         Payment: ${empty b.paymentStatus ? 'pending' : b.paymentStatus}
                                                     </span>
                                                 </div>
@@ -340,7 +340,7 @@
                                                             </c:if>
                                                         </select>
 
-                                                        <select name="paymentStatus_${b.bookingId}" data-current="${empty b.paymentStatus ? 'paid' : b.paymentStatus}" ${!canStaffUpdate ? 'disabled' : ''} class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${!canStaffUpdate ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${b.paymentStatus == 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'}">
+                                                        <select name="paymentStatus_${b.bookingId}" data-current="${empty b.paymentStatus ? 'paid' : b.paymentStatus}" ${!canStaffUpdate ? 'disabled' : ''} class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${!canStaffUpdate ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'} ${b.paymentStatus == 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' : b.paymentStatus == 'pending refund' ? 'bg-amber-50 text-amber-600 border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'}">
                                                             <option value="${empty b.paymentStatus ? 'paid' : b.paymentStatus}" selected>${empty b.paymentStatus ? 'paid' : b.paymentStatus}</option>
                                                             <c:if test="${staffCanMarkPaidMap[b.bookingId] && b.paymentStatus != 'paid'}">
                                                                 <option value="paid">paid</option>
@@ -372,7 +372,7 @@
                                                             <option value="cancelled" ${b.playStatus == 'cancelled' ? 'selected' : ''}>cancelled</option>
                                                         </select>
 
-                                                        <select name="paymentStatus_${b.bookingId}" data-current="${empty b.paymentStatus ? 'pending' : b.paymentStatus}" class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border cursor-pointer ${b.paymentStatus == 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'}">
+                                                        <select name="paymentStatus_${b.bookingId}" data-current="${empty b.paymentStatus ? 'pending' : b.paymentStatus}" class="px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border cursor-pointer ${b.paymentStatus == 'failed' ? 'bg-rose-50 text-rose-600 border-rose-100' : b.paymentStatus == 'pending refund' ? 'bg-amber-50 text-amber-600 border-amber-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border-emerald-100' : 'bg-slate-100 text-slate-600 border-slate-200'}">
                                                             <option value="pending" ${empty b.paymentStatus || b.paymentStatus == 'pending' ? 'selected' : ''}>pending</option>
                                                             <option value="deposited" ${b.paymentStatus == 'deposited' ? 'selected' : ''}>deposited</option>
                                                             <option value="paid" ${b.paymentStatus == 'paid' ? 'selected' : ''}>paid</option>
@@ -417,7 +417,7 @@
                                         <h3 class="text-lg font-black text-gray-900 uppercase tracking-tight leading-tight">${b.fieldName}</h3>
                                         <div class="flex flex-col gap-1 items-end shrink-0">
                                             <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.playStatus == 'checked in' ? 'bg-sky-50 text-sky-600 border border-sky-100' : b.playStatus == 'checked out' ? 'bg-orange-50 text-orange-700 border border-orange-200' : b.playStatus == 'completed' ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : b.playStatus == 'cancelled' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-slate-100 text-slate-600 border border-slate-200'}">Play: ${empty b.playStatus ? 'booked' : b.playStatus}</span>
-                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'pending refund' || b.paymentStatus == 'pending refund confirm' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.paymentStatus == 'failed' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Payment: ${empty b.paymentStatus ? 'pending' : b.paymentStatus}</span>
+                                            <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.paymentStatus == 'paid' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : b.paymentStatus == 'deposited' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' : b.paymentStatus == 'pending refund' ? 'bg-amber-50 text-amber-600 border border-amber-100' : b.paymentStatus == 'refunded' ? 'bg-rose-50 text-rose-600 border border-rose-100' : b.paymentStatus == 'failed' ? 'bg-rose-50 text-rose-600 border border-rose-100' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Payment: ${empty b.paymentStatus ? 'pending' : b.paymentStatus}</span>
                                             <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${b.extraPaymentStatus == 'paid extra' ? 'bg-emerald-50 text-[#008751] border border-emerald-100' : b.extraPaymentStatus == 'pending extra' ? 'bg-orange-50 text-orange-700 border border-orange-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}">Extra: ${empty b.extraPaymentStatus ? 'none' : b.extraPaymentStatus}</span>
                                         </div>
                                     </div>
@@ -438,6 +438,13 @@
 
                                         <div class="flex flex-wrap items-center gap-2">
                                             <a href="${pageContext.request.contextPath}/customer/bookingDetail?id=${b.bookingId}" class="bg-gray-900 text-white px-5 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#008751] transition-colors">Chi tiết</a>
+                                            <c:if test="${b.paymentStatus == 'refunded'}">
+                                                <form method="post" action="${pageContext.request.contextPath}/customer/bookingDetail" onsubmit="return confirm('Xác nhận báo cáo chưa nhận được tiền hoàn?');">
+                                                    <input type="hidden" name="id" value="${b.bookingId}">
+                                                    <input type="hidden" name="action" value="report_refund_issue">
+                                                    <button type="submit" class="bg-rose-600 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-500 transition-colors">Báo cáo chưa hoàn tiền</button>
+                                                </form>
+                                            </c:if>
                                             <c:if test="${reviewableBookingMap[b.bookingId]}">
                                                 <c:choose>
                                                     <c:when test="${feedbackBookingMap[b.bookingId]}">
@@ -568,6 +575,13 @@
             if ((currentPaymentStatus === 'deposited' && nextPaymentStatus === 'paid')
                     || (currentExtraPaymentStatus === 'pending extra' && nextExtraPaymentStatus === 'paid extra')) {
                 if (!confirm('Xác nhận thanh toán tiền mặt?')) {
+                    return;
+                }
+            }
+
+            if (currentPaymentStatus === 'pending refund'
+                    && nextPaymentStatus === 'refunded') {
+                if (!confirm('Xác nhận đã hoàn tiền?')) {
                     return;
                 }
             }
