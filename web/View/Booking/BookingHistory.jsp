@@ -441,7 +441,28 @@
                                             <c:if test="${reviewableBookingMap[b.bookingId]}">
                                                 <c:choose>
                                                     <c:when test="${feedbackBookingMap[b.bookingId]}">
-                                                        <span class="px-4 py-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 font-black text-[10px] uppercase tracking-widest">Đã gửi đánh giá</span>
+                                                        <c:set var="fb" value="${feedbackMap[b.bookingId]}" />
+                                                        <div class="w-full rounded-2xl border border-emerald-100 bg-emerald-50/80 p-4 space-y-3">
+                                                            <div class="flex items-center justify-between gap-3">
+                                                                <div class="flex items-center gap-1 text-xl leading-none">
+                                                                    <c:forEach begin="1" end="5" var="star">
+                                                                        <span class="${star <= fb.rating ? 'text-amber-400' : 'text-gray-200'}">★</span>
+                                                                    </c:forEach>
+                                                                </div>
+                                                                <span class="px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest bg-white text-emerald-700 border border-emerald-100">Đã đánh giá</span>
+                                                            </div>
+                                                            <c:if test="${not empty fb.comment}">
+                                                                <p class="text-sm font-semibold text-emerald-900/80">${fb.comment}</p>
+                                                            </c:if>
+                                                            <div class="flex flex-wrap gap-2">
+                                                                <a href="${pageContext.request.contextPath}/customer/feedback?bookingId=${b.bookingId}" class="bg-emerald-600 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 transition-colors">Sửa đánh giá</a>
+                                                                <form method="post" action="${pageContext.request.contextPath}/customer/feedback" onsubmit="return confirm('Bạn có muốn xóa đánh giá này không?');">
+                                                                    <input type="hidden" name="bookingId" value="${b.bookingId}">
+                                                                    <input type="hidden" name="action" value="delete">
+                                                                    <button type="submit" class="bg-white text-rose-600 border border-rose-200 px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-colors">Xóa</button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
                                                     </c:when>
                                                     <c:otherwise>
                                                         <a href="${pageContext.request.contextPath}/customer/feedback?bookingId=${b.bookingId}" class="bg-amber-500 text-white px-4 py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-amber-400 transition-colors">Gửi đánh giá</a>

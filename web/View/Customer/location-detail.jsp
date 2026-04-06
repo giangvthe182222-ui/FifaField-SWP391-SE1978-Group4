@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -110,9 +111,23 @@
                                     <p class="text-lg font-black text-slate-900 uppercase tracking-tight truncate">${f.fieldName}</p>
                                     <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Loại sân: ${f.fieldType}</p>
                                     <p class="text-xs font-bold text-emerald-700 uppercase tracking-wider mt-1">${f.status}</p>
+                                    <div class="mt-2 text-[11px] font-black uppercase tracking-widest text-slate-500">
+                                        <span class="text-amber-400">★</span>
+                                        <c:choose>
+                                            <c:when test="${averageRatingMap[f.fieldId] != null}">
+                                                <fmt:formatNumber value="${averageRatingMap[f.fieldId]}" pattern="0.0"/> sao <span class="text-slate-300">|</span> ${feedbackCountMap[f.fieldId]} đánh giá
+                                            </c:when>
+                                            <c:otherwise>
+                                                Chưa có đánh giá
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </div>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-2">
+                                <a href="${pageContext.request.contextPath}/customer/field-detail?fieldId=${f.fieldId}" class="px-4 py-3 rounded-xl border border-slate-200 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:border-[#008751] hover:text-[#008751] transition-colors text-center">
+                                    Xem chi tiết
+                                </a>
                                 <a href="${pageContext.request.contextPath}/customer/field-schedule?fieldId=${f.fieldId}" class="px-4 py-3 rounded-xl border border-slate-200 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:border-[#008751] hover:text-[#008751] transition-colors text-center">
                                     Xem lịch sân
                                 </a>
