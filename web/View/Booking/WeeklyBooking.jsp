@@ -27,10 +27,25 @@
 </head>
 <body class="antialiased text-gray-900 h-screen flex flex-col overflow-hidden">
 
+    <c:set var="dashboardPath" value="/customer/dashboard" />
     <c:set var="roleNameLower" value="${fn:toLowerCase(sessionScope.user.role.roleName)}" />
+    <c:choose>
+        <c:when test="${roleNameLower eq 'staff'}">
+            <c:set var="dashboardPath" value="/staff/dashboard" />
+        </c:when>
+        <c:when test="${roleNameLower eq 'manager'}">
+            <c:set var="dashboardPath" value="/manager/dashboard" />
+        </c:when>
+    </c:choose>
 
     <!-- HEADER BAR -->
-    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-end px-6 shrink-0 z-20">
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-20">
+        <button type="button"
+                onclick="if (window.history.length > 1) { window.history.back(); } else { window.location.href='${pageContext.request.contextPath}${dashboardPath}'; }"
+                class="px-4 py-2 rounded-xl border-2 border-gray-100 bg-white text-gray-500 flex items-center gap-2 hover:border-[#008751]/30 hover:text-[#008751] transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            <span class="text-[10px] font-black uppercase tracking-widest">Quay lại</span>
+        </button>
         <div class="flex gap-2">
             <a href="${pageContext.request.contextPath}/booking?locationId=${selectedLocationId}&fieldId=${selectedFieldId}"
                class="px-4 py-2 rounded-xl border-2 flex items-center gap-2 transition-all border-gray-100 bg-white text-gray-400 no-underline hover:border-[#008751]/30">
