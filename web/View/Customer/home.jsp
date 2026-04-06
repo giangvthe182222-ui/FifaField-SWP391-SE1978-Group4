@@ -111,7 +111,7 @@
         </nav>
 
         <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <jsp:include page="/View/Layout/CustomerQuickPanel.jsp"/>
+            <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
         </section>
 
         <!-- Hero Section -->

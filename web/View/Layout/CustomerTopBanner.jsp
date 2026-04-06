@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
-<section class="bg-white elite-card shadow-xl shadow-gray-200/50 border border-gray-100 p-10 relative overflow-hidden group">
+<section class="bg-white elite-card rounded-[2.5rem] shadow-xl shadow-gray-200/50 border border-gray-100 p-10 relative overflow-hidden group">
     <div class="absolute -top-10 -right-10 opacity-[0.03] group-hover:scale-110 transition-transform duration-700">
         <i data-lucide="shield" class="w-64 h-64"></i>
     </div>
@@ -23,9 +23,5 @@
                 Đặt sân theo tuần
             </a>
         </div>
-    </div>
-
-    <div class="mt-12">
-        <jsp:include page="/View/Layout/CustomerQuickPanel.jsp"/>
     </div>
 </section>
