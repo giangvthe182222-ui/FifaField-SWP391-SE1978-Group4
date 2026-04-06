@@ -27,17 +27,7 @@
 <jsp:include page="/View/Layout/HeaderCustomer.jsp"/>
 
 <main class="flex-grow max-w-7xl mx-auto w-full px-6 py-12 space-y-8">
-    <section class="space-y-4">
-        <div class="flex items-center gap-3">
-            <a href="${pageContext.request.contextPath}/customer/dashboard" class="w-10 h-10 rounded-xl border border-gray-200 text-gray-500 hover:text-[#008751] hover:border-[#008751] transition-all flex items-center justify-center" aria-label="Quay lai dashboard" title="Quay lai dashboard">
-                <i data-lucide="arrow-left" class="w-5 h-5"></i>
-            </a>
-            <div>
-                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">FIFAFIELD 2026</p>
-                <h1 class="text-3xl md:text-4xl font-black tracking-tight uppercase">Danh sach <span class="text-[#008751]">co so thi dau</span></h1>
-            </div>
-        </div>
-    </section>
+    <jsp:include page="/View/Layout/CustomerTopBanner.jsp"/>
 
     <section class="bg-white rounded-[2rem] border border-gray-100 p-6 shadow-sm">
         <form method="get" action="${pageContext.request.contextPath}/customer/locations" class="grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
