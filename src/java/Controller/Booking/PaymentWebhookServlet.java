@@ -3,6 +3,7 @@ package Controller.Booking;
 import DAO.BookingDAO;
 import DAO.PaymentDAO;
 import DAO.WeeklyBookingGroupDAO;
+import Models.Booking;
 import Models.Payment;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -203,9 +204,51 @@ public class PaymentWebhookServlet extends HttpServlet {
         String paymentMethod = payment.getPaymentMethod() == null ? "" : payment.getPaymentMethod().trim().toLowerCase();
         boolean depositPlan = paymentMethod.contains("|deposit");
         if (depositPlan) {
+            Booking booking = bookingDAO.getBookingById(bookingId);
+            if (booking != null && "deposited".equals(normalizeBookingState(booking.getPaymentStatus()))) {
+                return true;
+            }
             return bookingDAO.markBookingDeposited(bookingId);
         }
-        return bookingDAO.markBookingPaid(bookingId);
+
+        Booking booking = bookingDAO.getBookingById(bookingId);
+        if (booking == null) {
+            return false;
+        }
+
+        String paymentStatus = normalizeBookingState(booking.getPaymentStatus());
+        if (!"paid".equals(paymentStatus)) {
+            if (!bookingDAO.markBookingPaid(bookingId)) {
+                return false;
+            }
+            booking = bookingDAO.getBookingById(bookingId);
+            if (booking == null) {
+                return false;
+            }
+        }
+
+        String playStatus = normalizeBookingState(booking.getPlayStatus());
+        if (!"checked out".equals(playStatus)) {
+            return true;
+        }
+
+        String extraPaymentStatus = normalizeBookingState(booking.getExtraPaymentStatus());
+        if ("pending extra".equals(extraPaymentStatus)) {
+            if (!bookingDAO.updateSplitStates(bookingId, "checked out", "paid", "paid extra")) {
+                return false;
+            }
+        }
+
+        Booking latest = bookingDAO.getBookingById(bookingId);
+        if (latest != null && "completed".equals(normalizeBookingState(latest.getPlayStatus()))) {
+            return true;
+        }
+
+        return bookingDAO.updateStatus(bookingId, "completed");
+    }
+
+    private String normalizeBookingState(String value) {
+        return value == null ? "" : value.trim().toLowerCase();
     }
 
     private BigDecimal resolveDepositAmount(BigDecimal totalAmount) {

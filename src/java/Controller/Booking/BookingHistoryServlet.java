@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.time.LocalDateTime;
 
@@ -94,7 +93,6 @@ public class BookingHistoryServlet extends HttpServlet {
         }
 
         FeedbackDAO feedbackDAO = new FeedbackDAO();
-        Set<UUID> feedbackBookingIds = feedbackDAO.getFeedbackBookingIdsByCustomer(userId);
         Map<UUID, Boolean> feedbackBookingMap = new HashMap<>();
         Map<UUID, Feedback> feedbackMap = new HashMap<>();
         Map<UUID, Boolean> reviewableBookingMap = new HashMap<>();
@@ -103,7 +101,7 @@ public class BookingHistoryServlet extends HttpServlet {
             Feedback feedback = feedbackDAO.getFeedbackByBookingAndCustomer(booking.getBookingId(), userId);
             feedbackMap.put(booking.getBookingId(), feedback);
             feedbackBookingMap.put(booking.getBookingId(), feedback != null);
-            boolean reviewable = "completed".equalsIgnoreCase(booking.getStatus())
+            boolean reviewable = "completed".equalsIgnoreCase(booking.getPlayStatus())
                     && booking.getBookingDate() != null
                     && booking.getEndTime() != null
                     && !LocalDateTime.of(booking.getBookingDate(), booking.getEndTime()).isAfter(now);
