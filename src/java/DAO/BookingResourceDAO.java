@@ -152,6 +152,73 @@ public class BookingResourceDAO {
         }
     }
 
+    boolean applyCashSettlementForPaidExtra(Connection conn,
+                                            UUID bookingId,
+                                            String previousPaymentStatus,
+                                            String previousExtraPaymentStatus,
+                                            String nextPaymentStatus,
+                                            String nextExtraPaymentStatus) throws SQLException {
+        String previousExtra = normalizeStatus(previousExtraPaymentStatus);
+        String nextExtra = normalizeStatus(nextExtraPaymentStatus);
+        if (!BookingStateDAO.STATUS_PENDING_EXTRA.equals(previousExtra)
+                || !BookingStateDAO.EXTRA_PAYMENT_STATUS_PAID.equals(nextExtra)) {
+            return true;
+        }
+
+        BookingStateDAO.LatestPaymentInfo latestPaymentInfo = getLatestPaymentInfo(conn, bookingId);
+        if (latestPaymentInfo == null) {
+            return false;
+        }
+
+        BigDecimal totalPrice = getBookingTotalPrice(conn, bookingId).max(BigDecimal.ZERO);
+        BigDecimal currentPaidAmount = latestPaymentInfo.amount == null
+                ? BigDecimal.ZERO
+                : latestPaymentInfo.amount.max(BigDecimal.ZERO);
+
+        String settledPaymentStatus = normalizeStatus(nextPaymentStatus);
+        if (settledPaymentStatus.isEmpty()) {
+            settledPaymentStatus = normalizeStatus(previousPaymentStatus);
+        }
+
+        BigDecimal supplementarySettled = BigDecimal.ZERO;
+        if (BookingStateDAO.STATUS_DEPOSITED.equals(settledPaymentStatus)) {
+            supplementarySettled = estimatePendingExtraOutstanding(
+                    totalPrice,
+                    currentPaidAmount,
+                    latestPaymentInfo.paymentMethod);
+        } else if (BookingStateDAO.STATUS_PAID.equals(settledPaymentStatus)) {
+            supplementarySettled = totalPrice.subtract(currentPaidAmount);
+        }
+
+        if (supplementarySettled.compareTo(BigDecimal.ZERO) < 0) {
+            supplementarySettled = BigDecimal.ZERO;
+        }
+
+        BigDecimal maxCollectable = totalPrice.subtract(currentPaidAmount);
+        if (maxCollectable.compareTo(BigDecimal.ZERO) < 0) {
+            maxCollectable = BigDecimal.ZERO;
+        }
+        if (supplementarySettled.compareTo(maxCollectable) > 0) {
+            supplementarySettled = maxCollectable;
+        }
+
+        if (supplementarySettled.compareTo(BigDecimal.ZERO) <= 0) {
+            return true;
+        }
+
+        BigDecimal newPaidAmount = currentPaidAmount.add(supplementarySettled);
+        if (newPaidAmount.compareTo(totalPrice) > 0) {
+            newPaidAmount = totalPrice;
+        }
+
+        String sql = "UPDATE Payment SET amount = ?, payment_status = 'SUCCESS', payment_time = SYSDATETIME() WHERE booking_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBigDecimal(1, newPaidAmount.max(BigDecimal.ZERO));
+            ps.setString(2, bookingId.toString());
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     BigDecimal resolveCashSettledAmount(Connection conn,
                                         UUID bookingId,
                                         String nextExtraPaymentStatus,

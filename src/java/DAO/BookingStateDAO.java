@@ -331,6 +331,17 @@ public class BookingStateDAO {
                 return false;
             }
 
+            if (!bookingResourceDAO.applyCashSettlementForPaidExtra(
+                    conn,
+                    bookingId,
+                    snapshot.paymentStatus,
+                    snapshot.extraPaymentStatus,
+                    normalizedPaymentStatus,
+                    normalizedExtraPaymentStatus)) {
+                conn.rollback();
+                return false;
+            }
+
             if (!bookingResourceDAO.applyCashSettlementForDepositedUpgrade(
                     conn,
                     bookingId,

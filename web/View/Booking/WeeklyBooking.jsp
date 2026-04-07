@@ -27,6 +27,12 @@
 </head>
 <body class="antialiased text-gray-900 h-screen flex flex-col overflow-hidden">
 
+    <%--
+        dashboardPath được xác định theo role hiện tại để nút "Quay lại" đi đúng trang:
+        - customer -> /customer/dashboard
+        - staff    -> /staff/dashboard
+        - manager  -> /manager/dashboard
+    --%>
     <c:set var="dashboardPath" value="/customer/dashboard" />
     <c:set var="roleNameLower" value="${fn:toLowerCase(sessionScope.user.role.roleName)}" />
     <c:choose>
@@ -63,6 +69,16 @@
     <form method="post" action="${pageContext.request.contextPath}/booking/weekly-confirm" id="weeklyForm" class="flex-1 flex overflow-hidden">
         
         <!-- HIDDEN STATE -->
+        <%--
+            Các hidden input này là state gốc mà servlet weekly-confirm cần để tạo booking:
+            - fieldId/locationId: sân và chi nhánh đang chọn
+            - weekStart/weekCount: cửa sổ tuần đang thao tác
+            - action=confirm: báo servlet đây là hành động xác nhận
+
+            2 container hidden bên dưới được JS tự sinh <input name="scheduleIds"> để submit:
+            - autoRecurringSelections: các ca được tự động nhân bản theo tuần
+            - persistedCarrySelections: ca đã chọn từ tuần khác, vẫn cần giữ khi chuyển tuần
+        --%>
         <input type="hidden" name="fieldId"    id="hFieldId"    value="${selectedFieldId}">
         <input type="hidden" name="locationId" id="hLocationId" value="${selectedLocationId}">
         <input type="hidden" name="weekStart"  id="hWeekStart"  value="${weekStart}">
@@ -196,6 +212,10 @@
                     </c:if>
 
                     <div class="flex items-center gap-3">
+                        <%--
+                            weekCount là số tuần lặp (4..12).
+                            Khi đổi giá trị này, JS sẽ tính lại số ca lặp tự động dựa trên anchor slot đã chọn.
+                        --%>
                         <select id="weekCountSelect" onchange="filterSubmit()"
                                 class="px-4 py-2 bg-gray-50 border border-gray-100 rounded-xl font-black text-[10px] text-gray-700 uppercase tracking-widest outline-none input-focus cursor-pointer">
                             <c:forEach begin="4" end="12" var="wc">
@@ -221,6 +241,12 @@
                         </div>
                     </c:when>
                     <c:otherwise>
+                        <%--
+                            Chú ý cơ chế chọn slot:
+                            - Checkbox chỉ render cho slot "available"
+                            - Mỗi ô có data-date + data-start để JS xác định "chu kỳ lặp" theo thứ + giờ
+                            - slot-id là scheduleId thực tế sẽ submit về backend
+                        --%>
                         <div class="flex items-center justify-between mb-4">
                             <div class="flex gap-2">
                                 <button type="button" onclick="selectAll()" class="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest border-2 border-[#008751] text-[#008751] rounded-lg hover:bg-emerald-50 transition-all">Tất cả</button>
@@ -432,6 +458,14 @@
     </form>
 
     <!-- DATA FOR JS -->
+    <%--
+        Khối JSON bridge từ server -> client:
+        - slotPricesData: map scheduleId -> price (cho slot nhìn thấy ở tuần hiện tại)
+        - allRangeSchedulesData: toàn bộ lịch trong range tuần được phép lặp
+        - selectedScheduleIdsData: tập schedule đã chọn trước đó (persist qua query param)
+        - selectedSchedulePricesData: giá của các slot đã chọn (kể cả slot không còn ở tuần hiện tại)
+        - anchorScheduleIdsData: các slot "gốc" dùng làm mốc lặp 7 ngày
+    --%>
     <script id="slotPricesData" type="application/json">
     {
     <c:forEach var="row" items="${gridRows}" varStatus="rSt">
@@ -472,6 +506,7 @@
     (function () {
         lucide.createIcons();
 
+        // Parse JSON an toàn: nếu dữ liệu lỗi format thì fallback object/array rỗng.
         var rawPricesJson = (document.getElementById('slotPricesData') || {}).textContent || '{}';
         var slotPrices = {};
         try { slotPrices = JSON.parse(rawPricesJson); } catch(e) {}
@@ -510,6 +545,7 @@
             return t.length >= 5 ? t.substring(0, 5) : t;
         }
 
+        // index để tra nhanh slot theo (date|start) hoặc theo id.
         var scheduleByDateStart = {};
         var scheduleById = {};
         allRangeSchedules.forEach(function(s) {
@@ -541,6 +577,7 @@
             });
             return out;
         }
+        // Lấy tất cả scheduleIds sẽ submit: checked hiện tại + autoRecurring + carrySelections.
         function getAllSubmittedScheduleIds() {
             return unique(
                 getChecked().map(function(cb){ return cb.value; })
@@ -560,6 +597,8 @@
             var d = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
             return isNaN(d.getTime()) ? null : d;
         }
+        // key chu kỳ lặp: dayOfWeek|HH:mm. Ví dụ "2|18:00".
+        // Dùng key này để nhân bản slot sang các tuần kế tiếp cùng thứ cùng giờ.
         function recurringKey(dateStr, startTimeStr) {
             var d = parseIsoDate(dateStr);
             var start = normalizeTime(startTimeStr);
@@ -577,6 +616,7 @@
                 key: recurringKey(date, start)
             };
         }
+        // Khi bỏ chọn 1 anchor, toàn bộ chuỗi lặp cùng key sẽ bị xóa khỏi persisted set.
         function clearSeriesByKey(seriesKey) {
             if (!seriesKey) return;
             Object.keys(persistedAnchorIds).forEach(function(anchorId) {
@@ -603,12 +643,15 @@
             if (!container) return;
             container.innerHTML = '';
 
+            // weekCount luôn được đồng bộ ngược vào hidden input để backend nhận giá trị mới nhất.
             var weekCountSel = document.getElementById('weekCountSelect');
             var weekCount = parseInt(weekCountSel ? weekCountSel.value : '4', 10);
             if (isNaN(weekCount) || weekCount < 4) weekCount = 4;
             var hWeekCount = document.getElementById('hWeekCount');
             if (hWeekCount) hWeekCount.value = String(weekCount);
 
+            // baseIds là các slot user check trực tiếp trong tuần hiện tại.
+            // autoIds là các slot được tự động lặp từ anchor qua các tuần sau.
             var checked = getChecked();
             var baseIds = {};
             checked.forEach(function(cb) { baseIds[String(cb.value)] = true; });
@@ -623,6 +666,7 @@
                 var baseStart = normalizeTime(anchor.start);
                 if (!baseDate || !baseStart) return;
 
+                // Lặp từ tuần thứ 2 tới tuần thứ N (w=1..weekCount-1) theo bước 7 ngày.
                 for (var w = 1; w < weekCount; w++) {
                     var targetDate = addDays(baseDate, w * 7);
                     if (!targetDate) continue;
@@ -630,6 +674,7 @@
                     if (!target) { skipped++; continue; }
                     var targetStatus = String(target.status || '').toLowerCase();
                     var targetId = String(target.id || '');
+                    // Bỏ qua nếu slot mục tiêu không available hoặc trùng slot user đã check tay.
                     if (targetStatus !== 'available' || !targetId || baseIds[targetId]) { skipped++; continue; }
                     autoIds[targetId] = true;
                 }
@@ -643,6 +688,7 @@
                 container.appendChild(input);
             });
 
+            // Notice giúp user biết số ca auto thêm và số ca bị skip do không khả dụng.
             if (notice) {
                 var autoCount = Object.keys(autoIds).length;
                 if (autoCount > 0 || skipped > 0) {
@@ -655,6 +701,10 @@
             }
         }
 
+        // buildSelectedIdsForNavigation giữ state qua lần đổi tuần/lọc:
+        // - giữ selected cũ
+        // - bỏ selected thuộc tuần đang hiện nếu user đã uncheck
+        // - thêm checked hiện tại + auto ids
         function buildSelectedIdsForNavigation() {
             var merged = {};
             Object.keys(persistedSelectedIds).forEach(function(id) { merged[id] = true; });
@@ -666,6 +716,7 @@
 
         function buildAnchorIdsForNavigation() { return Object.keys(persistedAnchorIds); }
 
+        // carrySelections chỉ chứa slot "ngoài màn hình hiện tại" để không đúp với checkbox visible.
         function rebuildCarrySelections() {
             var container = document.getElementById('persistedCarrySelections');
             if (!container) return;
@@ -691,6 +742,11 @@
             persistedSelectedIds = next;
         }
 
+        // Công thức tổng tiền weekly:
+        // fieldSum = tổng tiền các ca đã chọn
+        // equipTotal = tổng giá vật tư mỗi ca * số ca (vật tư áp dụng cho mỗi buổi)
+        // total = fieldSum sau giảm voucher + equipTotal
+        // dueNow = total hoặc 30% total (nếu chọn đặt cọc)
         function updateSummary() {
             var selectedIds = getAllSubmittedScheduleIds();
             var count       = selectedIds.length;
@@ -749,6 +805,8 @@
         window.onCellChange = function(cb) {
             var sid = String(cb.value);
             var meta = scheduleMeta(sid, cb.getAttribute('data-date'), cb.getAttribute('data-start'));
+            // checked: slot trở thành anchor để sinh chuỗi tuần.
+            // unchecked: xóa cả chuỗi cùng recurring key để tránh treo selection cũ.
             if (cb.checked) persistedAnchorIds[sid] = true;
             else {
                 clearSeriesByKey(meta.key);
@@ -763,6 +821,7 @@
         };
 
         window.selectAll = function() {
+            // Chọn tất cả slot available của tuần hiện tại và xem mỗi slot là 1 anchor.
             document.querySelectorAll('.slot-cb').forEach(function(cb){
                 if (!cb.checked) cb.checked = true;
                 persistedAnchorIds[String(cb.value)] = true;
@@ -775,6 +834,7 @@
         };
 
         window.clearAll = function() {
+            // Xóa sạch cả lựa chọn hiện tại lẫn persisted state để reset hoàn toàn.
             document.querySelectorAll('.slot-cb').forEach(function(cb){
                 cb.checked = false; setCellVisual(cb, false);
             });
@@ -812,6 +872,7 @@
             if (fieldVal) params.set('fieldId', fieldVal);
             if (ws) params.set('weekStart', ws);
             if (wc) params.set('weekCount', wc);
+            // Giữ payment option + selectedIds + anchorIds trên URL để khi reload không mất state.
             var paymentOptionEl = document.querySelector('input[name="bookingPaymentOption"]:checked');
             if (paymentOptionEl && paymentOptionEl.value) params.set('bookingPaymentOption', paymentOptionEl.value);
             var selectedIds = buildSelectedIdsForNavigation();
@@ -825,6 +886,7 @@
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 var nextUrl = new URL(this.href, window.location.origin);
+                // Điều hướng tuần nhưng vẫn mang theo state lựa chọn.
                 var paymentOptionEl = document.querySelector('input[name="bookingPaymentOption"]:checked');
                 if (paymentOptionEl && paymentOptionEl.value) {
                     nextUrl.searchParams.set('bookingPaymentOption', paymentOptionEl.value);
@@ -847,9 +909,11 @@
                 document.getElementById('noSelectMsg').classList.remove('hidden');
                 return false;
             }
+            // Confirm box hiển thị tổng và số tiền cần trả ngay để user tránh nhầm lẫn trước khi tạo booking.
             return confirm('Tạo lịch tuần cho ' + count + ' ca và chuyển đến trang xác nhận?\nTổng tiền: ' + document.getElementById('sumTotal').textContent + '\nThanh toán hôm nay: ' + document.getElementById('sumDueNow').textContent);
         };
 
+        // Rehydrate UI từ persisted state sau khi đổi tuần/lọc xong.
         document.querySelectorAll('.slot-cb').forEach(function(cb) {
             if (persistedSelectedIds[String(cb.value)]) {
                 cb.checked = true;

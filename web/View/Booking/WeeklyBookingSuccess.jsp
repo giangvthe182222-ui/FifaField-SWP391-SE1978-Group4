@@ -18,6 +18,12 @@
 </head>
 <body class="antialiased text-gray-900 flex flex-col min-h-screen">
 
+<%--
+    Header động theo vai trò đăng nhập để giữ đúng trải nghiệm điều hướng:
+    - STAFF   -> HeaderStaff
+    - MANAGER -> HeaderManager
+    - còn lại -> HeaderCustomer
+--%>
 <c:choose>
     <c:when test="${sessionScope.user.role.roleName eq 'STAFF' or sessionScope.user.role.roleName eq 'staff'}">
         <jsp:include page="/View/Layout/HeaderStaff.jsp"/>
@@ -33,6 +39,11 @@
 <main class="flex-grow max-w-4xl mx-auto px-6 py-16 w-full space-y-10">
 
     <%-- Success hero --%>
+    <%--
+        Hero chỉ mang tính thông báo trạng thái:
+        booking weekly đã tạo xong nhưng chưa hoàn tất nếu chưa thanh toán.
+        Dòng mô tả nhấn mạnh deadline 2 giờ để user chú ý.
+    --%>
     <div class="text-center space-y-4">
         <div class="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto shadow-xl shadow-emerald-200/50">
             <i data-lucide="calendar-check" class="w-12 h-12 text-[#008751]"></i>
@@ -72,6 +83,10 @@
         <c:otherwise>
 
         <%-- Calculate total --%>
+        <%--
+            grandTotal cộng tất cả b.totalPrice của từng ca trong nhóm tuần.
+            Lưu ý totalPrice đã là tổng của ca (tiền sân + vật tư nếu có).
+        --%>
         <c:set var="grandTotal" value="0"/>
         <c:forEach var="b" items="${bookings}">
             <c:set var="grandTotal" value="${grandTotal + b.totalPrice}"/>
@@ -112,6 +127,10 @@
                         <fmt:formatNumber value="${b.totalPrice}" type="currency" currencySymbol="₫" maxFractionDigits="0"/>
                     </td>
                     <td class="px-6 py-4 text-center text-xs font-black uppercase tracking-wide text-amber-600">
+                        <%--
+                            Trạng thái hiển thị dạng playStatus/paymentStatus để staff/customer
+                            nhìn nhanh được tình hình của từng ca trong nhóm.
+                        --%>
                         ${empty b.playStatus ? 'booked' : b.playStatus} / ${empty b.paymentStatus ? 'pending' : b.paymentStatus}
                     </td>
                 </tr>
@@ -132,6 +151,11 @@
     </div>
 
     <c:if test="${not empty weeklyGroupId and not empty bookings}">
+        <%--
+            Nút CTA thanh toán nhóm tuần:
+            - weeklyGroupId: khóa để PaymentServlet load đúng nhóm booking
+            - paymentOption: full/deposit, ưu tiên giá trị đã chọn trước đó
+        --%>
         <div class="text-center">
             <a href="${pageContext.request.contextPath}/payment?weeklyGroupId=${weeklyGroupId}&paymentOption=${empty weeklyPaymentOption ? 'full' : weeklyPaymentOption}"
                class="inline-flex items-center justify-center gap-2 px-10 py-4 bg-[#008751] hover:bg-[#006d41] text-white font-black uppercase tracking-widest text-sm rounded-2xl transition-all shadow-lg shadow-[#008751]/20">
@@ -142,6 +166,11 @@
     </c:if>
 
     <%-- Action buttons --%>
+    <%--
+        2 hướng hành động sau khi tạo weekly booking:
+        - Xem lịch sử để theo dõi trạng thái
+        - Quay lại flow weekly để tạo một nhóm tuần mới
+    --%>
     <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <a href="${historyPath}"
            class="flex items-center justify-center gap-2 px-8 py-4 bg-white border-2 border-gray-200 hover:border-[#008751] text-gray-700 hover:text-[#008751] font-black uppercase tracking-widest text-sm rounded-2xl transition-all">
