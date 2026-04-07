@@ -172,7 +172,7 @@ public class PaymentServlet extends HttpServlet {
                 return;
             }
 
-            if (!canStartRemainingPayment(booking, dbPayment)) {
+            if (!canStartRemainingPayment(bookingDAO, bookingId, booking, dbPayment)) {
                 session.setAttribute("flash_error", "Remaining payment is only available for deposited or checked out bookings.");
                 response.sendRedirect(request.getContextPath() + bookingHistoryPath);
                 return;
@@ -200,7 +200,7 @@ public class PaymentServlet extends HttpServlet {
                     ? (String) session.getAttribute(accountNumberKey)
                     : DEFAULT_ACCOUNT_NUMBER;
 
-            BigDecimal remainingAmount = resolveRemainingAmount(booking, dbPayment);
+            BigDecimal remainingAmount = resolveRemainingAmount(bookingDAO, bookingId, booking, dbPayment);
             if (remainingAmount.compareTo(BigDecimal.ZERO) <= 0) {
                 if (!applyBookingStatusAfterRemainingSuccess(bookingDAO, bookingId)) {
                     session.setAttribute("flash_error", "No remaining amount but booking status update failed.");
@@ -303,6 +303,14 @@ public class PaymentServlet extends HttpServlet {
             }
 
             BigDecimal supplementaryAmount = dbPayment.getAmount();
+            String bookingPaymentStatus = getBookingPaymentStatus(booking);
+            String bookingExtraStatus = normalizeBookingState(booking.getExtraPaymentStatus());
+
+            if ("paid".equals(bookingPaymentStatus) && "pending extra".equals(bookingExtraStatus)) {
+                // After deposited -> paid normalization, supplementary charge must be the true outstanding delta.
+                supplementaryAmount = bookingDAO.getOutstandingAmount(bookingId);
+            }
+
             if (supplementaryAmount == null || supplementaryAmount.compareTo(BigDecimal.ZERO) <= 0) {
                 supplementaryAmount = bookingDAO.getSupplementaryAmountByBookingId(bookingId);
             }
@@ -1039,7 +1047,7 @@ public class PaymentServlet extends HttpServlet {
         return normalizeBookingState(booking.getPaymentStatus());
     }
 
-    private boolean canStartRemainingPayment(Booking booking, Payment payment) {
+    private boolean canStartRemainingPayment(BookingDAO bookingDAO, UUID bookingId, Booking booking, Payment payment) {
         if (booking == null || payment == null) {
             return false;
         }
@@ -1055,10 +1063,17 @@ public class PaymentServlet extends HttpServlet {
             return false;
         }
 
-        return resolveRemainingAmount(booking, payment).compareTo(BigDecimal.ZERO) > 0;
+        return resolveRemainingAmount(bookingDAO, bookingId, booking, payment).compareTo(BigDecimal.ZERO) > 0;
     }
 
-    private BigDecimal resolveRemainingAmount(Booking booking, Payment payment) {
+    private BigDecimal resolveRemainingAmount(BookingDAO bookingDAO, UUID bookingId, Booking booking, Payment payment) {
+        if (bookingDAO != null && bookingId != null) {
+            BigDecimal outstanding = bookingDAO.getOutstandingAmount(bookingId);
+            if (outstanding != null && outstanding.compareTo(BigDecimal.ZERO) > 0) {
+                return outstanding;
+            }
+        }
+
         BigDecimal totalAmount = booking != null && booking.getTotalPrice() != null
                 ? booking.getTotalPrice()
                 : BigDecimal.ZERO;
