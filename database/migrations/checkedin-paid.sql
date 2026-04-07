@@ -18,7 +18,6 @@ DECLARE @PaymentDeadline DATETIME2 = DATEADD(MINUTE, 15, @Now);
 DECLARE @StartTime TIME;
 DECLARE @EndTime TIME;
 DECLARE @Price DECIMAL(10,2);
-DECLARE @DepositAmount DECIMAL(10,2);
 
 IF @NowTime < '00:30:00'
 BEGIN
@@ -79,12 +78,6 @@ BEGIN
     SET @Price = 300000;
 END;
 
-SET @DepositAmount = ROUND(@Price * 0.30, 0);
-IF @DepositAmount IS NULL OR @DepositAmount <= 0
-BEGIN
-    SET @DepositAmount = @Price;
-END;
-
 BEGIN TRY
     BEGIN TRANSACTION;
 
@@ -128,7 +121,7 @@ BEGIN TRY
             @ScheduleId,
             @Now,
             N'checked in',
-            N'deposited',
+            N'paid',
             N'none',
             @Price,
             @PaymentDeadline
@@ -154,7 +147,7 @@ BEGIN TRY
             @ScheduleId,
             @Now,
             N'checked in',
-            N'deposited',
+            N'paid',
             N'none',
             @Price
         );
@@ -171,8 +164,8 @@ BEGIN TRY
     VALUES (
         @PaymentId,
         @BookingId,
-        @DepositAmount,
-        N'payOS|deposit',
+        @Price,
+        N'cash',
         N'SUCCESS',
         @Now
     );
@@ -199,11 +192,10 @@ SELECT
     @StartTime AS start_time,
     @EndTime AS end_time,
     @Price AS total_price,
-    @DepositAmount AS paid_amount,
     N'checked in' AS play_status,
-    N'deposited' AS payment_status,
+    N'paid' AS payment_status,
     N'none' AS extra_payment_status,
-    N'checkedin-deposited' AS seed_type;
+    N'checkedin-paid' AS seed_type;
 
 SELECT
     b.booking_id,
