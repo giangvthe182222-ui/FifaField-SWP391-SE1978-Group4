@@ -18,6 +18,7 @@ import Models.BookingEquipmentViewModel;
 import Models.Field;
 import Models.Location;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class BookingDAO {
 
@@ -42,6 +43,7 @@ public class BookingDAO {
     private static final String PAYMENT_STATUS_FAILED = "failed";
     private static final String EXTRA_PAYMENT_STATUS_NONE = "none";
     private static final String EXTRA_PAYMENT_STATUS_PAID = "paid extra";
+    private static final BigDecimal DEPOSIT_RATE = new BigDecimal("0.30");
 
         private static final Set<String> SUPPORTED_PLAY_STATUSES = new HashSet<>(Arrays.asList(
             PLAY_STATUS_BOOKED,
@@ -2003,7 +2005,7 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
 
                 if (STATUS_PAID.equals(bookingPaymentStatus)
                         && STATUS_PENDING_EXTRA.equals(bookingExtraStatus)) {
-                    return true;
+                    return totalPrice.compareTo(paidAmount) > 0;
                 }
 
                 if (STATUS_DEPOSITED.equals(bookingPaymentStatus)) {
@@ -2160,6 +2162,123 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
         }
     }
 
+    private boolean applyCashSettlementForDepositedUpgrade(Connection conn,
+            UUID bookingId,
+            String previousPaymentStatus,
+            String nextPaymentStatus,
+            String nextExtraPaymentStatus) throws SQLException {
+        if (!STATUS_DEPOSITED.equals(normalizeStatus(previousPaymentStatus))
+                || !STATUS_PAID.equals(normalizeStatus(nextPaymentStatus))) {
+            return true;
+        }
+
+        LatestPaymentInfo latestPaymentInfo = getLatestPaymentInfo(conn, bookingId);
+        if (latestPaymentInfo == null) {
+            return false;
+        }
+
+        BigDecimal currentPaidAmount = latestPaymentInfo.amount == null
+                ? BigDecimal.ZERO
+                : latestPaymentInfo.amount;
+        BigDecimal settledAmount = resolveCashSettledAmount(
+                conn,
+                bookingId,
+                nextExtraPaymentStatus,
+                currentPaidAmount,
+                latestPaymentInfo.paymentMethod);
+        String sql = "UPDATE Payment SET amount = ?, payment_status = 'SUCCESS', payment_time = SYSDATETIME() WHERE booking_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBigDecimal(1, settledAmount);
+            ps.setString(2, bookingId.toString());
+            return ps.executeUpdate() > 0;
+        }
+    }
+
+    private BigDecimal resolveCashSettledAmount(Connection conn,
+            UUID bookingId,
+            String nextExtraPaymentStatus,
+            BigDecimal currentPaidAmount,
+            String paymentMethod) throws SQLException {
+        BigDecimal totalPrice = getBookingTotalPrice(conn, bookingId);
+        if (!STATUS_PENDING_EXTRA.equals(normalizeStatus(nextExtraPaymentStatus))) {
+            return totalPrice.max(BigDecimal.ZERO);
+        }
+
+        BigDecimal supplementaryOutstanding = estimatePendingExtraOutstanding(
+                totalPrice,
+                currentPaidAmount == null ? BigDecimal.ZERO : currentPaidAmount,
+                paymentMethod);
+
+        BigDecimal settledAmount = totalPrice.subtract(supplementaryOutstanding);
+        if (currentPaidAmount != null && settledAmount.compareTo(currentPaidAmount) < 0) {
+            settledAmount = currentPaidAmount;
+        }
+        if (settledAmount.compareTo(totalPrice) > 0) {
+            settledAmount = totalPrice;
+        }
+        return settledAmount.max(BigDecimal.ZERO);
+    }
+
+    private BigDecimal estimatePendingExtraOutstanding(BigDecimal totalPrice,
+            BigDecimal currentPaidAmount,
+            String paymentMethod) {
+        if (totalPrice == null || totalPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal paidAmount = currentPaidAmount == null ? BigDecimal.ZERO : currentPaidAmount;
+        String normalizedPaymentMethod = normalizeStatus(paymentMethod);
+
+        if (normalizedPaymentMethod.contains("|deposit")
+                && paidAmount.compareTo(BigDecimal.ZERO) > 0) {
+            BigDecimal estimatedBookedTotal = paidAmount.divide(DEPOSIT_RATE, 0, RoundingMode.HALF_UP);
+            BigDecimal supplementaryOutstanding = totalPrice.subtract(estimatedBookedTotal);
+            if (supplementaryOutstanding.compareTo(BigDecimal.ZERO) < 0) {
+                return BigDecimal.ZERO;
+            }
+            if (supplementaryOutstanding.compareTo(totalPrice) > 0) {
+                return totalPrice;
+            }
+            return supplementaryOutstanding;
+        }
+
+        BigDecimal outstandingByPaidAmount = totalPrice.subtract(paidAmount);
+        if (outstandingByPaidAmount.compareTo(BigDecimal.ZERO) < 0) {
+            return BigDecimal.ZERO;
+        }
+        if (outstandingByPaidAmount.compareTo(totalPrice) > 0) {
+            return totalPrice;
+        }
+        return outstandingByPaidAmount;
+    }
+
+    private LatestPaymentInfo getLatestPaymentInfo(Connection conn, UUID bookingId) throws SQLException {
+        String sql = "SELECT TOP 1 amount, payment_method FROM Payment WHERE booking_id = ? ORDER BY payment_time DESC";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, bookingId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (!rs.next()) {
+                    return null;
+                }
+                return new LatestPaymentInfo(rs.getBigDecimal("amount"), rs.getString("payment_method"));
+            }
+        }
+    }
+
+    private BigDecimal getBookingTotalPrice(Connection conn, UUID bookingId) throws SQLException {
+        String sql = "SELECT ISNULL(total_price, 0) AS total_price FROM Booking WHERE booking_id = ?";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, bookingId.toString());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    BigDecimal totalPrice = rs.getBigDecimal("total_price");
+                    return totalPrice == null ? BigDecimal.ZERO : totalPrice;
+                }
+            }
+        }
+        return BigDecimal.ZERO;
+    }
+
 //=============================================================================================GIVE BACK EQUIPMENTS===============================================================================================//
     /**
      * Releases schedule slot and returns all booked equipment quantity to
@@ -2253,6 +2372,16 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
             }
 
             if (updatedRows <= 0) {
+                conn.rollback();
+                return false;
+            }
+
+            if (!applyCashSettlementForDepositedUpgrade(
+                    conn,
+                    bookingId,
+                    snapshot.paymentStatus,
+                    normalizedPaymentStatus,
+                    normalizedExtraPaymentStatus)) {
                 conn.rollback();
                 return false;
             }
@@ -2515,6 +2644,17 @@ public boolean updateStatus(UUID bookingId, String newStatus) {
             this.playStatus = playStatus;
             this.paymentStatus = paymentStatus;
             this.extraPaymentStatus = extraPaymentStatus;
+        }
+    }
+
+    private static class LatestPaymentInfo {
+
+        private final BigDecimal amount;
+        private final String paymentMethod;
+
+        private LatestPaymentInfo(BigDecimal amount, String paymentMethod) {
+            this.amount = amount;
+            this.paymentMethod = paymentMethod;
         }
     }
 

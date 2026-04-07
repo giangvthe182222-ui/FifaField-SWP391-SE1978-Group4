@@ -323,6 +323,13 @@
                     || (currentExtra === 'pending extra' && nextExtra === 'paid extra')) {
                 if (!confirm('Xác nhận thanh toán tiền mặt?')) {
                     e.preventDefault();
+                    return;
+                }
+            }
+
+            if (currentPayment === 'pending refund' && nextPayment === 'refunded') {
+                if (!confirm('Xác nhận đã hoàn tiền cho khách?')) {
+                    e.preventDefault();
                 }
             }
         });
