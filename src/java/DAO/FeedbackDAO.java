@@ -178,6 +178,27 @@ public class FeedbackDAO {
         return null;
     }
 
+    public Double getAverageRatingByLocation(UUID locationId) {
+        String sql = "SELECT AVG(CAST(fb.rating AS DECIMAL(10,2))) AS avg_rating "
+                + "FROM Feedback fb "
+                + "INNER JOIN Booking b ON b.booking_id = fb.booking_id "
+                + "INNER JOIN Field f ON f.field_id = b.field_id "
+                + "WHERE f.location_id = ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, locationId.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                double value = rs.getDouble("avg_rating");
+                return rs.wasNull() ? null : value;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public int getFeedbackCountByField(UUID fieldId) {
         String sql = "SELECT COUNT(*) AS feedback_count "
                 + "FROM Feedback fb "
@@ -197,9 +218,29 @@ public class FeedbackDAO {
         return 0;
     }
 
+    public int getFeedbackCountByLocation(UUID locationId) {
+        String sql = "SELECT COUNT(*) AS feedback_count "
+                + "FROM Feedback fb "
+                + "INNER JOIN Booking b ON b.booking_id = fb.booking_id "
+                + "INNER JOIN Field f ON f.field_id = b.field_id "
+                + "WHERE f.location_id = ?";
+
+        try (Connection con = DBConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, locationId.toString());
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("feedback_count");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     public List<FieldFeedbackViewModel> getFeedbacksByField(UUID fieldId) {
         List<FieldFeedbackViewModel> feedbacks = new ArrayList<>();
-        String sql = "SELECT fb.feedback_id, fb.booking_id, fb.rating, fb.comment, fb.created_at, u.full_name AS customer_name "
+        String sql = "SELECT fb.feedback_id, fb.booking_id, fb.customer_id, fb.rating, fb.comment, fb.created_at, u.full_name AS customer_name "
                 + "FROM Feedback fb "
                 + "INNER JOIN Booking b ON b.booking_id = fb.booking_id "
                 + "INNER JOIN Users u ON u.user_id = fb.customer_id "
@@ -219,6 +260,10 @@ public class FeedbackDAO {
                 }
                 if (bookingId != null) {
                     feedback.setBookingId(UUID.fromString(bookingId));
+                }
+                String customerId = rs.getString("customer_id");
+                if (customerId != null) {
+                    feedback.setCustomerId(UUID.fromString(customerId));
                 }
                 feedback.setRating(rs.getInt("rating"));
                 feedback.setComment(rs.getString("comment"));

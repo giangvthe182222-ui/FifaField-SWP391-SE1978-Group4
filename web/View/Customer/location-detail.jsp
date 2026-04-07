@@ -25,7 +25,7 @@
             <p class="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400">FIFAFIELD LOCATION</p>
             <h1 class="text-4xl font-black tracking-tight uppercase">Chi tiết <span class="text-[#008751]">Cơ sở</span></h1>
         </div>
-        <a href="${pageContext.request.contextPath}/customer/locations" class="w-10 h-10 rounded-xl border border-slate-200 text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
+        <a href="${pageContext.request.contextPath}/customer/locations" onclick="if (window.history.length > 1) { window.history.back(); return false; }" class="w-10 h-10 rounded-xl border border-slate-200 text-slate-700 hover:border-[#008751] hover:text-[#008751] transition-colors flex items-center justify-center" aria-label="Quay lại" title="Quay lại">
             <i data-lucide="arrow-left" class="w-5 h-5"></i>
         </a>
     </div>
@@ -52,9 +52,29 @@
                 </div>
 
                 <div class="space-y-3">
-                    <div class="flex items-start gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4">
-                        <i data-lucide="map-pin" class="w-4 h-4 text-[#008751] mt-0.5"></i>
-                        <p class="text-sm font-bold text-slate-700">${location.address}</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="flex items-start gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-[#008751] mt-0.5"></i>
+                            <p class="text-sm font-bold text-slate-700">${location.address}</p>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2">
+                            <div class="flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="star" class="w-4 h-4 text-[#008751]"></i>
+                                    <p class="text-xs font-black uppercase tracking-widest text-slate-400">Đánh giá cơ sở</p>
+                                </div>
+                                <span class="text-xs font-black uppercase tracking-widest text-slate-400">${locationFeedbackCount} lượt</span>
+                            </div>
+                            <div class="flex items-end gap-3">
+                                <p class="text-3xl font-black tracking-tight text-[#008751]">
+                                    <c:choose>
+                                        <c:when test="${locationAverageRating != null}"><fmt:formatNumber value="${locationAverageRating}" pattern="0.0"/></c:when>
+                                        <c:otherwise>0.0</c:otherwise>
+                                    </c:choose>
+                                </p>
+                                <p class="pb-1 text-sm font-bold text-slate-500">/ 5 sao</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4">
                         <i data-lucide="phone" class="w-4 h-4 text-[#008751]"></i>

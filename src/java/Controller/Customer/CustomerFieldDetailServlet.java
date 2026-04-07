@@ -56,6 +56,7 @@ public class CustomerFieldDetailServlet extends HttpServlet {
             request.setAttribute("averageRating", averageRating);
             request.setAttribute("feedbackCount", feedbackCount);
             request.setAttribute("feedbacks", feedbacks);
+            request.setAttribute("currentUserId", user.getUserId().toString());
             request.getRequestDispatcher("/View/Customer/field-detail.jsp").forward(request, response);
         } catch (Exception ex) {
             response.sendRedirect(request.getContextPath() + "/customer/dashboard");
