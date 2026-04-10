@@ -1090,24 +1090,7 @@ public class PaymentServlet extends HttpServlet {
     }
 
     private boolean applyBookingStatusAfterRemainingSuccess(BookingDAO bookingDAO, UUID bookingId) {
-        if (bookingDAO == null || bookingId == null) {
-            return false;
-        }
-
-        Booking latestBooking = bookingDAO.getBookingById(bookingId);
-        String currentPlayStatus = getBookingPlayStatus(latestBooking);
-        String currentPaymentStatus = getBookingPaymentStatus(latestBooking);
-
-        if ("completed".equals(currentPlayStatus) || "paid".equals(currentPaymentStatus)) {
-            return true;
-        }
-        if ("checked out".equals(currentPlayStatus)) {
-            return bookingDAO.updateStatus(bookingId, "completed");
-        }
-        if ("deposited".equals(currentPaymentStatus)) {
-            return bookingDAO.markBookingPaid(bookingId);
-        }
-        return false;
+        return settleBookingAfterOnlinePayment(bookingDAO, bookingId, true);
     }
 
     private boolean applyBookingStatusAfterPaymentSuccess(BookingDAO bookingDAO, Payment payment, UUID bookingId) {
@@ -1125,10 +1108,84 @@ public class PaymentServlet extends HttpServlet {
             return bookingDAO.markBookingDeposited(bookingId);
         }
 
-        if ("paid".equals(currentPaymentStatus)) {
+        if (!"paid".equals(currentPaymentStatus)) {
+            if (!bookingDAO.markBookingPaid(bookingId)) {
+                return false;
+            }
+        }
+
+        // Online payment success should auto settle checked-out bookings.
+        return settleBookingAfterOnlinePayment(bookingDAO, bookingId, false);
+    }
+
+    private boolean settleBookingAfterOnlinePayment(BookingDAO bookingDAO, UUID bookingId, boolean upgradeDepositedToPaid) {
+        if (bookingDAO == null || bookingId == null) {
+            return false;
+        }
+
+        Booking booking = bookingDAO.getBookingById(bookingId);
+        if (booking == null) {
+            return false;
+        }
+
+        String playStatus = getBookingPlayStatus(booking);
+        String paymentStatus = getBookingPaymentStatus(booking);
+        String extraPaymentStatus = normalizeBookingState(booking.getExtraPaymentStatus());
+        if (extraPaymentStatus.isEmpty()) {
+            extraPaymentStatus = "none";
+        }
+
+        if (upgradeDepositedToPaid && "deposited".equals(paymentStatus)) {
+            if (!bookingDAO.markBookingPaid(bookingId)) {
+                return false;
+            }
+            booking = bookingDAO.getBookingById(bookingId);
+            if (booking == null) {
+                return false;
+            }
+            playStatus = getBookingPlayStatus(booking);
+            paymentStatus = getBookingPaymentStatus(booking);
+            extraPaymentStatus = normalizeBookingState(booking.getExtraPaymentStatus());
+            if (extraPaymentStatus.isEmpty()) {
+                extraPaymentStatus = "none";
+            }
+        }
+
+        // Only checked-out bookings are auto-promoted to completed.
+        if (!"checked out".equals(playStatus)) {
             return true;
         }
-        return bookingDAO.markBookingPaid(bookingId);
+
+        if (!"paid".equals(paymentStatus)) {
+            if (!bookingDAO.markBookingPaid(bookingId)) {
+                return false;
+            }
+            booking = bookingDAO.getBookingById(bookingId);
+            if (booking == null) {
+                return false;
+            }
+            paymentStatus = getBookingPaymentStatus(booking);
+            extraPaymentStatus = normalizeBookingState(booking.getExtraPaymentStatus());
+            if (extraPaymentStatus.isEmpty()) {
+                extraPaymentStatus = "none";
+            }
+            if (!"paid".equals(paymentStatus)) {
+                return false;
+            }
+        }
+
+        if ("pending extra".equals(extraPaymentStatus)) {
+            if (!bookingDAO.updateSplitStates(bookingId, "checked out", "paid", "paid extra")) {
+                return false;
+            }
+        }
+
+        Booking latest = bookingDAO.getBookingById(bookingId);
+        if (latest != null && "completed".equals(getBookingPlayStatus(latest))) {
+            return true;
+        }
+
+        return bookingDAO.updateStatus(bookingId, "completed");
     }
 
     private boolean applyWeeklyGroupPaymentSuccess(UUID weeklyGroupId,
