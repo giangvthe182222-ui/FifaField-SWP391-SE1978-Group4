@@ -92,3 +92,86 @@
 
             </div>
         </footer>
+
+<script>
+    (function () {
+        if (!document.body || document.body.getAttribute('data-booking-status-vi') !== 'true') {
+            return;
+        }
+
+        var statusMap = {
+            'pending refund': 'Chờ hoàn tiền',
+            'pending extra': 'Chờ thanh toán thêm',
+            'paid extra': 'Đã thanh toán thêm',
+            'checked in': 'Đã nhận sân',
+            'checked out': 'Đã trả sân',
+            'deposited': 'Đã đặt cọc',
+            'completed': 'Hoàn thành',
+            'cancelled': 'Đã hủy',
+            'refunded': 'Đã hoàn tiền',
+            'booked': 'Đã đặt',
+            'pending': 'Chờ thanh toán',
+            'paid': 'Đã thanh toán',
+            'failed': 'Thanh toán thất bại',
+            'none': 'Không có'
+        };
+
+        var phraseMap = {
+            'Play status': 'Trạng thái chơi',
+            'Payment status': 'Trạng thái thanh toán',
+            'Extra status': 'Trạng thái phụ thu',
+            'Play': 'Trạng thái chơi',
+            'Payment': 'Trạng thái thanh toán',
+            'Extra': 'Trạng thái phụ thu',
+            'play': 'Trạng thái chơi',
+            'payment': 'Trạng thái thanh toán',
+            'extra': 'Trạng thái phụ thu',
+            'Update': 'Cập nhật'
+        };
+
+        function escapeRegExp(text) {
+            return text.replace(/[.*+?^()|[\]\\]/g, '\\$&');
+        }
+
+        var statusKeys = Object.keys(statusMap).sort(function (a, b) {
+            return b.length - a.length;
+        });
+        var statusPattern = new RegExp(statusKeys.map(escapeRegExp).join('|'), 'gi');
+
+        var phraseKeys = Object.keys(phraseMap).sort(function (a, b) {
+            return b.length - a.length;
+        });
+        var phrasePattern = new RegExp(phraseKeys.map(escapeRegExp).join('|'), 'g');
+
+        function translateText(text) {
+            if (!text || !text.trim()) {
+                return text;
+            }
+
+            var translated = text.replace(phrasePattern, function (match) {
+                return phraseMap[match] || match;
+            });
+
+            translated = translated.replace(statusPattern, function (match) {
+                return statusMap[match.toLowerCase()] || match;
+            });
+
+            translated = translated.replace(/\s*\/\s*/g, ' / ');
+            return translated;
+        }
+
+        var selector = 'option, span, p, div, h1, h2, h3, h4, td, th, label, button, a';
+        var elements = document.querySelectorAll(selector);
+        for (var i = 0; i < elements.length; i++) {
+            var el = elements[i];
+            if (el.children.length > 0) {
+                continue;
+            }
+            var original = el.textContent;
+            var translated = translateText(original);
+            if (translated !== original) {
+                el.textContent = translated;
+            }
+        }
+    })();
+</script>
